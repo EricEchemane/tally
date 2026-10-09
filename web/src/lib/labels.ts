@@ -73,7 +73,7 @@ export const FIELD_GROUPS: { title: string; fields: FieldDef[] }[] = [
   {
     title: "Seller",
     fields: [
-      { key: "seller_name", label: "Name", kind: "text", editable: false },
+      { key: "seller_name", label: "Name", kind: "text", editable: true },
       { key: "seller_address", label: "Address", kind: "text", editable: false },
       { key: "seller_tin", label: "TIN", kind: "tin", editable: true },
       { key: "seller_branch", label: "Branch code", kind: "text", editable: true },
