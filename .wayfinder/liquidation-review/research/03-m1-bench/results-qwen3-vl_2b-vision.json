@@ -1,0 +1,271 @@
+{
+ "model": "qwen3-vl:2b",
+ "mode": "vision",
+ "results": [
+  {
+   "file": "valid-bf-sinangag",
+   "s": 115.2,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 2,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "valid-7eleven",
+   "s": 100.7,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 2,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "dup-7eleven-blurry",
+   "s": 91.9,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 2,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "valid-mrdiy-date-cropped",
+   "s": 84.7,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 3,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "dup-mrdiy-rotated",
+   "s": 87.7,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 2,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "valid-lawson-torn",
+   "s": 89.5,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 2,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "valid-petron-fuel",
+   "s": 93.0,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 2,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "valid-landmark-vat-exempt-mix",
+   "s": 92.8,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 1,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "vat_exempt_sales",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "valid-llaollao-service-invoice",
+   "s": 88.1,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 2,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "nonvat-mouthfeel",
+   "s": 81.2,
+   "prompt_tok": 1273,
+   "out_tok": 2823,
+   "json_ok": false,
+   "correct": 3,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "total",
+    "notice"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "out-of-period-jollibee-2025",
+   "s": 82.1,
+   "prompt_tok": 1312,
+   "out_tok": 2784,
+   "json_ok": false,
+   "correct": 2,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "seller_tin9",
+    "branch",
+    "vat_registered",
+    "invoice_number",
+    "date",
+    "vatable_sales",
+    "vat_amount",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "or-cebu-2022-multi-finding",
+   "s": 84.4,
+   "prompt_tok": 1312,
+   "out_tok": 2784,
+   "json_ok": false,
+   "correct": 7,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "invoice_number",
+    "date",
+    "total"
+   ],
+   "pred": {}
+  },
+  {
+   "file": "foreign-us-receipt",
+   "s": 88.3,
+   "prompt_tok": 1290,
+   "out_tok": 2806,
+   "json_ok": false,
+   "correct": 7,
+   "of": 11,
+   "wrong": [
+    "doc_type",
+    "invoice_number",
+    "date",
+    "total"
+   ],
+   "pred": {}
+  }
+ ],
+ "ollama_ps": "NAME           ID              SIZE      PROCESSOR    CONTEXT    RUNNER      UNTIL              \nqwen3-vl:2b    6e72c4c9d31b    1.8 GB    100% GPU     4096       llamacpp    9 minutes from now    \n",
+ "swap_mb_before": 2627.5,
+ "swap_mb_after": 5665.0
+}

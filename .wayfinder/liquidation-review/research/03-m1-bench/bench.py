@@ -43,7 +43,7 @@ SYSTEM = """You extract fields from Philippine receipts into JSON. Rules:
 def call(model, messages, images=None):
     if images: messages[-1]["images"] = images
     body = {"model": model, "messages": messages, "format": SCHEMA, "stream": False,
-            "options": {"temperature": 0, "num_ctx": 4096}, "keep_alive": "10m"}
+            "options": {"temperature": 0, "num_ctx": 4096, "num_predict": 600}, "keep_alive": "10m"}
     if model.startswith("qwen3"): body["think"] = False
     t = time.perf_counter()
     r = requests.post(OLLAMA, json=body, timeout=600).json()
@@ -80,7 +80,7 @@ def swap_mb():
 
 if __name__ == "__main__":
     model, mode = sys.argv[1], sys.argv[2]  # mode: text | vision
-    for m in ("qwen3:4b", "qwen2.5:3b", "qwen3-vl:2b"): subprocess.run(["ollama", "stop", m], capture_output=True)
+    for m in ("qwen3:4b", "qwen2.5:3b", "qwen3-vl:2b", "qwen3-vl:2b-instruct"): subprocess.run(["ollama", "stop", m], capture_output=True)
     results, swap0 = [], swap_mb()
     for i, name in enumerate(TRUTH):
         if mode == "text":

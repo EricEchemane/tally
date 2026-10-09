@@ -1,0 +1,19 @@
+valid-bf-sinangag                    19.8s  10/11  wrong=['date']
+valid-7eleven                        16.4s  10/11  wrong=['date']
+dup-7eleven-blurry                   11.7s  8/11  wrong=['date', 'vatable_sales', 'vat_amount']
+valid-mrdiy-date-cropped             11.6s  10/11  wrong=['date']
+dup-mrdiy-rotated                    11.3s  8/11  wrong=['seller_tin9', 'branch', 'date']
+valid-lawson-torn                    11.6s  5/11  wrong=['seller_tin9', 'branch', 'invoice_number', 'date', 'vatable_sales', 'vat_amount']
+valid-petron-fuel                    11.1s  10/11  wrong=['date']
+valid-landmark-vat-exempt-mix        12.2s  7/11  wrong=['invoice_number', 'date', 'vat_amount', 'vat_exempt_sales']
+valid-llaollao-service-invoice       11.9s  9/11  wrong=['date', 'vat_amount']
+nonvat-mouthfeel                     11.1s  8/11  wrong=['branch', 'date', 'vatable_sales']
+out-of-period-jollibee-2025          11.4s  11/11  wrong=[]
+or-cebu-2022-multi-finding           11.8s  3/11  wrong=['doc_type', 'seller_tin9', 'branch', 'vat_registered', 'date', 'vatable_sales', 'vat_amount', 'vat_exempt_sales']
+foreign-us-receipt                   11.9s  5/11  wrong=['doc_type', 'vat_registered', 'date', 'vatable_sales', 'vat_amount', 'vat_exempt_sales']
+
+qwen3-vl:2b-instruct vision: accuracy 104/143 = 73%; first 19.8s, warm median 11.7s
+NAME                    ID              SIZE      PROCESSOR    CONTEXT    RUNNER      UNTIL              
+qwen3-vl:2b-instruct    ff304a477a01    1.8 GB    100% GPU     4096       llamacpp    9 minutes from now    
+
+swap MB: 5764.75 -> 3576.5

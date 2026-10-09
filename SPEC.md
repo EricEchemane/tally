@@ -1,0 +1,329 @@
+# Vouch Local: Build Spec
+
+> Every receipt checked against BIR rules, on your own laptop.
+
+This is the one document to build from during the 20-hour hackathon (theme: **Local AI**, "stay useful when the cloud disappears"). Each section summarizes a decision; the linked ticket holds the reasoning. Vocabulary follows [GLOSSARY.md](GLOSSARY.md): use its terms in code, the UI and the pitch.
+
+Sources: [map](.wayfinder/liquidation-review/map.md) · [API contract](.wayfinder/liquidation-review/research/08-api-sketch.md) · [demo script](.wayfinder/liquidation-review/research/09-demo-script.md) · [M1 benchmark](.wayfinder/liquidation-review/research/03-m1-bench/FINDINGS.md) · [sample receipts](samples/receipts/README.md)
+
+---
+
+## 1. Product
+
+**User:** a finance **Reviewer** at a Philippine company who checks an **Employee's** **Liquidation** of a **Cash Advance**.
+
+**Problem** (validated with an accountant who handles liquidations; [ticket](.wayfinder/liquidation-review/issues/01-validate-workflow-with-reviewer-contact.md)):
+- Receipts are checked by hand ("eyeballed").
+- Receipts must be BIR-compliant and carry the Company's name and TIN.
+- A rejected receipt means the Employee returns that money.
+- Consolidated reports and the SLSP are always confidential: **"privacy is the priority."**
+
+**What Vouch does:**
+1. The Reviewer opens a Cash Advance and scans its QR code with a phone (or uploads files).
+2. Each receipt photo is read on the Mac (Apple Vision OCR, then qwen3:4b), checked by code against BIR rules, and appears on the dashboard live with ✅ or ⚠️.
+3. The Reviewer corrects misreads, dismisses Findings with reasons, and approves or returns the Liquidation.
+4. Exports: a Liquidation summary (Excel) and an SLSP-ready purchases CSV.
+5. The Reviewer can ask questions in English or Taglish ("How much input VAT did we lose in April?").
+
+**Why local:**
+- Employee and Company tax data never leave the office.
+- Checking a whole pile of receipts costs nothing.
+- It works with no internet.
+- **No request leaves the machine.**
+
+**Guiding principle: the LLM reads and interprets; code decides and computes.** The model never decides validity and never writes a number the user sees.
+
+---
+
+## 2. Stack and topology
+
+```
+Phone browser ─┐                          ┌─ Ollama :11434 (qwen3:4b, localhost only)
+               ├─► Next.js :3000 ─/api,/ws─►│ FastAPI :8000 ─┤
+Mac dashboard ─┘   (rewrites; one origin)   └─ SQLite + data/images/ └─ Apple Vision OCR via ocrmac (in-process)
+```
+
+- **Backend:** Python 3.12 (uv), FastAPI, `ocrmac`, Pillow + `pillow-heif`, `openpyxl`, SQLite, pytest. **It owns all logic and all tests.**
+- **Frontend:** Next.js (client components), react-query, one WebSocket. It is a thin client; the teammate redesigns it freely against the API contract.
+- **Network:**
+  - Next.js runs with `-H 0.0.0.0` on the Mac's LAN IP or a phone hotspot, and rewrites `/api/*` and `/ws` to FastAPI.
+  - FastAPI and Ollama stay on localhost.
+  - Nothing needs the internet after the setup downloads.
+- **Hardware target:** M1 MacBook Pro, **8GB**. Only one model is ever loaded.
+
+**Ollama settings:**
+- `model: qwen3:4b`, `think: false`, `temperature: 0`, `format: <JSON Schema>`
+- `num_ctx: 4096` (2048 is probably enough), `num_predict: 600`, `keep_alive: -1`
+- Environment: `OLLAMA_MAX_LOADED_MODELS=1`
+
+---
+
+## 3. Domain model (SQLite)
+
+Money is stored as **integer centavos** (₱355.00 → `35500`). The API sends peso numbers with 2 decimals. **The UI never does money arithmetic; it shows `totals`.**
+
+| Table | Key fields |
+|---|---|
+| `company` (single row) | `name`, `tin`, `buyer_details_rule` (`ALL_RECEIPTS` \| `AT_1000_AND_ABOVE`) |
+| `employee` | `name` |
+| `cash_advance` | `employee_id`, `amount`, `purpose`, `released_on`, `spending_end_on` |
+| `liquidation` (1:1 with cash_advance, created with it) | `status` (`OPEN` \| `APPROVED` \| `RETURNED`), `return_note`, frozen totals once approved |
+| `receipt` | `liquidation_id`, `stage` (`queued → ocr → extracting → checking → done \| failed`), `image_path`, `image_hash`, `rotation`, `ocr_text`, `extraction` (JSON, immutable), `derived` (JSON), `status` |
+| `correction` | `receipt_id`, `field`, `value`, `previous`, `at` |
+| `finding` | `receipt_id`, `check`, `condition`, `severity`, `state` (`OPEN` \| `DISMISSED` \| `CONFIRMED`), `message`, `amount_affected`, `related_liquidation_id`, `dismissal_reason` |
+| `question` | `text`, `state`, `answer` (JSON) |
+
+Demo Company: **Bayanihan Demo Corp, TIN 123-456-789-00000** (fictional), Buyer Details Rule `ALL_RECEIPTS`.
+
+---
+
+## 4. Receipt pipeline
+
+Decisions from [Measure OCR and extraction on the 8GB M1](.wayfinder/liquidation-review/issues/03-measure-extraction-on-m1.md) and [Receipt extraction schema](.wayfinder/liquidation-review/issues/05-receipt-extraction-schema.md). **Start from the working benchmark code** in `research/03-m1-bench/`:
+- `ocr.py`: upright detection and row grouping
+- `post.py`: normalization
+- `repair.py`: VAT repair
+
+| Step | What | Time on M1 |
+|---|---|---|
+| 1. Ingest | Save the image; convert HEIC → JPEG; compute `image_hash` | — |
+| 2. OCR | `ocrmac` accurate mode. **Upright detection:** if the median box is tall and narrow, rotate ±90° and keep the better pass. **Row grouping:** join observations whose vertical centers overlap, left to right. Emit `receipt.ocr_done` with a short preview. | ~0.5 s (1.6 s if rotated) |
+| 3. Extraction | One qwen3:4b call over the grouped text, with the JSON Schema below. Goes through the **LLM queue** (questions have priority). | ~14 s warm, ~22 s cold |
+| 4. Derive | Code normalization and keyword rules (below), then VAT repair | ms |
+| 5. Checks | A pure function, re-run on every change | ms |
+
+**Measured on 13 real receipts:** 90% field accuracy. The VAT arithmetic check flagged every wrong amount, and the repair fixed 3 of 4.
+
+### Extraction (LLM output, immutable; all nullable; never invent values)
+
+`seller_name`, `seller_address`, `seller_tin_raw`, `invoice_number_raw`, `date_raw` (as printed), `buyer_name`, `buyer_tin_raw`, `buyer_address` (display only), `vatable_sales`, `vat_amount`, `vat_exempt_sales`, `zero_rated_sales`, `total`, `particulars` (short text, e.g. "2 rice meals"), `expense_category` (`MEALS` \| `TRANSPORT_FUEL` \| `LODGING` \| `SUPPLIES` \| `OTHER`).
+
+No line items. The prompt rules, refined from the benchmark:
+- The seller is the business at the top. Ignore the POS-provider and accreditation block at the bottom.
+- Buyer fields only if filled in on the Name/TIN lines.
+- Amounts are plain numbers.
+- Copy exactly.
+
+### Derived (code)
+
+- `doc_type`: `OFFICIAL_RECEIPT` if "OFFICIAL RECEIPT" appears; `INVOICE` if "INVOICE" appears; `OTHER` if non-PHP or no seller TIN; otherwise none found (→ NEEDS_REVIEW).
+- `vat_registered`: "NON VAT" → false; "VAT REG" → true; otherwise the LLM's reading.
+- `not_valid_notice`: "NOT VALID FOR … INPUT TAX" appears.
+- `currency`: from "$", "USD" and similar.
+- `seller_tin` (9 digits) and `seller_branch` (3–5 digits):
+  - reject MIN-like strings
+  - rejoin a TIN that wraps onto the next row
+- `buyer_tin`; `invoice_number` with prefixes like "SI #:" stripped; `date` parsed from many formats to ISO.
+- **Non-VAT seller** → VATable and VAT become null.
+- **VAT repair:** if the arithmetic fails, search the OCR numbers for a VATable / VAT / exempt / total set that satisfies it. Prefer the LLM's total, then exempt = 0. Set `amounts_repaired`.
+- `slsp_bucket`: MEALS, LODGING and TRANSPORT → services; fuel and SUPPLIES → other goods.
+- `duplicate_key` = seller TIN + invoice number + total.
+
+### Corrections (Reviewer)
+
+- **The value used** for a field is the correction if there is one, otherwise the derived value.
+- **Editable:** seller TIN and branch, invoice number, date, the 4 amounts, total, buyer name and TIN, doc type, VAT status, Expense Category, particulars, `withholding_tax` (Reviewer-only, never computed).
+- The original Extraction is always kept.
+
+---
+
+## 5. Checks
+
+From [Checks and Disallowed Amount rules](.wayfinder/liquidation-review/issues/06-checks-and-disallowed-amount-rules.md).
+
+**Severities:**
+- `REJECT`: the whole amount is disallowed and the Employee returns it.
+- `NEEDS_REVIEW`: blocks approval until resolved.
+- `NO_INPUT_VAT`: the spend counts, but its VAT is non-creditable.
+
+**Receipt Status** = the worst *open* Finding: REJECT > NEEDS_REVIEW > NO_INPUT_VAT > accepted.
+
+**Principle:** auto-REJECT only on printed evidence. A missing or unreadable value gives NEEDS_REVIEW.
+
+| # | Check | Condition | Severity |
+|---|---|---|---|
+| 1 | Document type | "Official Receipt" printed | REJECT |
+| | | Non-peso or foreign document | REJECT |
+| | | No Invoice/OR title found | NEEDS_REVIEW |
+| | | "NOT VALID FOR CLAIM OF INPUT TAX" printed, or Non-VAT seller | NO_INPUT_VAT |
+| 2 | Seller TIN | Missing, or not 9 digits + 3–5 digit branch | NEEDS_REVIEW |
+| 3 | Buyer details (per the Buyer Details Rule) | Buyer TIN's 9 digits ≠ Company TIN | REJECT |
+| | | Buyer area blank (no lines or empty lines) | REJECT |
+| | | Something written but TIN unreadable or incomplete | NEEDS_REVIEW |
+| | | TIN matches, name differs | accepted (difference noted) |
+| 4 | VAT arithmetic (VAT-registered; ±₱0.05; after repair) | VATable × 12% ≠ VAT, or the parts ≠ total | NEEDS_REVIEW |
+| | | No VAT breakdown | NEEDS_REVIEW (Reviewer confirms as REJECT or NO_INPUT_VAT) |
+| | | Auto-repaired | accepted, with an "auto-corrected" note |
+| 5 | Duplicate | Same `duplicate_key` or `image_hash` in **any** Liquidation | REJECT on the later one, naming the earlier |
+| 6 | Date | Outside the Spending Period (`released_on`..`spending_end_on`, inclusive) | REJECT |
+| | | Date missing | NEEDS_REVIEW |
+
+- The checks are `check(effective_receipt, company, cash_advance, other_receipts) -> findings`.
+- Dismissals are keyed by `(receipt, check, condition)` so they survive re-runs.
+
+**Reviewer actions:**
+- **Correct** a field (the checks re-run).
+- **Dismiss** a Finding; the reason is required, and it stays visible as dismissed.
+- **Confirm** a NEEDS_REVIEW as REJECT, or as NO_INPUT_VAT for check 4 only.
+
+**Totals:**
+- Valid Spend = non-rejected receipts.
+- Disallowed Amount = rejected receipts (whole amounts).
+- Amount to Return = advance − Valid Spend, when positive. Otherwise the difference is Excess Spend (reimbursable, subject to approval).
+- Claimable input VAT = the VAT of accepted receipts without NO_INPUT_VAT.
+
+**Liquidation lifecycle:**
+- `OPEN` → `APPROVED` (only with no open NEEDS_REVIEW; freezes totals).
+- `OPEN` → `RETURNED` (the open Findings are the reasons) → `OPEN` again via reopen.
+
+---
+
+## 6. Questions
+
+From [Question set and query approach](.wayfinder/liquidation-review/issues/07-question-set-and-query-approach.md).
+
+**The 7 supported questions:**
+1. Open Cash Advances older than N days
+2. Input VAT lost in a period, and why
+3. Amount to Return per Employee
+4. Spend by Expense Category in a period
+5. Suppliers with the most invalid receipts
+6. Receipts submitted twice
+7. What still needs my review
+
+Anything else gets "I can't answer that yet" plus the list.
+
+**How a question is answered:**
+1. One qwen3:4b call returns `{question_id, employee, expense_category, period, days}` (about 30 output tokens). The prompt has 2–3 English and Taglish examples.
+2. `period` is `THIS_MONTH | LAST_MONTH | THIS_QUARTER | MONTH:YYYY-MM | RANGE:a..b`. **Code resolves the dates.**
+3. Code runs a fixed, parameterized, read-only SQL template (one pytest test each), then writes an English answer from a template. **No model-written numbers.**
+4. An ambiguous Employee name gets a clarifying choice.
+5. The answer shows a sentence, a table, links into the records, and a "how I got this" line (the matched question and the period).
+6. Questions are async and **jump the LLM queue**: the worst-case wait is one receipt (~15 s).
+
+---
+
+## 7. API and live events
+
+**The full contract is in [research/08-api-sketch.md](.wayfinder/liquidation-review/research/08-api-sketch.md).** Summary:
+
+**Company and records:**
+- `GET/PATCH /api/company`. The PATCH toggles the Buyer Details Rule and recomputes every OPEN Liquidation.
+- `GET/POST /api/employees`, `GET/POST /api/cash-advances` (creates the Liquidation too)
+
+**Liquidations:**
+- `GET /api/liquidations/{id}`
+- `POST /api/liquidations/{id}/approve` (409 while NEEDS_REVIEW is open), `.../return`, `.../reopen`
+- `GET /api/liquidations/{id}/capture-link`, which returns the QR code and token
+
+**Receipts and Reviewer actions:**
+- `POST /api/liquidations/{id}/receipts`: multipart, multiple images, returns 202. The phone sends the `?t=` token.
+- `GET /api/receipts/{id}`, `.../image`, `DELETE`
+- `POST/DELETE /api/receipts/{id}/corrections`
+- `POST /api/findings/{id}/dismiss` `{reason}`, `POST /api/findings/{id}/confirm` `{as}`
+
+**Questions and exports:**
+- `POST /api/questions` → 202 `{question_id}`; `GET /api/questions/{id}`; `GET /api/questions` (history)
+- `GET /api/liquidations/{id}/summary.xlsx`. Columns, per the accountant: TIN, date, seller name, seller address, particulars, amount, withholding tax, VAT, VAT-exempt, plus status, Findings and a totals block.
+- `GET /api/exports/slsp.csv?month=YYYY-MM`. Non-rejected receipts; NO_INPUT_VAT receipts go in the non-creditable column. Columns:
+  `month_end,seller_tin,seller_branch_code,registered_name,last_name,first_name,middle_name,address1,address2,exempt,zero_rated,services,capital_goods,other_goods,taxable_net_of_vat,input_tax,non_creditable_input_tax,gross_purchases,invoice_no,invoice_date,owner_tin,liquidation_id,receipt_id`
+
+**Ops:** `GET /api/health`, `POST /api/admin/warmup`.
+
+**Capture:**
+- Phone page `/capture/{id}?t=`: **Take photo** (`capture="environment"`) and **Choose from gallery** (`multiple`).
+- Dashboard: drag-and-drop or a multi-file picker.
+
+**WebSocket `/ws`:** events are **invalidation hints**; the client re-fetches over REST and invalidates everything on reconnect.
+- `receipt.stage`, `receipt.ocr_done` (with a preview), `receipt.updated`, `receipt.failed`
+- `liquidation.updated`, `question.answered`, `company.updated`, `queue.updated`
+
+**LLM worker:** one asyncio priority queue (questions = 0, receipts = 1). OCR runs outside the queue.
+
+---
+
+## 8. Tests (the teammate can't break these)
+
+- pytest against the API with the **LLM mocked by fixture extractions**: one JSON per sample in `samples/receipts/`.
+- Expected statuses and Findings come from `samples/receipts/README.md`, re-evaluated against §5. Under `ALL_RECEIPTS`, every real sample also gets the blank-buyer REJECT. The synthetic receipts are the passing cases.
+- Unit tests:
+  - row grouping and upright detection
+  - TIN, date and invoice normalization
+  - VAT repair (Lawson, Petron, llaollao)
+  - every check condition
+  - totals, including Excess Spend
+  - the lifecycle (approve 409)
+  - each question template
+  - period resolution
+- One real-model test marked `@pytest.mark.ollama` (skipped by default).
+
+---
+
+## 9. Build plan (20 h, two people)
+
+**You (fundamentals; backend first, then a working basic UI):**
+
+| Hours | Work | Done when |
+|---|---|---|
+| 0–1 | Repo `api/` and `web/`, `setup.sh` (brew, uv, ollama pull), SQLite schema, seed Company | `pytest` runs; Next.js proxies `/api/health` |
+| 1–4 | Pipeline: port `ocr.py`/`post.py`/`repair.py`, extraction call, derive; fixture extractions for 13 samples | The pipeline test passes on all samples |
+| 4–6 | Checks, totals, lifecycle as pure functions + tests | Check table §5 fully covered |
+| 6–8 | Endpoints, LLM priority queue, WebSocket events, corrections/dismiss/confirm | API tests green; live events fire |
+| 8–11 | Basic UI: Cash Advance list, Liquidation screen (totals, receipts, live stages), receipt detail (image, fields, Findings, correct/dismiss), QR + phone capture page, drag-drop upload, rule toggle | The full flow works phone → dashboard |
+| 11–13 | Questions (picker + 7 templates + tests), Excel summary, SLSP CSV | Demo questions answer correctly |
+| 13–14 | Seed script (2 Liquidations, ~8 processed receipts, the duplicate, the misread 7-Eleven), health/warmup | One-command demo reset |
+| **14** | **Feature freeze** | |
+| 14–20 | Bugs, rehearse 3×, record the internet-off clip and full takes | |
+
+**Teammate (demo assets first, then UI polish once features exist):**
+
+| Hours | Work |
+|---|---|
+| 0–6 | Blur card numbers and cashier names in `samples/`; make 1–2 synthetic receipts (Bayanihan Demo Corp + TIN handwritten); set up LuLu/`nettop` and the hotspot (mobile data off); draft slides for the problem and why-local beats; plan any AI-generated video parts (product footage stays real) |
+| 6–12 | Design the visual system and components against the contract's example payloads |
+| 12–17 | Polish the real screens (Liquidation, receipt detail, capture page, questions panel) without changing the API |
+| 17–20 | Edit the ~2 min submission cut and the ~60 s vertical LinkedIn cut with captions; README for the public repo |
+
+**Cut list if behind** (cut in this order):
+1. The SLSP CSV
+2. Excel → CSV for the summary
+3. Questions 1, 3, 5, 7 (keep 2, 4, 6)
+4. HEIC conversion
+5. Reopen
+6. Gallery multi-select
+
+**Never cut:**
+- live stages and OCR preview
+- checks 1–6 and the rule toggle
+- corrections/dismiss
+- the approve block
+- the internet-off clip
+
+---
+
+## 10. Demo
+
+The full script is in [research/09-demo-script.md](.wayfinder/liquidation-review/research/09-demo-script.md). Format: 5 min demo + 3 min Q&A. You narrate and drive the dashboard; the teammate runs the phone, the network monitor and the clip.
+
+1. Problem (the accountant's words)
+2. Why local
+3. QR + 2 live scans over pre-seeded data
+4. Rule toggle + duplicate + correction
+5. 3 questions (1 Taglish)
+6. Approve blocked, then resolved and approved, then exports
+7. The internet-off clip + "90%, every wrong amount caught"
+
+**Pre-flight (T-5 min):** close apps, warm up, check health, test the QR. **Fallback:** "this one's already processed."
+
+---
+
+## 11. Not in this build
+
+- **Open questions, only if time remains** (see the [map](.wayfinder/liquidation-review/map.md)): cloud sync (optional, clearly separate), voice questions, policy rules (check 8), the legibility check, e-invoice/PDF intake, falsification RED_FLAGs, AI-generated video, Windows/installer distribution.
+- **Out of scope:**
+  - a POS with a cloud LLM
+  - freelancer 2307 handling
+  - on-phone inference
+  - online ATP verification (findings say "likely valid")
+  - a vision-model fallback
+  - free text-to-SQL
