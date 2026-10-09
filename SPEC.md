@@ -149,7 +149,8 @@ No line items. The prompt rules, refined from the benchmark:
 ### Corrections (Reviewer)
 
 - **The value used** for a field is the correction if there is one, otherwise the derived value.
-- **Editable:** seller TIN and branch, invoice number, date, the 4 amounts, total, buyer name and TIN, doc type, VAT status, Expense Category, particulars, `withholding_tax` (Reviewer-only, never computed).
+- **Editable:** seller TIN and branch, invoice number, date, the 4 amounts, total, buyer name and TIN, doc type, VAT status, Expense Category, particulars, `withholding_tax` (Reviewer-only, never computed), and **seller name** (display-only).
+- Seller name was made editable after the fixtures showed OCR often misses or garbles store names (logos, torn or faded headers), and a prompt change couldn't fix it.
 - The original Extraction is always kept.
 
 ---
@@ -398,7 +399,12 @@ The full script is in [research/09-demo-script.md](.wayfinder/liquidation-review
 6. Approve blocked, then resolved and approved, then exports
 7. The internet-off clip + "90%, every wrong amount caught"
 
-**Pre-flight (T-5 min):** close apps, warm up, check health, test the QR. **Fallback:** "this one's already processed."
+**Pre-flight:**
+- **Restart the Mac** beforehand. Swap builds up over a day of work (9 GB measured) and pushes the model's weights out, which slows the first receipts.
+- Start `MODE=demo ./dev.sh` (production web build: no file watchers, no first-visit page compiles on stage), then `./demo.sh` (reset, warm-up, health and swap check).
+- Open only Terminal and one browser tab. Test the QR once.
+
+**Fallback:** "this one's already processed."
 
 ---
 

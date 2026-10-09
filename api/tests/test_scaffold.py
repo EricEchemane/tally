@@ -86,7 +86,7 @@ def test_correction_changes_effective_and_totals(client):
     r = client.post(f"/api/receipts/{llaollao}/corrections", json={"field": "total", "value": 160}).json()
     assert r["effective"]["total"] == 160.0 and r["corrections"][0]["previous"] == 159.0
     assert client.get(f"/api/liquidations/{lid}").json()["totals"]["valid_spend"] == 442.95
-    assert client.post(f"/api/receipts/{llaollao}/corrections", json={"field": "seller_name", "value": "x"}).status_code == 422
+    assert client.post(f"/api/receipts/{llaollao}/corrections", json={"field": "seller_address", "value": "x"}).status_code == 422
     assert client.delete(f"/api/receipts/{llaollao}/corrections/total").json()["effective"]["total"] == 159.0
 
 

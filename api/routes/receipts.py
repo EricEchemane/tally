@@ -151,7 +151,8 @@ def _normalize(field: str, value: Any) -> dict[str, Any]:
         return {field: bool(value)} if isinstance(value, bool) else bad("must be true or false")
     if field in ENUMS:
         return {field: value} if value in ENUMS[field] else bad(f"must be one of {sorted(ENUMS[field])}")
-    return {field: str(value).strip()}
+    text = " ".join(str(value).split())
+    return {field: text} if len(text) <= 120 else bad("at most 120 characters")
 
 
 @router.delete("/receipts/{receipt_id}/corrections/{field}")
