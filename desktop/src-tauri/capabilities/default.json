@@ -1,0 +1,6 @@
+{
+  "identifier": "default",
+  "description": "The bundled splash page only; the app itself is served by the backend and needs no IPC.",
+  "windows": ["main"],
+  "permissions": ["core:default"]
+}

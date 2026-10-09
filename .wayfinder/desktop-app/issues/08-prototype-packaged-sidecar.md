@@ -2,7 +2,7 @@
 
 Type: prototype (HITL)
 Status: open
-Assignee:
+Assignee: Eric
 Blocked by: none
 
 ## Question
@@ -12,4 +12,6 @@ Does a bare Tauri 2 shell plus the frozen backend actually work on both platform
 - on Simon's Windows machine: the installer, the firewall allow rule, the phone reaching the LAN address, SmartScreen
 - quitting and force-killing the app leaves no backend process running
 
-It works through the 12 risks listed in [research/02-tauri-sidecar.md](../research/02-tauri-sidecar.md). The prototype is throwaway, on its own branch.
+It works through the 12 risks listed in [research/02-tauri-sidecar.md](../research/02-tauri-sidecar.md).
+
+**Mac first (2026-10-10):** not throwaway any more. The macOS half becomes the real app skeleton in `desktop/` on `plan/desktop-app`; the Windows half waits for Simon.

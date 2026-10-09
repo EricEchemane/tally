@@ -4,13 +4,14 @@ Label: wayfinder:map
 
 ## Destination
 
-A `DESKTOP.md` build spec, every decision locked, for packaging Tally as an installable desktop app for macOS (Apple Silicon) and Windows 10/11 x64: the SQLite data inside the app, Ollama set up through a first-run dialog, and phone capture still working. Written now; built after the hackathon demo.
+Tally as an installable desktop app: first a working macOS (Apple Silicon) app built on this branch, then a `DESKTOP.md` spec for the Windows 10/11 x64 port. The SQLite data lives inside the app, Ollama is set up through a first-run dialog, and phone capture still works.
 
 ## Notes
 
 - **Domain:** same as [the liquidation-review map](../liquidation-review/map.md); vocabulary in [GLOSSARY.md](../../GLOSSARY.md). The product behaviour is fixed by [SPEC.md](../../SPEC.md); this map only decides how it is packaged, installed and run.
 - **Agreed while charting (2026-10-09):**
   - **Timing:** plan now, build after the demo. `main` keeps the web + server setup; this work lives on the `plan/desktop-app` branch.
+  - **Mac first, and this map carries the build (2026-10-10, overrides "plan, don't do"):** the macOS app is built here on `plan/desktop-app`, ticket by ticket: the packaged-sidecar prototype becomes the real app skeleton, then the first-run wizard, then the static export. Windows tickets (the measurement and the OCR engine choice) wait for Simon's results and don't block the Mac app. `DESKTOP.md` records what was built and decided, for the Windows port.
   - **Platforms:** macOS on Apple Silicon and Windows 10/11 x64. Linux, Intel Macs and Windows on ARM are out.
   - **Who runs it:** one Reviewer's own laptop. The app still serves the phone capture page over the office Wi-Fi through the QR code.
   - **Ollama:** on first run the app detects Ollama. If it is missing, a setup dialog gets the official installer, waits for it, then pulls `qwen3:4b` with progress. Review and exports work with no model; scanning shows "waiting for setup".

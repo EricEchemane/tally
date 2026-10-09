@@ -1,0 +1,27 @@
+# PyInstaller spec for the desktop sidecar: one-folder build (see .wayfinder/desktop-app/research/02-tauri-sidecar.md).
+#   cd api && uv run --group desktop pyinstaller tally-api.spec --noconfirm --distpath ../desktop/dist-sidecar
+# The static export of web/ is bundled when ../web/out exists.
+import os
+import sys
+
+from PyInstaller.utils.hooks import collect_all
+
+datas = [("db/schema.sql", "db")]
+binaries = []
+hiddenimports = ["ocrmac", "ocrmac.ocrmac", "pillow_heif"]
+
+# Lazily imported, no PyInstaller hooks: Apple Vision through pyobjc (macOS) and libheif.
+packages = ["pillow_heif"] + (["objc", "Foundation", "Quartz", "Vision", "CoreML", "AppKit", "ocrmac"]
+                              if sys.platform == "darwin" else [])
+for pkg in packages:
+    d, b, h = collect_all(pkg)
+    datas, binaries, hiddenimports = datas + d, binaries + b, hiddenimports + h
+
+if os.path.isdir("../web/out"):
+    datas.append(("../web/out", "web"))
+
+a = Analysis(["desktop.py"], pathex=["."], binaries=binaries, datas=datas, hiddenimports=hiddenimports,
+             excludes=["pytest", "watchfiles", "tkinter"])
+pyz = PYZ(a.pure)
+exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name="tally-api", console=True)
+coll = COLLECT(exe, a.binaries, a.datas, name="tally-api")

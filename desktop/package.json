@@ -1,0 +1,13 @@
+{
+  "name": "tally-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "sidecar": "cd ../api && uv run --group desktop pyinstaller tally-api.spec --noconfirm --distpath ../desktop/dist-sidecar --workpath ../desktop/build-sidecar",
+    "dev": "tauri dev",
+    "build": "npm run sidecar && tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "2.12.1"
+  }
+}
