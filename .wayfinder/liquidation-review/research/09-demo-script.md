@@ -12,9 +12,9 @@
 |---|---|---|
 | 0:00–0:30 | **Problem.** The accountant's words: receipts are checked by hand ("eyeballed"); a rejected receipt means the Employee pays the money back; "privacy is the priority". | Problem & usefulness (25%) |
 | 0:30–1:00 | **Why local.** Liquidation reports and the SLSP are always confidential. Everything runs on this 8GB MacBook: Apple Vision OCR + qwen3:4b. The network monitor stays visible. | Local AI (25%) |
-| 1:00–2:30 | **Core flow.** Open the ₱15,000 Cash Advance, already loaded with ~8 processed receipts. Scan the QR code; the phone opens capture. Snap 2 receipts live: the synthetic Petron with the Company TIN written on it (→ ✅), and the 2022 Official Receipt (→ REJECT, several Findings). The OCR text appears in under 1 s, the checks land around 15 s, and the totals update. | Execution, demo quality |
+| 1:00–2:30 | **Core flow.** Show the field-trip Liquidation, already loaded with 8 processed receipts, then open Juan's October office-supplies Liquidation. Scan the QR code; the phone opens capture. Snap 2 receipts live: the printed `bayanihan-corp-1` invoice with the Company's buyer details (→ ✅ ACCEPTED), and the 2022 Official Receipt (→ REJECT, several Findings). The OCR text appears in under 1 s, the verdict lands in about 13 s, and the totals update. | Execution, demo quality |
 | 2:30–3:15 | **Rules come alive.** Switch the Buyer Details Rule from "all receipts" to "₱1,000+" and watch the Liquidation recompute with ✅s appearing. Point at a duplicate rejected that names the other Liquidation. Correct a misread amount on the blurry 7-Eleven receipt; the checks re-run. | Innovation, UX |
-| 3:15–4:15 | **Questions.** "How much input VAT did we lose in April, and why?", then Taglish: "Magkano ang ibabalik ni Juan?" ("How much does Juan have to return?"), then "Has any receipt been submitted twice?" Show each answer's "how I got this" line. | Local LLM |
+| 3:15–4:15 | **Questions.** Taglish: "Magkano ang ibabalik ni Juan?" ("How much does Juan have to return?"), then "Has any receipt been submitted twice?", then Taglish: "Ano pa ang kailangan kong i-review?" ("What do I still need to review?"), whose answer leads straight into the next beat. Show each answer's "how I got this" line. Skip the input-VAT question: on the demo data it answers with small sums (₱30.43 for April) or "none" for this quarter. | Local LLM |
 | 4:15–4:45 | **Close the loop.** Approve is blocked (a receipt still needs review). Resolve it, approve, then download the Liquidation summary (Excel, with the accountant's columns) and the SLSP CSV. | Usefulness |
 | 4:45–5:00 | **Proof.** Play the 20 s internet-off clip. One line: "90% of fields right on real receipts; the arithmetic check caught every wrong amount." | Local AI, execution |
 
@@ -26,7 +26,7 @@
 ## Pre-flight (T-5 min) and fallback
 
 - **Machine:** close Chrome tabs and other apps (8GB; swap reached 3.9 GB during the benchmark). Run `POST /api/admin/warmup` and check that `GET /api/health` shows the model loaded and an empty queue. Phone and Mac on the same network; QR tested once.
-- **Pre-seeded data:** 2 Liquidations with ~8 processed receipts, including the cross-Liquidation duplicate and the blurry 7-Eleven photo with a misread amount.
+- **Pre-seeded data:** 3 Liquidations (see the demo data table in SPEC.md §3): the field trip with 8 processed receipts, the October office supplies with the blurry 7-Eleven duplicate (misread amount), and Maria's pharmacy run. `./demo.sh` resets them.
 - **Only 2 receipts are scanned live.** If one fails: "this one's already processed", and open the pre-seeded copy.
 
 ## Q&A prep (3:00)

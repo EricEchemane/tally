@@ -397,7 +397,7 @@ The full script is in [research/09-demo-script.md](.wayfinder/liquidation-review
 2. Why local
 3. QR + 2 live scans over pre-seeded data
 4. Rule toggle + duplicate + correction
-5. 3 questions (1 Taglish)
+5. 3 questions (2 Taglish): amount to return, duplicates, what still needs review
 6. Approve blocked, then resolved and approved, then exports
 7. The internet-off clip + "90%, every wrong amount caught"
 
