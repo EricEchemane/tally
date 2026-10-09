@@ -10,7 +10,7 @@ from money import to_centavos
 
 @pytest.fixture
 def conn(tmp_path, monkeypatch):
-    monkeypatch.setenv("TALLY_SEED_PLACEHOLDERS", "0")
+    monkeypatch.setenv("TALLY_SEED", "minimal")
     c = db.connect(tmp_path / "q.db")
     db.init_db(c)
     seed(c)  # Juan Dela Cruz: ₱15,000 released 2026-03-30, Liquidation 1

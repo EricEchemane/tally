@@ -1,0 +1,17 @@
+*** DEMO ONLY ***
+MANDini St, Munt iniupa Cite
+VAT REG TIN: 987-654-321-00000
+SALES INVOICE
+Invoice No.  SI-000123
+Date  2026-10-09
+Bond Paper A4 (ream)
+2 X 202,00  570.00
+Balpen Black (box)
+1 x 96.00  96.00
+TOTAL  PHP  666.00
+VATable Sales  594.64
+VAT (12%)  71.36
+Sold to: BAYANIHAN DEMO CORP  TIN:
+Address: 123 Rizal St,  123-456-789-00000
+Quezon City
+*** DEMO ONLY ***

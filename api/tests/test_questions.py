@@ -1,209 +1,108 @@
-"""Question templates and period resolution (SPEC §6, §8). One test per template."""
-import datetime as dt
+"""Question picker and answering (SPEC §6). Fake mode picks by keywords; the real model is in an ollama test."""
+import time
 
 import pytest
 
-from dbhelpers import add_employee_advance, add_receipt, conn  # noqa: F401  (conn is a fixture)
-from questions.templates import SUPPORTED, run
-from questions.templates.periods import describe, resolve_period
+from llm.question_picker import Pick, _clean, pick_by_keywords
+from questions import templates
 
-TODAY = dt.date(2026, 5, 20)
-
-
-# ---------- period resolution ----------
-
-@pytest.mark.parametrize("period, expected", [
-    ("THIS_MONTH", ("2026-05-01", "2026-05-31")),
-    ("LAST_MONTH", ("2026-04-01", "2026-04-30")),
-    ("THIS_QUARTER", ("2026-04-01", "2026-06-30")),
-    ("MONTH:2026-02", ("2026-02-01", "2026-02-28")),
-    ("MONTH:2028-02", ("2028-02-01", "2028-02-29")),
-    ("RANGE:2026-04-03..2026-04-10", ("2026-04-03", "2026-04-10")),
-    ("this_month", ("2026-05-01", "2026-05-31")),
-])
-def test_resolve_period(period, expected):
-    a, b = resolve_period(period, TODAY)
-    assert (a.isoformat(), b.isoformat()) == expected
+CASES = [  # (question, expected Pick) — English, Filipino and Taglish
+    ("How much input VAT did we lose this month, and why?", Pick(2, period="THIS_MONTH")),
+    ("Magkano ang ibabalik ni Juan?", Pick(3, employee="Juan")),
+    ("How much does Maria Santos still have to return?", Pick(3, employee="Maria Santos")),
+    ("Magkano ang nagastos sa pagkain noong Abril?", Pick(4, expense_category="MEALS", period="MONTH:04")),
+    ("How much did we spend on fuel last month?", Pick(4, expense_category="TRANSPORT_FUEL", period="LAST_MONTH")),
+    ("Which cash advances are still open after 45 days?", Pick(1, days=45)),
+    ("Which suppliers gave us the most invalid receipts?", Pick(5)),
+    ("May resibo bang dalawang beses na-submit?", Pick(6)),
+    ("Ano pa ang kailangan kong i-review?", Pick(7)),
+    ("What's the weather tomorrow?", Pick(0)),
+]
 
 
-def test_resolve_period_across_year_boundaries():
-    assert resolve_period("LAST_MONTH", dt.date(2026, 1, 15)) == (dt.date(2025, 12, 1), dt.date(2025, 12, 31))
-    assert resolve_period("THIS_QUARTER", dt.date(2026, 12, 31)) == (dt.date(2026, 10, 1), dt.date(2026, 12, 31))
+@pytest.mark.parametrize("text,expected", CASES)
+def test_keyword_picker(text, expected):
+    assert pick_by_keywords(text) == expected
 
 
-@pytest.mark.parametrize("period", [None, ""])
-def test_no_period_is_all_time(period):
-    assert resolve_period(period, TODAY) is None
+def test_llm_output_is_validated():
+    p = _clean({"question_id": 9, "employee": "  ", "expense_category": "FOOD", "period": "2026-04", "days": -3})
+    assert p == Pick(0)
+    assert _clean({"question_id": 4, "employee": None, "expense_category": "MEALS", "period": "MONTH:04", "days": None}) \
+        == Pick(4, expense_category="MEALS", period="MONTH:04")
 
 
-@pytest.mark.parametrize("period", ["NEXT_YEAR", "MONTH:2026-13", "RANGE:2026-04-10..2026-04-01", "MONTH:26-04"])
-def test_bad_period_raises(period):
-    with pytest.raises(ValueError):
-        resolve_period(period, TODAY)
+def _ask(c, text):
+    qid = c.post("/api/questions", json={"text": text}).json()["question_id"]
+    deadline = time.monotonic() + 5
+    while (q := c.get(f"/api/questions/{qid}").json())["state"] != "done":
+        assert time.monotonic() < deadline
+        time.sleep(0.02)
+    return q["answer"]
 
 
-def test_describe():
-    assert describe(resolve_period("MONTH:2026-04", TODAY)) == "in April 2026"
-    assert describe(resolve_period("THIS_QUARTER", TODAY)) == "in Q2 2026"
-    assert describe(resolve_period("RANGE:2026-04-03..2026-04-10", TODAY)) == "from 2026-04-03 to 2026-04-10"
-    assert describe(None) == ""
+@pytest.fixture
+def recorded(monkeypatch):
+    """Stand-in for Simon's templates: records the slots it was called with."""
+    calls = []
+
+    def run(conn, question_id, slots, today):
+        calls.append((question_id, slots, today))
+        return {"kind": "answer", "sentence": "ok", "table": {"columns": [], "rows": []}, "links": [],
+                "how": {"question_id": question_id, "question": templates.SUPPORTED[question_id], "period": None}}
+
+    monkeypatch.setattr(templates, "run", run)
+    monkeypatch.setenv("TALLY_TODAY", "2026-10-09")
+    return calls
 
 
-# ---------- the templates ----------
-
-def test_unsupported_question():
-    a = run(None, None, {}, TODAY)
-    assert a["kind"] == "unsupported" and a["supported"] == list(SUPPORTED.values())
-    assert run(None, 99, {}, TODAY)["kind"] == "unsupported"
-
-
-def test_bad_period_asks_which_period(conn):
-    a = run(conn, 2, {"period": "SOMETIME"}, TODAY)
-    assert a["kind"] == "clarify"
-    assert [c["label"] for c in a["choices"]] == ["This month", "Last month", "This quarter"]
+def test_slots_reach_the_templates(clean_client, recorded):
+    assert _ask(clean_client, "Magkano ang nagastos sa pagkain noong Abril?")["kind"] == "answer"
+    qid, slots, today = recorded[-1]
+    assert qid == 4 and slots["expense_category"] == "MEALS" and slots["period"] == "MONTH:04"
+    assert str(today) == "2026-10-09"
 
 
-def test_templates_are_read_only(conn):
-    run(conn, 7, {}, TODAY)
-    conn.execute("INSERT INTO employee (name) VALUES ('Still writable')")  # query_only was switched back off
+def test_employee_is_resolved_or_clarified(clean_client, recorded):
+    c = clean_client
+    _ask(c, "Magkano ang ibabalik ni Juan?")
+    assert recorded[-1][1]["employee_name"] == "Juan Dela Cruz"           # unique first-name match
+    c.post("/api/employees", json={"name": "Juan Santos"})
+    a = _ask(c, "Magkano ang ibabalik ni Juan?")
+    assert a["kind"] == "clarify" and [ch["label"] for ch in a["choices"]] == ["Juan Dela Cruz", "Juan Santos"]
+    assert a["choices"][1]["text"] == "Magkano ang ibabalik ni Juan Santos?"
+    _ask(c, a["choices"][1]["text"])                                      # re-asking the choice resolves it
+    assert recorded[-1][1]["employee_name"] == "Juan Santos"
+    a = _ask(c, "How much does Pedro still have to return?")
+    assert a["kind"] == "clarify" and "couldn't find" in a["sentence"]
+    _ask(c, "Who still has to return money?")                             # no name: everyone
+    assert recorded[-1][1]["employee_id"] is None
 
 
-def test_q1_open_advances_older_than_n_days(conn):
-    liq_maria = add_employee_advance(conn, "Maria Santos", 5000, "2026-05-10")
-    add_receipt(conn, 1, "ACCEPTED", total=1000, date="2026-04-02")
-
-    a = run(conn, 1, {"days": 30}, TODAY)  # Juan's (51 days) is older than 30; Maria's (10 days) isn't
-    assert a["kind"] == "answer"
-    assert a["table"]["rows"] == [["Juan Dela Cruz", "Field sales trip, South Luzon", "2026-03-30", 51, "OPEN", 15000.0, 14000.0]]
-    assert a["sentence"] == "1 Cash Advance released more than 30 days ago is not yet liquidated, worth ₱15,000.00 in all."
-    assert a["links"] == [{"label": "Juan Dela Cruz: Field sales trip, South Luzon", "href": "/liquidations/1"}]
-
-    assert len(run(conn, 1, {"days": 5}, TODAY)["table"]["rows"]) == 2
-    conn.execute("UPDATE liquidation SET status = 'APPROVED' WHERE id IN (1, ?)", (liq_maria,))
-    assert run(conn, 1, {"days": None}, TODAY)["sentence"] == "No Cash Advance released more than 30 days ago is still open."
+def test_unsupported_and_real_templates(clean_client):
+    c = clean_client
+    a = _ask(c, "What's the weather tomorrow?")
+    assert a["kind"] == "unsupported" and len(a["supported"]) == 7
+    a = _ask(c, "Ano pa ang kailangan kong i-review?")      # the real template (test_question_templates.py)
+    assert a["kind"] == "answer" and a["how"]["question_id"] == 7 and a["sentence"] == "Nothing needs your review."
 
 
-def test_q2_input_vat_lost_and_why(conn):
-    add_receipt(conn, 1, "REJECT", [("DOC_TYPE", "official_receipt", "REJECT"), ("BUYER_DETAILS", "blank", "REJECT")],
-                total=560, vat_amount=60, date="2026-04-03", seller_name="Cebu Hotel")
-    add_receipt(conn, 1, "REJECT", [("BUYER_DETAILS", "blank", "REJECT")], total=355, vat_amount=38.04, date="2026-04-05")
-    add_receipt(conn, 1, "NO_INPUT_VAT", [("VAT_ARITHMETIC", "no_breakdown", "NO_INPUT_VAT", "CONFIRMED")],
-                total=200, vat_amount=None, date="2026-04-06")
-    add_receipt(conn, 1, "NO_INPUT_VAT", [("DOC_TYPE", "not_valid_notice", "NO_INPUT_VAT")],
-                total=112, vat_amount=12, date="2026-04-07")
-    add_receipt(conn, 1, "NEEDS_REVIEW", [("SELLER_TIN", "missing", "NEEDS_REVIEW")], total=224, vat_amount=24, date="2026-04-08")
-    add_receipt(conn, 1, "ACCEPTED", total=1120, vat_amount=120, date="2026-04-09")
-    add_receipt(conn, 1, "REJECT", [("DATE", "outside_period", "REJECT")], total=999, vat_amount=99, date="2026-05-03")
-    # A Reviewer correction moves this one into April and changes its VAT.
-    add_receipt(conn, 1, "REJECT", [("DUPLICATE", "duplicate", "REJECT")], total=112, vat_amount=50, date="2026-03-31",
-                corrections={"date": "2026-04-10", "vat_amount": 1200})
-    # A dismissed Finding doesn't count as the reason.
-    add_receipt(conn, 1, "NO_INPUT_VAT", [("BUYER_DETAILS", "blank", "REJECT", "DISMISSED"),
-                                          ("DOC_TYPE", "non_vat", "NO_INPUT_VAT")], total=50, date="2026-04-11")
-
-    a = run(conn, 2, {"period": "MONTH:2026-04"}, TODAY)
-    assert a["sentence"] == ("You lost ₱122.04 of input VAT in April 2026: ₱110.04 from rejected receipts, ₱12.00 non-creditable."
-                             " Another ₱24.00 is on receipts still waiting for review.")
-    assert a["table"] == {"columns": ["Reason", "Receipts", "VAT"], "rows": [
-        ["Official Receipt, not an Invoice", 1, 60.0],
-        ["No Company name/TIN", 1, 38.04],
-        ['"Not valid for input tax" printed', 1, 12.0],
-        ["Submitted twice", 1, 12.0],
-        ["No VAT breakdown", 1, 0.0],
-        ["Non-VAT seller", 1, 0.0],
-    ]}
-    assert a["how"] == {"question_id": 2, "question": SUPPORTED[2], "period": {"from": "2026-04-01", "to": "2026-04-30"}}
-    assert a["links"][0] == {"label": "Cebu Hotel", "href": "/receipts/1"}
-
-    assert run(conn, 2, {"period": "MONTH:2026-06"}, TODAY)["sentence"] == "You lost no input VAT in June 2026."
-    assert run(conn, 2, {}, TODAY)["how"]["period"] is None
+# Phrasings outside the prompt's examples; only the real model is expected to get these.
+UNSEEN = [
+    ("Which cash advances are still unliquidated?", Pick(1)),
+    ("Ilan ang resibong na-reject ngayong buwan dahil sa VAT?", Pick(2, period="THIS_MONTH")),
+    ("Sino ang may utang pa sa company?", Pick(3)),
+    ("Show me duplicate receipts from April", Pick(6, period="MONTH:04")),
+    ("Magkano ang nagastos sa gasolina ngayong buwan?", Pick(4, expense_category="TRANSPORT_FUEL", period="THIS_MONTH")),
+    ("Anong mga resibo ang kailangan pang i-check?", Pick(7)),
+]
 
 
-def test_q3_amount_to_return_per_employee(conn):
-    add_receipt(conn, 1, "ACCEPTED", total=12000, date="2026-04-02")
-    add_receipt(conn, 1, "REJECT", total=500, date="2026-04-03")
-    liq = add_employee_advance(conn, "Maria Santos", 3000, "2026-05-01")
-    add_receipt(conn, liq, "NEEDS_REVIEW", total=3500, date="2026-05-02")  # Excess Spend, nothing to return
-    add_employee_advance(conn, "Maria Reyes", 1000, "2026-05-01")
-
-    a = run(conn, 3, {}, TODAY)
-    assert a["sentence"] == "2 Employees have ₱4,000.00 to return in all."
-    assert a["table"]["rows"] == [
-        ["Juan Dela Cruz", "Field sales trip, South Luzon", "OPEN", 15000.0, 12000.0, 3000.0],
-        ["Maria Reyes", "Trip", "OPEN", 1000.0, 0.0, 1000.0],
-    ]
-
-    assert run(conn, 3, {"employee": "juan"}, TODAY)["sentence"] == "Juan Dela Cruz needs to return ₱3,000.00."
-    assert run(conn, 3, {"employee": "Maria Santos"}, TODAY)["sentence"] == "Maria Santos has nothing to return."
-
-    clarify = run(conn, 3, {"employee": "Maria"}, TODAY)
-    assert clarify["kind"] == "clarify" and clarify["sentence"] == "Which Maria do you mean?"
-    assert clarify["choices"] == [
-        {"label": "Maria Reyes", "text": "How much does Maria Reyes need to return?"},
-        {"label": "Maria Santos", "text": "How much does Maria Santos need to return?"},
-    ]
-    unknown = run(conn, 3, {"employee": "Pedro"}, TODAY)
-    assert unknown["kind"] == "clarify" and len(unknown["choices"]) == 3
-    assert run(conn, 3, {"employee": "%"}, TODAY)["kind"] == "clarify"  # LIKE wildcards are escaped
-
-
-def test_q4_spend_by_expense_category(conn):
-    add_receipt(conn, 1, "ACCEPTED", total=355, expense_category="MEALS", date="2026-04-03")
-    add_receipt(conn, 1, "NO_INPUT_VAT", total=145, expense_category="MEALS", date="2026-04-04")
-    add_receipt(conn, 1, "NEEDS_REVIEW", total=2000, expense_category="TRANSPORT_FUEL", date="2026-04-05")
-    add_receipt(conn, 1, "REJECT", total=5000, expense_category="LODGING", date="2026-04-06")  # not Valid Spend
-    add_receipt(conn, 1, "ACCEPTED", total=100, expense_category="MEALS", date="2026-05-01")  # other month
-    add_receipt(conn, 1, "ACCEPTED", total=80, expense_category="MEALS", date="2026-04-20",
-                corrections={"expense_category": "SUPPLIES"})
-
-    a = run(conn, 4, {"period": "MONTH:2026-04"}, TODAY)
-    assert a["table"]["rows"] == [["Transport and fuel", 1, 2000.0], ["Meals", 2, 500.0], ["Supplies", 1, 80.0]]
-    assert a["sentence"] == "Valid Spend in April 2026 was ₱2,580.00; the largest Expense Category was transport and fuel at ₱2,000.00."
-
-    meals = run(conn, 4, {"period": "MONTH:2026-04", "expense_category": "MEALS"}, TODAY)
-    assert meals["sentence"] == "Spend on meals in April 2026 was ₱500.00 across 2 receipts."
-    assert run(conn, 4, {"period": "MONTH:2026-01"}, TODAY)["sentence"] == "No valid spend in January 2026."
-
-
-def test_q5_suppliers_with_most_invalid_receipts(conn):
-    for _ in range(2):
-        add_receipt(conn, 1, "REJECT", total=284, seller_name="7-Eleven", seller_tin="000123456", date="2026-04-02")
-    add_receipt(conn, 1, "REJECT", total=1000, seller_name="Petron", seller_tin="000999888", date="2026-04-03")
-    add_receipt(conn, 1, "ACCEPTED", total=500, seller_name="Petron", seller_tin="000999888", date="2026-04-03")
-    add_receipt(conn, 1, "REJECT", total=40, seller_name="Sari-sari", date="2026-05-03")
-
-    a = run(conn, 5, {}, TODAY)
-    assert a["table"]["rows"] == [["7-Eleven", "000-123-456", 2, 568.0], ["Petron", "000-999-888", 1, 1000.0],
-                                  ["Sari-sari", None, 1, 40.0]]
-    assert a["sentence"] == "7-Eleven has the most invalid receipts: 2 receipts worth ₱568.00."
-    assert a["links"][0] == {"label": "7-Eleven", "href": "/receipts/1"}
-    assert len(run(conn, 5, {"period": "MONTH:2026-04"}, TODAY)["table"]["rows"]) == 2
-
-
-def test_q6_receipts_submitted_twice(conn):
-    liq2 = add_employee_advance(conn, "Maria Santos", 3000, "2026-04-01")
-    add_receipt(conn, 1, "ACCEPTED", total=284, seller_name="7-Eleven", date="2026-04-02")
-    add_receipt(conn, liq2, "REJECT", [("DUPLICATE", "duplicate", "REJECT")], total=284, seller_name="7-Eleven", date="2026-04-02")
-    add_receipt(conn, liq2, "ACCEPTED", [("DUPLICATE", "duplicate", "REJECT", "DISMISSED")], total=90, date="2026-04-02")
-
-    a = run(conn, 6, {}, TODAY)
-    assert a["sentence"] == "1 receipt was submitted twice, worth ₱284.00."
-    assert a["table"]["rows"] == [["7-Eleven", "2026-04-02", 284.0, "Maria Santos", f"#{liq2}", "#1"]]
-    assert a["links"] == [{"label": "7-Eleven", "href": "/receipts/2"}]
-    assert run(conn, 6, {"period": "LAST_MONTH"}, dt.date(2026, 6, 1))["sentence"] == "No receipt was submitted twice in May 2026."
-
-
-def test_q7_what_still_needs_my_review(conn):
-    add_receipt(conn, 1, "NEEDS_REVIEW", [("SELLER_TIN", "missing", "NEEDS_REVIEW"), ("DATE", "missing", "NEEDS_REVIEW")],
-                seller_name="Lawson")
-    add_receipt(conn, 1, "REJECT", [("VAT_ARITHMETIC", "mismatch", "REJECT", "CONFIRMED")])  # resolved
-    liq2 = add_employee_advance(conn, "Maria Santos", 3000, "2026-04-01")
-    add_receipt(conn, liq2, "NEEDS_REVIEW", [("DATE", "missing", "NEEDS_REVIEW")])
-    conn.execute("UPDATE liquidation SET status = 'RETURNED' WHERE id = ?", (liq2,))
-
-    a = run(conn, 7, {}, TODAY)
-    assert a["sentence"] == "2 Findings on 1 receipt in 1 Liquidation need your review."
-    assert a["table"]["rows"] == [["Juan Dela Cruz", "Lawson", "SELLER_TIN missing"], ["Juan Dela Cruz", "Lawson", "DATE missing"]]
-    assert a["links"] == [{"label": "Lawson", "href": "/receipts/1"}]
-    conn.execute("UPDATE finding SET state = 'DISMISSED'")
-    assert run(conn, 7, {}, TODAY)["sentence"] == "Nothing needs your review."
+@pytest.mark.ollama
+def test_real_model_picks_correctly(monkeypatch):
+    """Run on the Mac: uv run pytest -m ollama tests/test_questions.py (measured 16/16, ~2–3 s each)."""
+    import config
+    from llm.question_picker import pick
+    monkeypatch.setattr(config, "FAKE_PIPELINE", False)
+    wrong = [(t, got, want) for t, want in CASES + UNSEEN if (got := pick(t)) != want]
+    assert not wrong, wrong

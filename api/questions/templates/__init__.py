@@ -85,7 +85,7 @@ LEFT JOIN finding f ON f.receipt_id = eff.id AND f.state IN ('OPEN', 'CONFIRMED'
 WHERE eff.status IN ('REJECT', 'NO_INPUT_VAT', 'NEEDS_REVIEW') AND {IN_PERIOD}
 ORDER BY eff.id"""
 
-SQL_EMPLOYEES = "SELECT id, name FROM employee WHERE (:pattern IS NULL OR name LIKE :pattern ESCAPE '\\') ORDER BY name"
+SQL_EMPLOYEES = "SELECT id, name FROM employee WHERE (:employee_id IS NULL OR id = :employee_id) ORDER BY name"
 
 SQL_LIQUIDATIONS_OF = """
 SELECT l.id AS liquidation_id, l.status, e.name AS employee, ca.purpose
@@ -245,33 +245,22 @@ def _q2_vat_lost(conn, slots, span, today):
 
 
 def _q3_amount_to_return(conn, slots, span, today):
-    name = (slots.get("employee") or "").strip()
-    pattern = None
-    if name:
-        pattern = "%" + name.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
-    employees = conn.execute(SQL_EMPLOYEES, {"pattern": pattern}).fetchall()
-    if name:
-        exact = [e for e in employees if e["name"].lower() == name.lower()]
-        employees = exact or employees
-        if len(employees) != 1:
-            choices = employees or conn.execute(SQL_EMPLOYEES, {"pattern": None}).fetchall()
-            sentence = (f"Which {name} do you mean?" if employees
-                        else f"I couldn't find an Employee named {name}. Did you mean one of these?")
-            return {"kind": "clarify", "sentence": sentence,
-                    "choices": [{"label": e["name"], "text": f"How much does {e['name']} need to return?"} for e in choices]}
+    # questions.service has already resolved (or clarified) the Employee: employee_id None = everyone.
+    employee_id = slots.get("employee_id")
+    employees = conn.execute(SQL_EMPLOYEES, {"employee_id": employee_id}).fetchall()
 
     table, links, owed = [], [], {}
     for e in employees:
         for r in conn.execute(SQL_LIQUIDATIONS_OF, {"employee_id": e["id"]}):
             t = serialize.totals_centavos(conn, r["liquidation_id"])
-            if t["amount_to_return"] <= 0 and not name:
+            if t["amount_to_return"] <= 0 and employee_id is None:
                 continue
             owed[e["name"]] = owed.get(e["name"], 0) + t["amount_to_return"]
             table.append([e["name"], r["purpose"], r["status"], to_pesos(t["advance"]), to_pesos(t["valid_spend"]),
                           to_pesos(t["amount_to_return"])])
             links.append({"label": f"{e['name']}: {r['purpose']}", "href": f"/liquidations/{r['liquidation_id']}"})
 
-    if name:
+    if employee_id is not None and employees:
         who = employees[0]["name"]
         amount = owed.get(who, 0)
         sentence = f"{who} needs to return {_peso(amount)}." if amount else f"{who} has nothing to return."
@@ -353,7 +342,14 @@ USES_PERIOD = {2, 4, 5, 6}
 
 def run(conn: sqlite3.Connection, question_id: int | None, slots: dict, today: dt.date) -> dict:
     """Answer one supported question. Returns {kind: "answer", sentence, table, links, how},
-    {kind: "clarify", sentence, choices} or {kind: "unsupported", sentence, supported} (SPEC §6, §7)."""
+    {kind: "clarify", sentence, choices} or {kind: "unsupported", sentence, supported} (SPEC §6, §7).
+
+    slots (built by questions.service from the LLM's pick):
+      employee_id / employee_name  int | None   question 3 only; None = every Employee
+      expense_category             str | None   question 4; MEALS | TRANSPORT_FUEL | LODGING | SUPPLIES | OTHER
+      period                       str | None   see resolve_period
+      days                         int | None   question 1; 30 when None
+    """
     if question_id not in TEMPLATES:
         return unsupported()
     span = None

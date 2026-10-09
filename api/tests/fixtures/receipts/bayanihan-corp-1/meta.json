@@ -1,0 +1,8 @@
+{
+  "image": "bayanihan-corp-1.jpg",
+  "image_sha256": "f06e7c6931735c241bee0f802d8edb28d0b6b27868c2bd8a094610e595bef354",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 3.52,
+  "llm_seconds": 14.1
+}

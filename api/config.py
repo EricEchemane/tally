@@ -17,3 +17,11 @@ MODEL = os.environ.get("TALLY_MODEL", "qwen3:4b")
 
 # Public base URL the phone uses for capture links, e.g. http://192.168.1.20:3000
 WEB_URL = os.environ.get("TALLY_WEB_URL", "http://localhost:3000")
+
+
+def today():
+    """The app's 'today'. TALLY_TODAY=YYYY-MM-DD pins it for tests and rehearsals."""
+    import datetime as dt
+
+    pinned = os.environ.get("TALLY_TODAY")
+    return dt.date.fromisoformat(pinned) if pinned else dt.date.today()

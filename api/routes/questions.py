@@ -1,14 +1,11 @@
-import asyncio
 import json
 import sqlite3
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
-import db
-import events
 from db import get_db
-from questions.templates import SUPPORTED
+from pipeline import runner
 
 router = APIRouter(prefix="/api/questions")
 
@@ -22,26 +19,11 @@ def _row(q: sqlite3.Row) -> dict:
             "answer": json.loads(q["answer"]) if q["answer"] else None}
 
 
-async def _answer_stub(question_id: int) -> None:
-    """Hour-0 stand-in. TODO(Eric, hours 10–12): LLM question picker -> questions.templates.run (Simon)."""
-    await asyncio.sleep(1)
-    answer = {"kind": "unsupported",
-              "sentence": "Questions aren't wired up yet. These are the questions Tally will answer:",
-              "supported": list(SUPPORTED.values())}
-    conn = db.connect()
-    try:
-        conn.execute("UPDATE question SET state = 'done', answer = ? WHERE id = ?", (json.dumps(answer), question_id))
-        conn.commit()
-    finally:
-        conn.close()
-    events.publish("question.answered", question_id=question_id)
-
-
 @router.post("", status_code=202)
-def ask(body: QuestionIn, background: BackgroundTasks, conn: sqlite3.Connection = Depends(get_db)):
+def ask(body: QuestionIn, conn: sqlite3.Connection = Depends(get_db)):
     qid = conn.execute("INSERT INTO question (text) VALUES (?)", (body.text.strip(),)).lastrowid
     conn.commit()
-    background.add_task(_answer_stub, qid)
+    runner.enqueue_question(qid)
     return {"question_id": qid}
 
 

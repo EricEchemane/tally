@@ -92,7 +92,8 @@ ORDER = [  # originals before their duplicates, so the later photo is the one re
     "valid-bf-sinangag", "valid-7eleven", "valid-mrdiy-date-cropped", "valid-lawson-torn", "valid-petron-fuel",
     "valid-landmark-vat-exempt-mix", "valid-llaollao-service-invoice", "nonvat-mouthfeel", "out-of-period-jollibee-2025",
     "or-cebu-2022-multi-finding", "foreign-us-receipt", "amber-handwritten-service-invoice", "mercury-drug-730",
-    "goldilocks-seller-tin-covered", "mercury-drug-226-faded", "mercury-drug-458", "dup-7eleven-blurry", "dup-mrdiy-rotated",
+    "goldilocks-seller-tin-covered", "mercury-drug-226-faded", "mercury-drug-458", "bayanihan-corp-1", "bayanihan-corp-2",
+    "dup-7eleven-blurry", "dup-mrdiy-rotated",
 ]
 
 # Reviewed by hand against SPEC §5 (Spending Period 2026-03-30 to 2026-05-02).
@@ -114,6 +115,9 @@ EXPECTED_AT_1000 = {
     "goldilocks-seller-tin-covered": ("REJECT", {"DATE:outside_period", "SELLER_TIN:missing", "VAT_ARITHMETIC:mismatch"}),
     "mercury-drug-226-faded": ("NEEDS_REVIEW", {"DATE:missing", "SELLER_TIN:missing"}),
     "mercury-drug-458": ("REJECT", {"DATE:outside_period", "SELLER_TIN:missing"}),
+    # The demo receipts carry the Company's name and TIN; dated 2026-10-09, outside this test's period.
+    "bayanihan-corp-1": ("REJECT", {"DATE:outside_period"}),
+    "bayanihan-corp-2": ("REJECT", {"DATE:outside_period"}),
     # total misread as ₱1,000, which also brings it under the ₱1,000 buyer rule
     "dup-7eleven-blurry": ("REJECT", {"BUYER_DETAILS:blank", "DUPLICATE:duplicate", "VAT_ARITHMETIC:mismatch"}),
     "dup-mrdiy-rotated": ("REJECT", {"DUPLICATE:duplicate"}),
@@ -158,10 +162,26 @@ def test_golden_all_samples_under_both_rules(clean_client):
     # Every receipt without a foreign title now also lacks the Company's details. Petron has "23"
     # handwritten on its Name line, so its buyer details are unreadable rather than blank.
     for name, (status, found) in EXPECTED_AT_1000.items():
-        extra = set() if name == "foreign-us-receipt" else (
+        extra = set() if name in ("foreign-us-receipt", "bayanihan-corp-1", "bayanihan-corp-2") else (
             {"BUYER_DETAILS:unreadable"} if name == "valid-petron-fuel" else {"BUYER_DETAILS:blank"})
         assert under_all[name][1] == found | extra, name
     assert under_all["valid-bf-sinangag"][0] == "REJECT" and under_all["valid-petron-fuel"][0] == "NEEDS_REVIEW"
+
+
+def test_demo_receipt_is_accepted_inside_its_period(clean_client):
+    """The printed demo receipt (Company as buyer) passes every check when the Cash Advance covers its date."""
+    c = clean_client
+    emp = c.get("/api/employees").json()[0]["id"]
+    lid = c.post("/api/cash-advances", json={"employee_id": emp, "amount": 5000, "purpose": "Office supplies",
+                                             "released_on": "2026-10-01", "spending_end_on": "2026-10-31"}).json()["liquidation"]["id"]
+    rid = _upload(c, lid, "bayanihan-corp-1")
+    _wait(c, [rid])
+    r = c.get(f"/api/receipts/{rid}").json()
+    assert r["status"] == "ACCEPTED" and r["findings"] == []
+    assert r["effective"]["buyer_tin"] == "123456789" and r["effective"]["invoice_number"] == "SI-000123"
+    totals = c.get(f"/api/liquidations/{lid}").json()["totals"]
+    assert totals == {"advance": 5000.0, "valid_spend": 666.0, "disallowed": 0.0, "amount_to_return": 4334.0,
+                      "excess_spend": 0.0, "claimable_input_vat": 71.36}
 
 
 # ---------- Reviewer flows ----------

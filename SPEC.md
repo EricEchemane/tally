@@ -83,6 +83,21 @@ Money is stored as **integer centavos** (₱355.00 → `35500`). The API sends p
 
 Demo Company: **Bayanihan Demo Corp, TIN 123-456-789-00000** (fictional), Buyer Details Rule `ALL_RECEIPTS`.
 
+**Starting data** (`TALLY_SEED`, used only when the database is empty):
+- `demo` (default): the demo data below.
+- `placeholders`: the API tests' data.
+- `minimal`: the Company plus one Cash Advance, no receipts.
+
+**Demo data** (`db/demo.py`): instant and model-free. Receipts come from the committed real-pipeline fixtures, then go through derive and the checks.
+
+| Liquidation | Spending Period | Seeded receipts | Demo moment |
+|---|---|---|---|
+| Juan Dela Cruz, field sales trip, ₱2,500 | 2026-03-30 to 05-02 | 8 real samples | Toggling to ₱1,000+ turns 5 ✅; amount to return ₱2,217.05 → ₱280.40 |
+| Juan Dela Cruz, office supplies, ₱1,500 | 2026-10-01 to 10-31 | blurry 7-Eleven (duplicate of the field trip's, amounts misread) | **Live scans:** `bayanihan-corp-1` → ✅ and the 2022 OR → REJECT; the amount correction |
+| Maria Santos, pharmacy supplies, ₱1,500 | 2026-09 | 2 Mercury Drug (seller TIN unreadable) | Material for "what needs my review" and per-Employee questions |
+
+**Resetting:** `./demo.sh` (with `./dev.sh` running) resets the data, warms the model, checks health and swap, and prints the dashboard and phone URLs. `POST /api/admin/demo-reset` does the reset alone, and open dashboards refresh through live events.
+
 ---
 
 ## 4. Receipt pipeline
@@ -223,11 +238,18 @@ From [Question set and query approach](.wayfinder/liquidation-review/issues/07-q
 
 Anything else gets "I can't answer that yet" plus the list.
 
-**How a question is answered:**
-1. One qwen3:4b call returns `{question_id, employee, expense_category, period, days}` (about 30 output tokens). The prompt has 2–3 English and Taglish examples.
-2. `period` is `THIS_MONTH | LAST_MONTH | THIS_QUARTER | MONTH:YYYY-MM | RANGE:a..b`. **Code resolves the dates.**
-3. Code runs a fixed, parameterized, read-only SQL template (one pytest test each), then writes an English answer from a template. **No model-written numbers.**
-4. An ambiguous Employee name gets a clarifying choice.
+**How a question is answered** (`llm/question_picker.py`, `questions/service.py`):
+1. **The pick.** One qwen3:4b call returns `{question_id (0 = unsupported), employee, expense_category, period, days}`, about 30 output tokens. The prompt describes each question with Filipino synonyms and has 8 English/Filipino/Taglish examples. The output is validated in code; anything malformed becomes null or question 0.
+   - **Measured on the Mac: 16/16 exact** on English, Filipino and Taglish phrasings, 10 of them outside the prompt's examples. **~2–3 s** per question (~6 s cold).
+   - In fake pipeline mode, a keyword picker stands in for the model.
+2. `period` is `THIS_MONTH | LAST_MONTH | THIS_QUARTER | LAST_QUARTER | THIS_YEAR | MONTH:MM | MONTH:YYYY-MM | RANGE:a..b`. The model writes `MONTH:04` for "Abril", because it never knows the year. **Code resolves the dates** (`templates.resolve_period`; `MONTH:MM` = the most recent such month on or before today).
+3. **The Employee is resolved in code:** every word typed must start a word of the name, so "Juan" matches Juan Dela Cruz.
+   - Two or more matches: `kind: "clarify"`, with choices whose `text` is the question re-worded with the full name; re-asking it resolves the name.
+   - No match: "couldn't find" plus a list of Employees.
+4. Code calls `questions.templates.run(conn, question_id, slots, today)` (Simon). It runs a fixed, parameterized, read-only SQL template (one pytest test each) and writes an English answer from a template. **No model-written numbers.**
+   - `slots = {employee_id, employee_name, expense_category, period, days}`
+   - `today = config.today()`; pin it with `TALLY_TODAY=YYYY-MM-DD` for rehearsals.
+   - Until the templates exist, the answer says which question was understood.
 5. The answer shows a sentence, a table, links into the records, and a "how I got this" line (the matched question and the period).
 6. Questions are async and **jump the LLM queue**: the worst-case wait is one receipt (~15 s).
 
