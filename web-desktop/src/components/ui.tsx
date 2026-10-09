@@ -17,9 +17,11 @@ export function cx(...c: (string | false | null | undefined)[]) {
 
 // ---------- layout ----------
 
-/** The page column. The top bar, the setup banner, the page and the footer all use it, so their edges
- *  line up: full width with 24 px gutters, capped at 1440 px of content on very wide screens (DESIGN.md). */
+/** Two columns, one centre (DESIGN.md). PAGE is the top bar's: full width with 24 px gutters, capped on very
+ *  wide screens. CONTENT is the page's: the same column with breathing room, 40 px inside the bar's edges
+ *  (16 px on small windows), so the navigation reads as the wider, top-level frame. */
 export const PAGE = "mx-auto w-full max-w-[90rem] px-6";
+export const CONTENT = "mx-auto w-full max-w-[90rem] px-10 lg:px-16";
 
 // ---------- buttons ----------
 

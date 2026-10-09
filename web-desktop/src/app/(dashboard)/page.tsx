@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { DownloadButton } from "@/components/Downloads";
-import { Button, Card, CardHeader, cx, Empty, inputClass, Label, LiquidationStatusPill, Money, Notice, PageHeader, Segmented, selectClass, Skeleton } from "@/components/ui";
+import { ScanButton, ScanDropArea, useScan } from "@/components/Scan";
+import { useLive } from "@/lib/live";
+import { Button, Card, CardHeader, cx, Empty, inputClass, Label, LiquidationStatusPill, Money, Notice, PageHeader, Segmented, selectClass, Skeleton, Spinner } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, LIQUIDATION_STATUS } from "@/lib/labels";
 import { useCashAdvances, useEmployees } from "@/lib/queries";
@@ -18,13 +20,21 @@ export default function Home() {
   const [filter, setFilter] = useState<Filter>(undefined);
   const [creating, setCreating] = useState(false);
   const advances = useCashAdvances(filter === "ARCHIVED" ? undefined : filter, filter === "ARCHIVED");
+  const scan = useScan(() => setCreating(true));
+  const reading = useLive().queue?.length ?? 0;
 
   return (
+    <ScanDropArea scan={scan}>
     <div className="space-y-8">
       <PageHeader
         title="Cash Advances"
-        sub="Open one to review its Liquidation and scan receipts."
-        actions={!creating && <Button variant="primary" onClick={() => setCreating(true)}>New Cash Advance</Button>}
+        sub={reading > 0
+          ? <span className="inline-flex items-center gap-2"><Spinner /> Reading {reading} receipt{reading === 1 ? "" : "s"}…</span>
+          : "Scan receipts, or drop photos anywhere on this page."}
+        actions={!creating && <>
+          <Button onClick={() => setCreating(true)}>New Cash Advance</Button>
+          <ScanButton scan={scan} />
+        </>}
       />
 
       {creating && <NewCashAdvance onDone={() => setCreating(false)} />}
@@ -51,6 +61,7 @@ export default function Home() {
 
       <SlspExport />
     </div>
+    </ScanDropArea>
   );
 }
 

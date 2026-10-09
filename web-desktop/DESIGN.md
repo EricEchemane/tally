@@ -4,11 +4,11 @@ The decisions behind the desktop dashboard's look, and the reasons. Values (colo
 
 ## Layout
 
-- **One column:** `PAGE` in `ui.tsx`. The top bar, the setup banner, the page and the footer all use it: full width with 24 px gutters, capped at 1440 px of content. The user asked for full-width navigation *and* aligned edges, so both follow the same column.
+- **Two columns, one centre:** `PAGE` and `CONTENT` in `ui.tsx`. The top bar uses `PAGE`: full width with 24 px gutters, capped on very wide screens. The page, the setup banner and the footer use `CONTENT`: the same column with **breathing room**, 40 px inside the bar's edges on each side (16 px below 1024 px). The user wanted the navigation visibly wider than the content, so it reads as the top-level frame.
 - **Same title height:** every page title starts at the same height. `PageHeader` always reserves the breadcrumb row, empty on top-level pages.
 - **Card inset, 24 px:** card titles, `CardBody` content, list rows (`CardList` 8 px + `ROW` 16 px) and table cells all start 24 px in from the card edge.
 - **Exceptions:** the setup wizard and the phone capture page are their own narrow centred columns, with no top bar.
-- `npm run check:layout` enforces the column, the title height and the inset. See the `ui-check` skill.
+- `npm run check:layout` enforces the breathing room on both sides, the title height and the inset. See the `ui-check` skill.
 
 ## Shape
 
@@ -37,8 +37,14 @@ The decisions behind the desktop dashboard's look, and the reasons. Values (colo
 - **Moments that signal change:** a status that lands pops once; a total that changes flashes green (good news) or red (bad).
 - **Numbers never animate:** an accounting screen never shows an amount that isn't real, so no count-up.
 - **Page changes crossfade** through React `<ViewTransition>`. Lists cascade. Dialogs scale in.
-- **Ask Tally** is the one expressive place: gradient button, springing panel, a thinking track, and answers revealed word by word.
+- **Ask Tally** is the one expressive place: gradient button, springing panel, a thinking track, and answers revealed word by word. Everything else stays calm.
 - **Reduce motion:** with macOS "Reduce motion" on, everything is instant except loading indicators.
+
+## Home page
+
+- **Scanning is the page's main action:** a plain "Scan receipts" button (primary), with "New Cash Advance" beside it, and photos can be dropped anywhere on the page. The user rejected a feature card with a glow, a gradient badge, onboarding steps and marketing copy as cluttered "AI slop", so highlight by placement and hierarchy, not decoration.
+- **A receipt always belongs to a Liquidation,** so scanning starts with "For which Cash Advance?". It's skipped when only one is open; when none is, New Cash Advance comes first. While the AI works, the subtitle says "Reading N receipts…".
+- **No phone QR code on the home page:** it would need a capture link not tied to one Liquidation.
 
 ## Words
 

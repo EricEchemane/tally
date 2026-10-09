@@ -17,11 +17,14 @@ export function startBackend() {
   const child = spawn("uv", ["run", "python", "desktop.py", "--data-dir", dataDir, "--port", "0"], {
     cwd: API,
     env: { ...process.env, TALLY_SEED: "demo", TALLY_FAKE_PIPELINE: "1", TALLY_FAKE_DELAY: "0.2" },
-    stdio: ["pipe", "pipe", "inherit"],
+    stdio: ["pipe", "pipe", "pipe"],
   });
+  // Quiet unless it fails to start: request logs would bury the caller's own output.
+  let log = "";
+  child.stderr.on("data", (b) => { log = (log + b).slice(-4000); });
   const stop = () => child.stdin.end(); // the backend exits when stdin closes
   return new Promise((resolve, reject) => {
-    child.on("exit", (code) => reject(new Error(`backend exited (${code}) before it was ready`)));
+    child.on("exit", (code) => reject(new Error(`backend exited (${code}) before it was ready:\n${log}`)));
     child.stdout.on("data", async (buf) => {
       const m = String(buf).match(/TALLY_READY port=(\d+)/);
       if (!m) return;

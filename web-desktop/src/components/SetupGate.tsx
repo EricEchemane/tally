@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { useSetupStatus } from "@/lib/setup";
-import { cx, PAGE } from "./ui";
+import { CONTENT, cx } from "./ui";
 
 /** A new install goes to the setup wizard first. Afterwards, a banner stays up until the model is ready. */
 export function SetupGate() {
@@ -17,7 +17,7 @@ export function SetupGate() {
   const pulling = s.pull.state === "running";
   const pct = pulling && s.pull.total ? Math.floor(((s.pull.done ?? 0) / s.pull.total) * 100) : null;
   return (
-    <div className={cx(PAGE, "mt-1")}><div className="rounded-full border border-warn/30 bg-warn-soft px-5 py-2 text-center text-sm">
+    <div className={cx(CONTENT, "mt-1")}><div className="rounded-full border border-warn/30 bg-warn-soft px-5 py-2 text-center text-sm">
       {pulling
         ? `Downloading the AI model${pct !== null ? ` (${pct}%)` : ""}. Receipts you scan now wait until it finishes.`
         : s.ollama.state !== "running"

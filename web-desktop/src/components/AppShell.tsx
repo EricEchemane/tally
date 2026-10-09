@@ -13,7 +13,7 @@ import { QuitGuard } from "./QuitGuard";
 import { QuestionsPanel } from "./QuestionsPanel";
 import { SetupGate } from "./SetupGate";
 import { useIndicator } from "@/lib/motion";
-import { cx, PAGE, Segmented, Sparkle } from "./ui";
+import { CONTENT, cx, PAGE, Segmented, Sparkle } from "./ui";
 
 const NAV = [
   { href: "/", label: "Cash Advances", match: (p: string) => p === "/" || p.startsWith("/liquidations") || p.startsWith("/receipts") },
@@ -82,11 +82,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <ViewTransition> animates them). The top bar sits outside it and stays still. Where WebKit has
           no View Transitions, each page fades in on its own instead. */}
       <ViewTransition default="page-fade">
-        <main key={vtSupported ? undefined : path} className={cx(PAGE, "flex-1 py-8", !vtSupported && "page-enter")}>
+        <main key={vtSupported ? undefined : path} className={cx(CONTENT, "flex-1 py-8", !vtSupported && "page-enter")}>
           {children}
         </main>
       </ViewTransition>
-      <footer className={cx(PAGE, "pb-8 text-xs text-faint")}>
+      <footer className={cx(CONTENT, "pb-8 text-xs text-faint")}>
         Every receipt is read and checked on this computer. No request leaves the machine.
       </footer>
       <QuestionsPanel open={asking} onClose={() => setAsking(false)} />

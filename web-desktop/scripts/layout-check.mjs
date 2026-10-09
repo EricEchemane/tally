@@ -2,7 +2,7 @@
 // when the spacing rules in DESIGN.md drift. Run after `next build`:  npm run check:layout
 //
 // Rules checked, at two window widths:
-//   edges    the top bar and the page title share one left edge (the PAGE column)
+//   edges    the page content sits 40 px inside the top bar's edge (CONTENT within PAGE), on both sides
 //   title    every page's title starts at the same height
 //   inset    text inside cards sits 24 px from the card edge: card titles, list rows, table cells
 // --shots <dir> also saves a screenshot of each page.
@@ -14,6 +14,7 @@ import { startBackend } from "./ui-backend.mjs";
 const PAGES = ["/", "/overview/", "/employees/", "/settings/", "/liquidations/?id=1", "/receipts/?id=1"];
 const WIDTHS = [1280, 1600];
 const INSET = 24; // DESIGN.md: card inset
+const BREATHING = 40; // DESIGN.md: content inside the top bar, at window widths of 1024 px and up
 const TOLERANCE = 1.5; // the card's 1 px border and sub-pixel rounding
 
 const shotsDir = process.argv.includes("--shots") ? process.argv[process.argv.indexOf("--shots") + 1] : null;
@@ -53,11 +54,15 @@ try {
           const td = card.querySelector("tbody td");
           if (td) at(td, "first table cell");
         }
-        return { barLeft: bar ? box(bar).left : null, titleLeft: box(h1).left, titleTop: box(h1).top, insets };
+        const main = document.querySelector("main"); const pad = parseFloat(getComputedStyle(main).paddingRight) || 0;
+        return { barLeft: bar ? box(bar).left : null, barRight: bar ? box(bar).right : null, titleLeft: box(h1).left,
+          contentRight: box(main).right - pad, titleTop: box(h1).top, insets };
       }, INSET);
       const where = `${width}px ${path}`;
-      if (m.barLeft !== null && Math.abs(m.barLeft - m.titleLeft) > TOLERANCE)
-        problems.push(`${where}: top bar edge ${m.barLeft}px but page title at ${m.titleLeft}px`);
+      if (m.barLeft !== null && Math.abs(m.titleLeft - m.barLeft - BREATHING) > TOLERANCE)
+        problems.push(`${where}: page content starts ${m.titleLeft - m.barLeft}px inside the top bar, not ${BREATHING}px`);
+      if (m.barRight !== null && Math.abs(m.barRight - m.contentRight - BREATHING) > TOLERANCE)
+        problems.push(`${where}: page content ends ${m.barRight - m.contentRight}px inside the top bar, not ${BREATHING}px`);
       titleTops.set(path, m.titleTop);
       for (const { what, inset } of m.insets)
         if (Math.abs(inset - INSET) > TOLERANCE) problems.push(`${where}: ${what} is ${inset}px from the card edge, not ${INSET}px`);
