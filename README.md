@@ -12,7 +12,9 @@ Local-first liquidation review for Philippine companies: phone photos of receipt
 
 ```sh
 ./setup.sh        # once: uv, node, ollama, qwen3:4b, deps
-./dev.sh          # API :8000 (localhost only) + web :3000 (LAN)
+./dev.sh          # API :8000 (localhost only) + web :3000 (LAN), hot reload
+MODE=demo ./dev.sh   # demo day: production web build, no reloaders, no page compiles on stage
+./demo.sh         # with dev.sh running: reset demo data, warm the model, check health and swap
 ```
 
 Open http://localhost:3000. The phone opens the QR code on a Liquidation (same Wi-Fi or hotspot).

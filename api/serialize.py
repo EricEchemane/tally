@@ -11,6 +11,7 @@ EDITABLE_FIELDS = {
     "seller_tin", "seller_branch", "invoice_number", "date",
     "vatable_sales", "vat_amount", "vat_exempt_sales", "zero_rated_sales", "total",
     "buyer_name", "buyer_tin", "doc_type", "vat_registered", "expense_category", "particulars", "withholding_tax",
+    "seller_name",  # display-only, but OCR often misses or garbles the store name (logos, torn or faded headers)
 }
 
 

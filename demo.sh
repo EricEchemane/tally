@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# Demo pre-flight (SPEC §10). Run with ./dev.sh already running:
+# Demo pre-flight (SPEC §10). Run with MODE=demo ./dev.sh already running:
 #   resets the demo data, warms the model, checks health and memory, prints the URLs.
 set -euo pipefail
 API=http://127.0.0.1:8000/api
-curl -sf "$API/health" >/dev/null || { echo "API not running: start ./dev.sh first"; exit 1; }
+curl -sf "$API/health" >/dev/null || { echo "API not running: start MODE=demo ./dev.sh first"; exit 1; }
 
 echo "Resetting demo data…"
 curl -sf -X POST "$API/admin/demo-reset" >/dev/null
@@ -13,7 +13,13 @@ curl -sf "$API/health" | python3 -c "
 import json, sys; h = json.load(sys.stdin)
 ok = h['ollama'] in ('up', 'fake') and h['model_loaded'] and h['queue']['length'] == 0
 print(('  ✅' if ok else '  ⚠️ ') + f\" ollama={h['ollama']} model={h['model']} loaded={h['model_loaded']} queue={h['queue']['length']}\")"
-echo "  swap in use: $(sysctl -n vm.swapusage | sed -E 's/.*used = ([0-9.]+M).*/\1/') (close Chrome tabs and other apps if high)"
+SWAP_MB=$(sysctl -n vm.swapusage | sed -E 's/.*used = ([0-9.]+)M.*/\1/' | cut -d. -f1)
+if [ "$SWAP_MB" -gt 2048 ]; then
+  echo "  ⚠️  swap in use: ${SWAP_MB} MB. The model's weights may be swapped out, so the first receipts will be slow."
+  echo "     Restart the Mac before the demo, then open only Terminal and one browser tab."
+else
+  echo "  ✅ swap in use: ${SWAP_MB} MB"
+fi
 
 IP=$(ipconfig getifaddr en0 2>/dev/null || echo localhost)
 echo

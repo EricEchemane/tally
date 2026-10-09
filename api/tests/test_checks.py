@@ -257,3 +257,17 @@ def test_approved_liquidation_is_frozen(clean_client):
     c.patch("/api/company", json={"buyer_details_rule": "ALL_RECEIPTS"})   # would reject it if still OPEN
     assert c.get(f"/api/receipts/{rid}").json()["status"] == "ACCEPTED"
     assert c.get(f"/api/liquidations/{lid}").json()["totals"] == totals
+
+
+def test_seller_name_correction_changes_display_not_findings(clean_client):
+    c = clean_client
+    rid = _upload(c, _liq(c), "valid-llaollao-service-invoice")
+    _wait(c, [rid])
+    before = c.get(f"/api/receipts/{rid}").json()
+    r = c.post(f"/api/receipts/{rid}/corrections", json={"field": "seller_name", "value": "  llaollao   Festival Mall "}).json()
+    assert r["effective"]["seller_name"] == "llaollao Festival Mall"
+    assert r["corrections"][0]["previous"] == before["effective"]["seller_name"]          # audit trail keeps the AI's reading
+    assert [f["condition"] for f in r["findings"]] == [f["condition"] for f in before["findings"]]
+    summary = next(x for x in c.get(f"/api/liquidations/{_liq(c)}").json()["receipts"] if x["id"] == rid)
+    assert summary["seller_name"] == "llaollao Festival Mall"
+    assert c.post(f"/api/receipts/{rid}/corrections", json={"field": "seller_name", "value": "x" * 121}).status_code == 422
