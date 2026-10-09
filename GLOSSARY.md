@@ -107,3 +107,17 @@ _Avoid_: Refund, change, balance
 **Excess Spend**:
 Valid spend beyond the cash advance, which the employee may claim back subject to approval.
 _Avoid_: Overspend, reimbursement, negative balance
+
+## Market
+
+**Prospect**:
+A person at a company who may adopt Tally and has sent an Early Access Request.
+_Avoid_: Lead, registrant, customer, user
+
+**Early Access Request**:
+A Prospect's request to try Tally, giving their contact details, their company, and roughly how many cash advances it liquidates a month; it creates no account.
+_Avoid_: Registration, sign-up, waitlist entry
+
+**Tester**:
+A person, such as a hackathon judge, who installs Tally on their own computer to try it and give feedback, without intending to adopt it.
+_Avoid_: Beta user, trial user, judge (as a role name)
