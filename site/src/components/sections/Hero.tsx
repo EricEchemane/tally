@@ -161,9 +161,10 @@ export function Hero() {
               </span>
             ))}
           </div>
-          <h1 className="max-w-[16ch] text-[2.05rem] leading-[0.98] font-extrabold tracking-[-0.025em] uppercase sm:max-w-[20ch] sm:text-5xl lg:max-w-[23ch] lg:text-[3.9rem]">
-            Every receipt checked against BIR rules,{" "}
-            <span className="text-[#1d5c43]">on your own laptop.</span>
+          <h1 className="max-w-[28ch] text-[1.75rem] leading-[1.02] font-extrabold tracking-[-0.025em] uppercase sm:max-w-[30ch] sm:text-[2.65rem] lg:max-w-[34ch] lg:text-[3.25rem]">
+            <span className="block">Every receipt checked.</span>
+            <span className="block">Ask Tally about your Liquidations.</span>
+            <span className="block text-[#1d5c43]">Keep it private and offline on your laptop.</span>
           </h1>
           <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-[#0f2b26]/70">
             Snap your receipts with your phone. Tally checks each one and shows you what needs a second look. Nothing

@@ -40,7 +40,7 @@ The reference for building the marketing site. It sets the order of the sections
 
 **Purpose:** say in five seconds what it is, who it's for, and that it runs locally.
 
-- **Headline:** "Every receipt checked against BIR rules, on your own laptop."
+- **Headline:** "Every receipt checked. Ask Tally about your Liquidations. Keep it private and offline on your laptop."
 - **Subhead** (draft): "Snap the receipts in a Liquidation with your phone. Tally reads each one, checks it against the BIR rules, and shows what needs your attention. Nothing goes to the cloud."
 - **Buttons:**
   - **Download for Mac** (primary)
