@@ -51,6 +51,17 @@ Run these in order. Fix what each one finds before moving to the next.
 6. `impeccable polish <target>`: the **last** touch. It's a single bounded pass, not a loop.
 7. Preview on localhost (`cd site && npm run dev`, port 3001) at both desktop and mobile widths. Then open a PR. Never push to `main`.
 
+## MCP servers (`.mcp.json`)
+
+The skills decide; the MCP servers supply parts, docs and eyes.
+
+| Server | Use it in | For |
+|---|---|---|
+| `context7` | Layers 3–4 | Current docs for Next 16, Tailwind v4 and Motion before writing code |
+| `shadcn` | Layer 3 | Accessible primitives (accordion, tabs). Restyle them to `design/tokens.css` and never ship the defaults |
+| `magicui` | Layer 4 | Motion components, only where `design-motion-principles` approves them and within the MOTION_INTENSITY dial |
+| `playwright` | Layer 5 | Desktop (1440) and mobile (390) screenshots of localhost for the sign-off gate |
+
 ## When the skills disagree
 
 1. The brief and the existing tokens in `design/tokens.css`
