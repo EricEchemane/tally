@@ -161,10 +161,10 @@ export function Hero() {
               </span>
             ))}
           </div>
-          <h1 className="max-w-[28ch] text-[1.75rem] leading-[1.02] font-extrabold tracking-[-0.025em] uppercase sm:max-w-[30ch] sm:text-[2.65rem] lg:max-w-[34ch] lg:text-[3.25rem]">
-            <span className="block">Every receipt checked.</span>
+          <h1 className="mx-auto w-full max-w-[48ch] text-balance text-[clamp(1.3rem,3.8vw,3.25rem)] leading-[1.08] font-extrabold tracking-[-0.025em] uppercase">
+            <span className="block">Every receipt checked locally.</span>
             <span className="block">Ask Tally about your Liquidations.</span>
-            <span className="block text-[#1d5c43]">Keep it private and offline on your laptop.</span>
+            <span className="block text-[#1d5c43]">Private, offline AI on your laptop.</span>
           </h1>
           <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-[#0f2b26]/70">
             Snap your receipts with your phone. Tally checks each one and shows you what needs a second look. Nothing

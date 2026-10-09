@@ -16,8 +16,8 @@ export default function Home() {
       <Hero />
       {/* Below the hero the page is always dark: near-black base with deep-green panels (see .section-dark). */}
       <div className="section-dark pb-3">
-        <div className="lazy-section"><Problem /></div>
         <div className="lazy-section"><Privacy /></div>
+        <div className="lazy-section"><Problem /></div>
         <div className="lazy-section"><HowItWorks /></div>
         <ChecksBand />
         <div className="lazy-section"><Checks /></div>
