@@ -4,8 +4,8 @@ import { cx } from "./product";
 
 export function Wordmark() {
   return (
-    <span className="flex items-center gap-2 text-lg font-semibold tracking-[-0.02em]">
-      <span aria-hidden className="grid size-8 place-items-center rounded-xl bg-night text-[0.95rem] font-bold text-lime">
+    <span className="flex items-center gap-2.5 text-xl font-bold tracking-[-0.03em]">
+      <span aria-hidden className="grid size-9 place-items-center rounded-xl bg-lime text-base font-extrabold text-lime-ink">
         T
       </span>
       Tally

@@ -1,69 +1,145 @@
-import { CheckCircleIcon, SealCheckIcon, WarningCircleIcon, WifiSlashIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  CheckCircleIcon,
+  IdentificationCardIcon,
+  ReceiptIcon,
+  SealCheckIcon,
+  WarningCircleIcon,
+  WifiSlashIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
-import type { CSSProperties } from "react";
-import { DemoButton, DownloadButton } from "@/components/Cta";
-import heroPhoto from "../../../public/images/hero-happy-laptop.jpg";
+import type { CSSProperties, ReactNode } from "react";
+import { Peso } from "@/components/product";
+import heroModel from "../../../public/images/hero-model.png";
 
 const delay = (t: string) => ({ "--at": t }) as CSSProperties;
 
-/**
- * Tally's results floating around her, in the app's own words (as the Upmind reference floats its tags).
- * The hero is always light, so its colours are fixed rather than theme tokens. Positions are % of the banner,
- * kept to the plain studio space either side of her; `mobile` chips also show on small screens.
- */
-const CHIPS = [
-  { label: "Accepted", Icon: CheckCircleIcon, dot: "bg-[#c5f06a] text-[#0f2b26]", pos: "left-[15%] top-[27%]", mobile: true },
-  { label: "Works offline", Icon: WifiSlashIcon, dot: "bg-[#d4eadb] text-[#1d5c43]", pos: "left-[7%] top-[46%]", mobile: false },
-  { label: "VAT adds up", Icon: SealCheckIcon, dot: "bg-[#d6e8f7] text-[#24507a]", pos: "right-[14%] top-[22%]", mobile: false },
-  { label: "Needs review", Icon: WarningCircleIcon, dot: "bg-[#fbe7b4] text-[#7a5200]", pos: "right-[8%] top-[42%]", mobile: true },
-];
-
+/* The hero is always light, so these elements use fixed colours rather than theme tokens. */
+const card =
+  "rounded-2xl bg-white/90 p-3.5 text-left text-[#0f2b26] shadow-[0_12px_32px_rgb(15_43_38/0.14)] ring-1 ring-black/5 backdrop-blur-md";
 const chipClass =
-  "items-center gap-2 rounded-full bg-white/80 py-1.5 pr-4 pl-1.5 text-sm font-semibold text-[#0f2b26] shadow-[0_8px_24px_rgb(15_43_38/0.12)] ring-1 ring-black/5 backdrop-blur-md";
+  "items-center gap-2 rounded-full bg-white/90 py-1.5 pr-4 pl-1.5 font-semibold text-[#0f2b26] shadow-[0_8px_24px_rgb(15_43_38/0.12)] ring-1 ring-black/5 backdrop-blur-md";
+
+function Status({ tone, children }: { tone: "ok" | "warn"; children: ReactNode }) {
+  const Icon = tone === "ok" ? CheckCircleIcon : WarningCircleIcon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${
+        tone === "ok" ? "bg-[#e1f1e7] text-[#1d6f47]" : "bg-[#fbefd5] text-[#8a5a00]"
+      }`}
+    >
+      <Icon aria-hidden weight="fill" className="size-3.5" />
+      {children}
+    </span>
+  );
+}
+
+/**
+ * Real pieces of Tally's work, held close around her (sample data): the receipt she just snapped, the VAT check,
+ * and a Finding left for her to review. Each is anchored a fixed distance from the banner's centre line, so they
+ * hug the silhouette symmetrically and leave open space toward both edges. Desktop only; phones get the chip row.
+ */
+function ModelElements() {
+  return (
+    <div className="hidden lg:block">
+      {/* Left, shoulder height: the receipt. */}
+      <div className={`hero-chip absolute w-60 ${card}`} style={{ top: "25%", right: "calc(50% + 7rem)", ...delay("0.6s") }}>
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#edf6e8] text-[#1d5c43]">
+            <ReceiptIcon aria-hidden className="size-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-semibold">Juana&apos;s Office Supplies</span>
+            <span className="block text-xs text-[#0f2b26]/60">Sales Invoice</span>
+          </span>
+        </div>
+        <div className="mt-3 flex items-center justify-between">
+          <span className="font-mono text-sm font-semibold">
+            <Peso />
+            666.00
+          </span>
+          <Status tone="ok">Accepted</Status>
+        </div>
+      </div>
+
+      {/* Left, lower: the promise in one tag. */}
+      <span className={`hero-chip absolute flex text-sm ${chipClass}`} style={{ top: "47%", right: "calc(50% + 9rem)", ...delay("1.5s") }}>
+        <span className="grid size-7 place-items-center rounded-full bg-[#c5f06a]">
+          <WifiSlashIcon aria-hidden weight="bold" className="size-4" />
+        </span>
+        Works offline
+      </span>
+
+      {/* Right, shoulder height: the VAT check. */}
+      <div className={`hero-chip absolute w-56 ${card}`} style={{ top: "20%", left: "calc(50% + 7rem)", ...delay("0.9s") }}>
+        <p className="flex items-center gap-1.5 text-xs font-semibold text-[#0f2b26]/60">
+          <SealCheckIcon aria-hidden weight="fill" className="size-4 text-[#1d5c43]" />
+          VAT check
+        </p>
+        <p className="mt-2 font-mono text-[0.8125rem]">594.64 × 12% = 71.36</p>
+        <div className="mt-2.5">
+          <Status tone="ok">VAT adds up</Status>
+        </div>
+      </div>
+
+      {/* Right, lower: a Finding for her to resolve. */}
+      <div className={`hero-chip absolute w-56 ${card}`} style={{ top: "41%", left: "calc(50% + 9rem)", ...delay("1.2s") }}>
+        <div className="flex items-center gap-2.5">
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#fbefd5] text-[#8a5a00]">
+            <IdentificationCardIcon aria-hidden className="size-5" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-sm font-semibold">Seller TIN not printed</span>
+            <span className="mt-1 block">
+              <Status tone="warn">Needs review</Status>
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Below lg the cards would crowd her, so two of the same results sit in a row above the headline. */
+const MOBILE_CHIPS = [
+  { label: "Accepted", Icon: CheckCircleIcon, dot: "bg-[#c5f06a] text-[#0f2b26]" },
+  { label: "Needs review", Icon: WarningCircleIcon, dot: "bg-[#fbe7b4] text-[#7a5200]" },
+];
 
 export function Hero() {
   return (
     <section id="top" className="px-3 pt-3">
-      <div className="relative isolate overflow-hidden rounded-[2rem] bg-[#e8f0e6] text-[#0f2b26]">
-        <Image
-          src={heroPhoto}
-          alt="A smiling young accountant in glasses waves while holding her laptop"
-          priority
-          placeholder="blur"
-          sizes="100vw"
-          className="hero-photo absolute inset-0 -z-20 size-full object-cover object-[46%_22%]"
-        />
-        {/* A soft green cast over the studio grey, the reference's lime light leak, and a white wash under the type. */}
-        <div aria-hidden className="absolute inset-0 -z-10 bg-[#e4f2dc] opacity-60 mix-blend-multiply" />
+      {/* The photo layers clip to the rounded banner on their own, so the download chooser can open past its edge. */}
+      {/* Calm ground: white easing into soft mint, a lime glow behind her shoulders, and her forest-green blazer as the
+          strongest shape on the page. The model is a cutout, so she sits on this ground with her uniform in full view. */}
+      <div
+        className="relative isolate rounded-[2rem] text-[#0f2b26]"
+        style={{ background: "linear-gradient(180deg, #f3faee 0%, #ffffff 62%)" }}
+      >
+        <div aria-hidden className="absolute inset-0 -z-10 overflow-hidden rounded-[2rem]">
         <div
-          aria-hidden
-          className="absolute inset-0 -z-10"
+          className="absolute inset-0 -z-30"
           style={{
             background:
-              "radial-gradient(34% 48% at 6% 22%, rgb(197 240 106 / 0.55), transparent 72%)," +
-              "linear-gradient(180deg, rgb(248 251 246 / 0) 0%, rgb(248 251 246 / 0) 40%, rgb(248 251 246 / 0.86) 60%, #f8fbf6 78%)",
+              "radial-gradient(30% 36% at 50% 30%, rgb(197 240 106 / 0.55), transparent 72%)," +
+              "radial-gradient(60% 50% at 50% 20%, rgb(220 237 211 / 0.7), transparent 75%)",
           }}
         />
+        <Image
+          src={heroModel}
+          alt="A smiling woman in a forest-green blazer with a lime pin and a white top"
+          priority
+          sizes="(min-width: 768px) 560px, 92vw"
+          className="hero-photo hero-model absolute top-[4.75rem] left-1/2 -z-20 h-[42%] w-auto max-w-none -translate-x-1/2 md:top-[5.5rem] md:h-[50%]"
+        />
 
-        {/* Desktop: floating around her. Mobile: her face fills the frame, so they sit in a row above the headline. */}
-        {CHIPS.map(({ label, Icon, dot, pos }, i) => (
-          <span
-            key={label}
-            aria-hidden
-            className={`hero-chip absolute ${pos} hidden md:flex ${chipClass}`}
-            style={delay(`${0.6 + i * 0.3}s`)}
-          >
-            <span className={`grid size-7 place-items-center rounded-full ${dot}`}>
-              <Icon aria-hidden weight="fill" className="size-4" />
-            </span>
-            {label}
-          </span>
-        ))}
+        <ModelElements />
+        </div>
 
-        <div className="relative flex min-h-[min(100svh,58rem)] flex-col items-center justify-end px-5 pt-[46svh] pb-16 text-center sm:pt-[50svh] sm:pb-20">
-          <div aria-hidden className="mb-5 flex gap-2 md:hidden">
-            {CHIPS.filter((c) => c.mobile).map(({ label, Icon, dot }, i) => (
-              <span key={label} className={`hero-chip flex ${chipClass.replace("text-sm", "text-xs")}`} style={delay(`${0.6 + i * 0.3}s`)}>
+        {/* Stack rhythm: tight within the message (headline to subhead), generous before the action. */}
+        <div className="relative flex min-h-[min(100svh,58rem)] flex-col items-center justify-end px-5 pt-[50svh] pb-20 text-center md:pt-[60svh] md:pb-16">
+          <div aria-hidden className="mb-6 flex gap-2 lg:hidden">
+            {MOBILE_CHIPS.map(({ label, Icon, dot }, i) => (
+              <span key={label} className={`hero-chip flex text-xs ${chipClass}`} style={delay(`${0.6 + i * 0.3}s`)}>
                 <span className={`grid size-6 place-items-center rounded-full ${dot}`}>
                   <Icon aria-hidden weight="fill" className="size-3.5" />
                 </span>
@@ -71,19 +147,16 @@ export function Hero() {
               </span>
             ))}
           </div>
-          <h1 className="max-w-[17ch] text-[2.3rem] leading-[1.04] font-semibold tracking-[-0.04em] sm:max-w-[22ch] sm:text-5xl lg:text-[3.7rem]">
+          <h1 className="max-w-[17ch] text-[2.3rem] leading-[1.04] font-semibold tracking-[-0.04em] sm:max-w-[24ch] sm:text-5xl lg:max-w-[28ch] lg:text-[3.6rem]">
             Every receipt checked against BIR rules,{" "}
             <span className="text-[#1d5c43]">on your own laptop.</span>
           </h1>
-          <p className="mt-5 max-w-[33rem] text-lg leading-relaxed text-[#0f2b26]/70">
+          <p className="mt-6 max-w-[33rem] text-lg leading-relaxed text-[#0f2b26]/70">
             Snap the receipts with your phone. Tally checks each one against the BIR rules, and nothing goes to the
             cloud.
           </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <DemoButton />
-            <DownloadButton className="order-first shadow-[0_8px_24px_rgb(120_170_40/0.35)] sm:order-none" />
-          </div>
-          <p className="mt-4 text-sm text-[#0f2b26]/60">For Mac with Apple Silicon. Windows is planned.</p>
+          {/* The actions live in the nav only (Download the desktop app, Watch the demo). */}
+          <p className="mt-6 text-sm text-[#0f2b26]/60">For Mac with Apple Silicon. Windows is planned.</p>
         </div>
       </div>
     </section>
@@ -94,13 +167,13 @@ const STATS = [
   { value: "6", label: "BIR checks on every receipt" },
   { value: "~15 s", label: "per receipt, measured on an 8 GB M1 MacBook Pro" },
   { value: "0", label: "receipts sent to the cloud" },
-  { value: "₱0", label: "extra for each receipt you check" },
+  { value: <><Peso />0</>, label: "extra for each receipt you check" },
 ];
 
 /** The reference kit's stats row, with only figures that are true today. */
 export function Stats() {
   return (
-    <section aria-label="Tally at a glance" className="mx-auto max-w-6xl px-5 pt-20 pb-6">
+    <section aria-label="Tally at a glance" className="mx-auto max-w-6xl px-5 pt-24 pb-8">
       <dl className="grid grid-cols-2 gap-x-6 gap-y-10 lg:grid-cols-4">
         {STATS.map((s) => (
           <div key={s.label} className="relative flex flex-col border-t border-line pt-5">

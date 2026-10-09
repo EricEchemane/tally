@@ -10,7 +10,7 @@ function Block({ title, body, children, className = "" }: { title: string; body:
     <article className={`flex flex-col rounded-3xl border border-line bg-surface p-6 shadow-card sm:p-8 ${className}`}>
       <h3 className="text-xl font-semibold tracking-[-0.02em]">{title}</h3>
       <div className="mt-2 max-w-prose text-muted">{body}</div>
-      <div className="mt-6 flex-1">{children}</div>
+      <div className="mt-8 flex-1">{children}</div>
     </article>
   );
 }
@@ -107,12 +107,12 @@ function AskView() {
 export function Review() {
   return (
     <section aria-labelledby="review-title" className="bg-sunken">
-      <div className="mx-auto max-w-6xl px-5 py-20 lg:py-28">
+      <div className="mx-auto max-w-6xl px-5 py-24 lg:py-32">
         <Label>You stay in control</Label>
         <h2 id="review-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-5xl">
           The AI reads. Code checks. You decide.
         </h2>
-        <div className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-12">
+        <div className="mt-14 grid lg:mt-16 grid-cols-1 gap-5 lg:grid-cols-12">
           <Block
             className="lg:col-span-7"
             title="Correct a misread."

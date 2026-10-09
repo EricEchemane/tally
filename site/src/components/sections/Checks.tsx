@@ -10,10 +10,11 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { Fragment } from "react";
 import { Label } from "@/components/marketing";
+import { Peso } from "@/components/product";
 
 const CHECKS = [
   { Icon: ReceiptIcon, name: "Invoice or Official Receipt", line: "Flags Official Receipts and receipts marked “not valid for claim of input tax”." },
-  { Icon: IdentificationCardIcon, name: "Buyer name and TIN", line: "The buyer's TIN must match your Company's, on every receipt or from ₱1,000 up, as you choose." },
+  { Icon: IdentificationCardIcon, name: "Buyer name and TIN", line: <>The buyer&apos;s TIN must match your Company&apos;s, on every receipt or from <Peso />1,000 up, as you choose.</> },
   { Icon: StorefrontIcon, name: "Seller TIN", line: "It must be there and in the right format, branch code included." },
   { Icon: CalculatorIcon, name: "VAT arithmetic", line: "VATable × 12% must equal the VAT, and the parts must add up to the total. If they don't, the receipt is flagged." },
   { Icon: CopyIcon, name: "Duplicates", line: "The same receipt submitted twice, even in a different Liquidation." },
@@ -45,16 +46,16 @@ export function ChecksBand() {
 export function Checks() {
   return (
     <section aria-labelledby="checks-title">
-      <div className="mx-auto max-w-6xl px-5 py-20 lg:py-28">
+      <div className="mx-auto max-w-6xl px-5 py-24 lg:py-32">
         <Label>What it checks</Label>
         <h2 id="checks-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem] sm:leading-[1.08]">
           The checks you&apos;d do, on every receipt.
         </h2>
-        <p className="mt-4 max-w-2xl text-lg leading-relaxed text-muted">
+        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted">
           Under the EOPT Act, Official Receipts no longer support input VAT claims. Tally knows.
         </p>
 
-        <ul className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="mt-14 grid lg:mt-16 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {CHECKS.map(({ Icon, name, line }) => (
             <li key={name} className="rounded-3xl bg-surface p-7 shadow-card ring-1 ring-line transition-transform duration-200 ease-out hover:-translate-y-1">
               <span className="grid size-12 place-items-center rounded-full bg-mint text-accent">

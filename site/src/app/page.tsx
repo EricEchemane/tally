@@ -1,5 +1,5 @@
 import { Checks, ChecksBand } from "@/components/sections/Checks";
-import { Download, Faq, Requirements } from "@/components/sections/Closing";
+import { Faq, Requirements } from "@/components/sections/Closing";
 import { Exports } from "@/components/sections/Exports";
 import { Hero, Stats } from "@/components/sections/Hero";
 import { HowItWorks } from "@/components/sections/HowItWorks";
@@ -23,7 +23,6 @@ export default function Home() {
       <Exports />
       <Requirements />
       <Faq />
-      <Download />
     </>
   );
 }

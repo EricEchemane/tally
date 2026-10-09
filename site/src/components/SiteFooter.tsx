@@ -16,9 +16,7 @@ export function SiteFooter() {
               <a key={item.href} href={item.href} className="w-fit hover:text-accent">
                 {item.label}
               </a>
-            ))}
-            <a href="#download" className="w-fit hover:text-accent">Download</a>
-          </nav>
+            ))}          </nav>
           <div className="flex flex-col gap-2.5">
             <p className="mb-1 font-semibold text-ink">Contact</p>
             {CONTACT_EMAIL ? (

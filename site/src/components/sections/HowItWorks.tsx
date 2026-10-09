@@ -146,12 +146,12 @@ const STEPS: Step[] = [
 export function HowItWorks() {
   return (
     <section id="how-it-works" aria-labelledby="how-title">
-      <div className="mx-auto max-w-6xl px-5 py-20 lg:py-28">
+      <div className="mx-auto max-w-6xl px-5 py-24 lg:py-32">
         <Label>How it works</Label>
         <h2 id="how-title" className="mt-4 max-w-[20ch] text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem] sm:leading-[1.08]">
           From a pile of receipts to an approved Liquidation.
         </h2>
-        <div className="mt-12 lg:mt-16">
+        <div className="mt-14 lg:mt-16">
           <StepTabs steps={STEPS} />
         </div>
         <div className="mt-10">

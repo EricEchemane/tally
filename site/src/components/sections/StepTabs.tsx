@@ -31,7 +31,7 @@ export function StepTabs({ steps }: { steps: Step[] }) {
   return (
     <>
       {/* Mobile and tablet */}
-      <ol className="space-y-14 lg:hidden">
+      <ol className="space-y-16 lg:hidden">
         {steps.map((s, i) => (
           <li key={s.title}>
             <p className="flex items-center gap-3 text-xl font-semibold tracking-[-0.02em]">
@@ -39,7 +39,7 @@ export function StepTabs({ steps }: { steps: Step[] }) {
               {s.title}
             </p>
             <div className="mt-3 max-w-prose text-muted">{s.body}</div>
-            <div className="mt-6 rounded-3xl bg-mint p-4 sm:p-6">{s.visual}</div>
+            <div className="mt-7 rounded-3xl bg-mint p-4 sm:p-6">{s.visual}</div>
           </li>
         ))}
       </ol>

@@ -2,9 +2,9 @@
 
 ## In use
 
-- **`hero-happy-laptop.jpg`**, the homepage banner. Photo by Bangun Stock Production
-  (unsplash.com/@bangunstockproductions), from unsplash.com/photos/b_iYfzh4Kgg. It's free for commercial use under
-  the Unsplash License; credit isn't required but is appreciated.
+- **`hero-model.png`**, the homepage banner model. It's cut out from the user-supplied `download (7).jpg` (repo root),
+  with the lime studio backdrop removed by flood fill. **Source and usage rights are unconfirmed:** confirm the
+  licence before the site goes public. The lime pin on the lapel may be another brand's mark.
 
 # Images the landing page still needs
 
@@ -30,7 +30,7 @@ focus.
   > Bright, upbeat lifestyle photograph of a happy Filipino woman accountant in her early 30s at a clean modern office desk in Manila, smiling warmly while photographing a small paper receipt with her smartphone, a neat short stack of receipts and an open laptop beside her. She looks relieved and confident, as if her work just got easy. Wearing a soft sage-green blouse, natural window daylight, green plants in the background, fresh green and cream colour palette, shallow depth of field, professional commercial photography, realistic, blank screens, no readable text, no logos, 4:3, empty space on the right.
 - **Stock search terms:** "happy Asian accountant smartphone receipt", "smiling Filipino professional office phone", "cheerful businesswoman photographing receipt".
 
-## 2. `accountant-cutout.png`: the closing "Download for Mac" block
+## 2. (Not used now) `accountant-cutout.png`: the closing download block, which was removed
 
 - **Format:** portrait 4:5, at least 1200 × 1500, **transparent background (PNG)**, cropped at the waist. She stands at the bottom edge of the lime panel, like the woman in the Creatix reference.
 - **Story:** the happy ending. She's finished her Liquidation and is pleased about it.

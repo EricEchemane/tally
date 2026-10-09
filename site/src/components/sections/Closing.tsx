@@ -5,8 +5,7 @@ import {
   LaptopIcon,
   WindowsLogoIcon,
 } from "@phosphor-icons/react/dist/ssr";
-import { DownloadButton } from "@/components/Cta";
-import { ImageSlot, Label } from "@/components/marketing";
+import { Label } from "@/components/marketing";
 import { PRIVACY_PROMISE } from "./Privacy";
 
 const NEEDS = [
@@ -18,7 +17,7 @@ const NEEDS = [
 export function Requirements() {
   return (
     <section aria-labelledby="requirements-title">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 py-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 py-24 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14 lg:py-32">
         <div>
           <Label>Requirements</Label>
           <h2 id="requirements-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem]">
@@ -64,7 +63,7 @@ const FAQ = [
 export function Faq() {
   return (
     <section id="faq" aria-labelledby="faq-title" className="bg-sunken">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 py-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14 lg:py-28">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 py-24 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14 lg:py-32">
         <div>
           <Label>FAQ</Label>
           <h2 id="faq-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem] sm:leading-[1.08]">
@@ -84,32 +83,6 @@ export function Faq() {
             </details>
           ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-export function Download() {
-  return (
-    <section id="download" aria-labelledby="download-title" className="px-3 pt-20">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-end gap-8 overflow-hidden rounded-[2rem] bg-lime text-lime-ink lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-        <div className="px-6 py-14 sm:px-12 lg:py-20">
-          <h2 id="download-title" className="max-w-[16ch] text-4xl font-semibold tracking-[-0.035em] sm:text-6xl sm:leading-[1.02]">
-            Try Tally on your next Liquidation.
-          </h2>
-          <p className="mt-5 max-w-md text-lg text-lime-ink/80">
-            Install it on your Mac, set it up once, and check your first pile of receipts offline.
-          </p>
-          <div className="mt-8 flex flex-col items-start gap-3">
-            <DownloadButton tone="night" />
-            <p className="text-sm text-lime-ink/75">Mac with Apple Silicon, 8 GB RAM. Windows is planned.</p>
-          </div>
-        </div>
-        <ImageSlot
-          file="accountant-cutout.png"
-          what="Joyful Filipino accountant with her phone, giving a thumbs-up, cut out on a transparent background"
-          className="mx-6 mb-0 aspect-[4/5] rounded-b-none border-lime-ink/25 bg-lime-hover sm:mx-12 lg:mx-0 lg:mr-10"
-        />
       </div>
     </section>
   );

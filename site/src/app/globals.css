@@ -32,7 +32,7 @@
   --color-mint: var(--mint);
   --color-mint-strong: var(--mint-strong);
   --color-forest: var(--forest);
-  --font-sans: var(--font-geist), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -85,12 +85,28 @@ details[open] .faq-answer { animation: panel-in 260ms var(--ease-out-expo); }
   to { transform: translateY(-6px); }
 }
 .hero-photo { animation: photo-settle 2.2s var(--ease-out-expo) both; }
+/* The cutout ends at her waist; fade that cut edge out so she rises from the ground instead of stopping on a line. */
+.hero-model {
+  -webkit-mask-image: linear-gradient(to bottom, #000 80%, transparent);
+  mask-image: linear-gradient(to bottom, #000 80%, transparent);
+}
 .hero-chip {
   animation:
     pop-in 650ms var(--ease-out-expo) var(--at) both,
     chip-drift 5.5s ease-in-out calc(var(--at) + 800ms) infinite alternate;
 }
 .hero-chip:nth-of-type(even) { animation-duration: 650ms, 7s; }
+
+/* Download chooser: grows from its button, quickly. Closing is instant (subtler than the entrance), and a
+   keyboard-opened chooser never animates (the component leaves this class off). */
+@keyframes chooser-in {
+  from { opacity: 0; filter: blur(2px); transform: translateY(-4px) scale(0.96); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+.chooser-in {
+  transform-origin: top center;
+  animation: chooser-in 180ms var(--ease-out-expo);
+}
 
 /* The checks band: one slow marquee, paused on hover, still under reduced motion. */
 @keyframes marquee {
@@ -103,5 +119,5 @@ details[open] .faq-answer { animation: panel-in 260ms var(--ease-out-expo); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .panel-in, details[open] .faq-answer, .marquee, .hero-photo, .hero-chip { animation: none; }
+  .panel-in, details[open] .faq-answer, .marquee, .hero-photo, .hero-chip, .chooser-in { animation: none; }
 }

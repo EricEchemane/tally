@@ -81,6 +81,11 @@ export function peso(value: number) {
   return `₱${pesoFormat.format(value)}`;
 }
 
+/** The peso sign in running text. The text face (Hanken Grotesk) has no ₱, so it borrows Geist Mono's. */
+export function Peso() {
+  return <span className="font-mono font-medium">₱</span>;
+}
+
 /** A peso amount, with figures that line up in columns. */
 export function Money({ value, className }: { value: number; className?: string }) {
   return <span className={cx("num font-mono tracking-tight", className)}>{peso(value)}</span>;

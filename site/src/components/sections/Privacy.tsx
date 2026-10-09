@@ -16,14 +16,14 @@ export function Privacy() {
   return (
     <section id="privacy" aria-labelledby="privacy-title" className="px-3">
       <div className="rounded-[2rem] bg-mint">
-        <div className="mx-auto max-w-6xl px-5 py-20 lg:py-28">
+        <div className="mx-auto max-w-6xl px-5 py-24 lg:py-32">
           <div className="grid grid-cols-1 gap-14 lg:grid-cols-2 lg:gap-16">
             <div>
               <Label>Private by design</Label>
-              <h2 id="privacy-title" className="mt-5 text-3xl font-semibold tracking-[-0.03em] sm:text-5xl sm:leading-[1.05]">
+              <h2 id="privacy-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-5xl sm:leading-[1.05]">
                 Your tax data stays in the office.
               </h2>
-              <p className="mt-6 max-w-[38rem] text-lg leading-relaxed text-muted">{PRIVACY_PROMISE}</p>
+              <p className="mt-5 max-w-[38rem] text-lg leading-relaxed text-muted">{PRIVACY_PROMISE}</p>
             </div>
             <DataPath />
           </div>

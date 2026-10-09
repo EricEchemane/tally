@@ -58,18 +58,18 @@ const CSV = `month_end,seller_tin,seller_branch_code,registered_name,…,taxable
 export function Exports() {
   return (
     <section aria-labelledby="exports-title">
-      <div className="mx-auto max-w-6xl px-5 py-20 lg:py-28">
+      <div className="mx-auto max-w-6xl px-5 py-24 lg:py-32">
         <Label>Exports</Label>
         <h2 id="exports-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem] sm:leading-[1.08]">
           Ready for your files and the BIR.
         </h2>
-        <div className="mt-12 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
+        <div className="mt-14 grid lg:mt-16 grid-cols-1 gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
           <div>
             <h3 className="flex items-center gap-2.5 text-lg font-semibold">
               <FileXlsIcon aria-hidden className="size-6 text-ok" />
               The Liquidation summary (Excel)
             </h3>
-            <p className="mt-1.5 max-w-prose text-muted">
+            <p className="mt-2 max-w-prose text-muted">
               Valid Spend, Disallowed Amount and the Amount to Return, receipt by receipt.
             </p>
             <div className="mt-6">
@@ -81,7 +81,7 @@ export function Exports() {
               <FileCsvIcon aria-hidden className="size-6 text-accent" />
               The SLSP-ready purchases CSV
             </h3>
-            <p className="mt-1.5 max-w-prose text-muted">The purchases, ready for your SLSP.</p>
+            <p className="mt-2 max-w-prose text-muted">The purchases, ready for your SLSP.</p>
             <pre className="mt-6 overflow-x-auto rounded-lg border border-line bg-sunken p-4 font-mono text-xs leading-relaxed text-ink">
               <code>{CSV}</code>
             </pre>

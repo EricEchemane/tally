@@ -10,7 +10,7 @@ const POINTS = [
 export function Problem() {
   return (
     <section aria-labelledby="problem-title">
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 py-20 lg:grid-cols-2 lg:gap-16 lg:py-28">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 py-24 lg:grid-cols-2 lg:gap-16 lg:py-32">
         <ImageSlot
           file="accountant-receipts.jpg"
           what="A happy Filipino accountant snapping a receipt with her phone, laptop open, work done early"
@@ -22,7 +22,7 @@ export function Problem() {
           <h2 id="problem-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem] sm:leading-[1.08]">
             Receipts are still checked by eye.
           </h2>
-          <p className="mt-3 text-muted">From an accountant who handles liquidations for Philippine companies.</p>
+          <p className="mt-5 text-muted">From an accountant who handles liquidations for Philippine companies.</p>
 
           <ul className="mt-8 space-y-5">
             {POINTS.map(({ Icon, text }) => (
