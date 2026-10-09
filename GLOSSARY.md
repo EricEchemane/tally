@@ -12,6 +12,10 @@ _Avoid_: Admin, user, accountant (as a role name)
 The person who received a cash advance and must account for it with receipts.
 _Avoid_: Requester, claimant
 
+**Inactive Employee**:
+An employee who no longer receives cash advances, such as one who has left the company; their past cash advances and liquidations stay on record.
+_Avoid_: Deleted employee, former employee, archived employee
+
 **Company**:
 The registered business that issued the cash advance; its registered name, address and TIN are what a receipt's buyer details must match.
 _Avoid_: Client, buyer (as a role name)
@@ -38,9 +42,21 @@ _Avoid_: Closed, completed, posted
 A liquidation sent back to the employee with its open findings as the reasons, to be completed and reviewed again.
 _Avoid_: Rejected liquidation, declined
 
+**Archived Cash Advance**:
+A cash advance whose liquidation is approved or returned, set aside from the working list; it still counts in reports and exports and can be brought back.
+_Avoid_: Deleted, closed, hidden
+
 **Receipt**:
 Any single proof-of-purchase document submitted in a liquidation, whatever its BIR document type.
 _Avoid_: Document, scan, bill
+
+**Receipt Photo**:
+The picture of a receipt exactly as it was taken or uploaded; it is the evidence on record and is never altered.
+_Avoid_: Scan, image, original, picture
+
+**Cropped Photo**:
+A copy of a receipt photo trimmed to the receipt's edges and straightened, used for display; the receipt photo it came from is kept.
+_Avoid_: Scan, cleaned image, processed image
 
 **Invoice**:
 The BIR document type that, under the EOPT Act, is the only primary proof of sale and the only type valid for claiming input VAT.

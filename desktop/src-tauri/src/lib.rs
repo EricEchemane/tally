@@ -11,6 +11,7 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use tauri::webview::DownloadEvent;
 use tauri::{Manager, RunEvent, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 const PREFERRED_PORT: u16 = 8765;
@@ -62,6 +63,47 @@ fn show_error(win: &WebviewWindow, message: &str) {
         serde_json_string(message)
     );
     let _ = win.eval(&js);
+}
+
+/// Downloads (CSV, Excel, backups) go straight to ~/Downloads under a name that doesn't overwrite an
+/// existing file, like a browser. When one finishes, the page gets a `tally:download` event so it can
+/// say "Saved" and offer Show in Finder.
+fn unique_in(dir: &Path, name: &str) -> PathBuf {
+    let candidate = dir.join(name);
+    if !candidate.exists() {
+        return candidate;
+    }
+    let p = Path::new(name);
+    let stem = p.file_stem().and_then(|s| s.to_str()).unwrap_or("download");
+    let ext = p.extension().and_then(|s| s.to_str()).map(|e| format!(".{e}")).unwrap_or_default();
+    (1..).map(|n| dir.join(format!("{stem} ({n}){ext}"))).find(|c| !c.exists()).expect("a free name")
+}
+
+fn on_download(webview: tauri::Webview, event: DownloadEvent<'_>) -> bool {
+    match event {
+        DownloadEvent::Requested { url, destination } => {
+            let name = destination
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .filter(|n| !n.is_empty())
+                .or_else(|| url.path_segments().and_then(|mut s| s.next_back()).map(str::to_owned))
+                .unwrap_or_else(|| "download".into());
+            if let Ok(dir) = webview.app_handle().path().download_dir() {
+                *destination = unique_in(&dir, &name);
+            }
+        }
+        DownloadEvent::Finished { path, success, .. } => {
+            let path = path.map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+            let js = format!(
+                "window.dispatchEvent(new CustomEvent('tally:download', {{ detail: {{ path: {}, success: {} }} }}));",
+                serde_json_string(&path),
+                success
+            );
+            let _ = webview.eval(&js);
+        }
+        _ => {}
+    }
+    true
 }
 
 fn serde_json_string(s: &str) -> String {
@@ -162,6 +204,9 @@ pub fn run() {
                 .title("Tally")
                 .inner_size(1280.0, 840.0)
                 .min_inner_size(900.0, 600.0)
+                // Lets the page know it runs inside the app (downloads report back; see on_download).
+                .initialization_script("window.__TALLY_DESKTOP__ = true;")
+                .on_download(on_download)
                 .build()?;
             start_backend(app.handle(), win)?;
             Ok(())

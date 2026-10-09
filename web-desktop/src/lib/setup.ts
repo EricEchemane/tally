@@ -7,6 +7,8 @@ export type JobState = "idle" | "running" | "done" | "failed";
 
 export interface SetupStatus {
   complete: boolean;
+  version: string;
+  data_dir: string;
   machine: { ram_gb: number; ram_ok: boolean; free_gb: number; disk_ok: boolean; os: string; macos: number | null; macos_ok: boolean };
   company: { name: string; tin: string; buyer_details_rule: BuyerDetailsRule };
   company_ok: boolean;

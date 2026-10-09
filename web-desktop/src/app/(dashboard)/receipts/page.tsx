@@ -12,6 +12,7 @@ import { CHECK, FIELD_GROUPS, formatDate, formatTin, STAGE, type FieldDef } from
 import { useLive } from "@/lib/live";
 import { useLiquidation, useReceipt } from "@/lib/queries";
 import { liquidationHref } from "@/lib/routes";
+import { MoveReceipts } from "@/components/MoveReceipts";
 import type { Finding, Receipt } from "@/lib/types";
 
 function ReceiptView() {
@@ -42,6 +43,7 @@ function ReceiptView() {
         actions={
           <>
             <span className="mr-2 text-2xl font-semibold tracking-tight"><Money value={r.effective?.total as number | null} /></span>
+            {liq.data?.status === "OPEN" && <MoveButton r={r} employeeId={liq.data.cash_advance.employee.id} />}
             {liq.data?.status === "OPEN" && <DeleteReceipt r={r} />}
           </>
         }
@@ -57,7 +59,7 @@ function ReceiptView() {
         </div>
 
         <div className="space-y-6">
-          {r.stage === "failed" && <Notice tone="bad">Tally couldn’t read this photo: {r.error ?? "unknown error"}. Delete it and retake the photo.</Notice>}
+          {r.stage === "failed" && <FailedNotice r={r} canRetry={liq.data?.status === "OPEN"} />}
           {r.stage !== "done" && r.stage !== "failed" && (
             <Notice tone="info">
               {STAGE[r.stage]}… {live.previews[r.id] && <span className="block truncate font-mono text-xs">{live.previews[r.id]}</span>}
@@ -87,19 +89,33 @@ function ReceiptView() {
 // ---------- image ----------
 
 function ReceiptImage({ r }: { r: Receipt }) {
-  // rotation is what OCR applied (PIL, counter-clockwise) to make the photo upright; CSS rotates clockwise.
+  // The Cropped Photo when the phone sent one; the Receipt Photo, as taken, is a toggle away.
+  const [cropped, setCropped] = useState(!!r.cropped_image_url);
+  const src = cropped && r.cropped_image_url ? r.cropped_image_url : r.image_url;
+  // rotation is what OCR applied (PIL, counter-clockwise) to make the photo it read upright; CSS rotates
+  // clockwise. OCR read the Cropped Photo when there is one, so the Receipt Photo starts unturned then.
   const [turn, setTurn] = useState(-r.rotation);
-  const sideways = Math.abs(turn % 180) === 90;
+  const shown = cropped || !r.cropped_image_url ? turn : turn + r.rotation;
+  const sideways = Math.abs(shown % 180) === 90;
   return (
     <Card className="overflow-hidden">
+      {r.cropped_image_url && (
+        <div className="flex gap-1 border-b border-line p-2">
+          {([[true, "Cropped"], [false, "As taken"]] as const).map(([value, label]) => (
+            <Button key={label} size="sm" variant={cropped === value ? "secondary" : "ghost"} onClick={() => setCropped(value)}>
+              {label}
+            </Button>
+          ))}
+        </div>
+      )}
       <div className="relative grid h-[60vh] place-items-center bg-sunken [container-type:size]">
         {/* eslint-disable-next-line @next/next/no-img-element -- local API image, no optimizer offline */}
         <img
-          src={r.image_url}
-          alt="Receipt photo"
+          src={src}
+          alt={cropped ? "Cropped receipt photo" : "Receipt photo"}
           className="object-contain transition-transform"
           style={{
-            transform: `rotate(${turn}deg)`,
+            transform: `rotate(${shown}deg)`,
             maxWidth: sideways ? "100cqh" : "100cqw",
             maxHeight: sideways ? "100cqw" : "100cqh",
           }}
@@ -107,7 +123,7 @@ function ReceiptImage({ r }: { r: Receipt }) {
       </div>
       <div className="flex items-center justify-between border-t border-line px-4 py-2">
         <Button variant="ghost" size="sm" onClick={() => setTurn((t) => t + 90)}>Rotate ↻</Button>
-        <a href={r.image_url} target="_blank" rel="noreferrer" className="text-sm text-muted hover:text-accent">Open full size ↗</a>
+        <a href={src} target="_blank" rel="noreferrer" className="text-sm text-muted hover:text-accent">Open full size ↗</a>
       </div>
     </Card>
   );
@@ -115,7 +131,7 @@ function ReceiptImage({ r }: { r: Receipt }) {
 
 function OcrText({ text }: { text: string }) {
   return (
-    <details className="overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
+    <details className="overflow-hidden rounded-3xl border border-line bg-surface">
       <summary className="cursor-pointer px-6 py-4 text-sm font-medium">Text read from the photo</summary>
       <pre className="max-h-80 overflow-auto whitespace-pre-wrap border-t border-line px-6 py-4 font-mono text-xs text-muted">{text}</pre>
     </details>
@@ -148,8 +164,8 @@ function FindingRow({ f, receiptId, canAct }: { f: Finding; receiptId: number; c
       <div className="flex flex-wrap items-center gap-2">
         <SeverityPill severity={f.severity} />
         <span className="text-xs font-medium uppercase tracking-wide text-muted">{CHECK[f.check] ?? f.check}</span>
-        {f.state === "DISMISSED" && <Pill>Dismissed</Pill>}
-        {f.state === "CONFIRMED" && <Pill tone="neutral">Confirmed by you</Pill>}
+        {f.state === "DISMISSED" && <Pill>Accepted anyway</Pill>}
+        {f.state === "CONFIRMED" && <Pill tone="neutral">You agreed</Pill>}
         {f.amount_affected != null && <span className="ml-auto text-sm text-muted"><Money value={f.amount_affected} /></span>}
       </div>
       <p className={cx("text-sm", f.state === "DISMISSED" && "text-muted line-through decoration-faint")}>{f.message}</p>
@@ -162,11 +178,11 @@ function FindingRow({ f, receiptId, canAct }: { f: Finding; receiptId: number; c
 
       {isOpen && canAct && !dismissing && (
         <div className="flex flex-wrap gap-2 pt-1">
-          <Button size="sm" onClick={() => setDismissing(true)}>Dismiss…</Button>
+          <Button size="sm" onClick={() => setDismissing(true)}>Accept anyway…</Button>
           {f.severity === "NEEDS_REVIEW" && (
             <>
               <Button size="sm" variant="danger" busy={confirm.isPending && confirm.variables === "REJECT"} onClick={() => confirm.mutate("REJECT")}>
-                Confirm as Reject
+                Agree: reject it
               </Button>
               {f.check === "VAT_ARITHMETIC" && (
                 <Button size="sm" busy={confirm.isPending && confirm.variables === "NO_INPUT_VAT"} onClick={() => confirm.mutate("NO_INPUT_VAT")}>
@@ -187,7 +203,7 @@ function FindingRow({ f, receiptId, canAct }: { f: Finding; receiptId: number; c
         >
           <input className={cx(inputClass, "h-8 min-w-0 flex-1")} autoFocus placeholder="Why is this fine? (required)"
             value={reason} onChange={(e) => setReason(e.target.value)} />
-          <Button type="submit" size="sm" variant="primary" disabled={!reason.trim()} busy={dismiss.isPending}>Dismiss</Button>
+          <Button type="submit" size="sm" variant="primary" disabled={!reason.trim()} busy={dismiss.isPending}>Accept anyway</Button>
           <Button size="sm" variant="ghost" onClick={() => setDismissing(false)}>Cancel</Button>
         </form>
       )}
@@ -205,7 +221,7 @@ function Fields({ r, editable }: { r: Receipt; editable: boolean }) {
       <CardHeader
         title="What Tally read"
         sub={editable ? "Fix a misread value; the checks re-run right away. The original reading is kept." : undefined}
-        actions={r.derived?.amounts_repaired ? <Pill tone="info">Amounts auto-corrected</Pill> : undefined}
+        actions={r.derived?.amounts_repaired ? <Pill tone="info">Amounts fixed using the photo</Pill> : undefined}
       />
       <div className="divide-y divide-line">
         {FIELD_GROUPS.map((g) => (
@@ -334,6 +350,35 @@ function FieldInput({ def, value, onChange, label }: { def: FieldDef; value: str
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
+  );
+}
+
+function FailedNotice({ r, canRetry }: { r: Receipt; canRetry: boolean }) {
+  const qc = useQueryClient();
+  const retry = useMutation({
+    mutationFn: () => api.post(`/api/receipts/${r.id}/retry`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["receipt", r.id] }); qc.invalidateQueries({ queryKey: ["liquidation", r.liquidation_id] }); },
+  });
+  return (
+    <Notice tone="bad">
+      <p>Tally couldn’t read this photo ({r.error ?? "unknown error"}). Try again; if it fails again, retake the photo.</p>
+      {canRetry && (
+        <div className="mt-3 flex gap-2">
+          <Button size="sm" variant="primary" busy={retry.isPending} onClick={() => retry.mutate()}>Try again</Button>
+        </div>
+      )}
+      {retry.isError && <p className="mt-2 text-xs">{errorMessage(retry.error)}</p>}
+    </Notice>
+  );
+}
+
+function MoveButton({ r, employeeId }: { r: Receipt; employeeId: number }) {
+  const router = useRouter();
+  const [moving, setMoving] = useState(false);
+  if (!moving) return <Button variant="ghost" size="sm" onClick={() => setMoving(true)}>Move…</Button>;
+  return (
+    <MoveReceipts receiptIds={[r.id]} employeeId={employeeId} fromLiquidationId={r.liquidation_id}
+      onDone={(to) => router.push(liquidationHref(to))} onCancel={() => setMoving(false)} />
   );
 }
 

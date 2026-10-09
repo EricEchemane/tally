@@ -8,7 +8,10 @@ export type Stage = "queued" | "ocr" | "extracting" | "checking" | "done" | "fai
 export type Severity = "REJECT" | "NEEDS_REVIEW" | "NO_INPUT_VAT";
 
 export interface Company { name: string; tin: string; buyer_details_rule: BuyerDetailsRule }
-export interface Employee { id: number; name: string }
+export interface Employee {
+  id: number; name: string; active: boolean;
+  cash_advances?: number; open_liquidations?: number; // only on the Employees list
+}
 
 export interface Totals {
   advance: number; valid_spend: number; disallowed: number;
@@ -17,7 +20,7 @@ export interface Totals {
 
 export interface CashAdvance {
   id: number; employee: Employee; amount: number; purpose: string;
-  released_on: string; spending_end_on: string;
+  released_on: string; spending_end_on: string; archived: boolean;
   liquidation: { id: number; status: LiquidationStatus; totals: Totals };
 }
 
@@ -41,7 +44,7 @@ export interface Finding {
 
 export interface Receipt {
   id: number; liquidation_id: number; stage: Stage; status: ReceiptStatus | null; checks_pending: boolean; error: string | null;
-  image_url: string; rotation: number; ocr_text: string | null;
+  image_url: string; cropped_image_url: string | null; rotation: number; ocr_text: string | null;
   extraction: Record<string, unknown> | null; derived: Record<string, unknown> | null;
   corrections: { field: string; value: unknown; previous: unknown; at: string }[];
   effective: Record<string, unknown> | null; findings: Finding[];
@@ -71,3 +74,17 @@ export type LiveEvent =
   | { event: "question.answered"; question_id: number }
   | { event: "company.updated"; buyer_details_rule: BuyerDetailsRule }
   | { event: "queue.updated"; length: number; current: { kind: "receipt" | "question"; id: number } | null };
+
+// The Overview page (api/overview.py). Peso numbers computed by the server.
+export type OverviewPeriod = "THIS_MONTH" | "LAST_MONTH" | "THIS_QUARTER" | "THIS_YEAR" | "ALL";
+export interface Overview {
+  period: OverviewPeriod; period_label: string; receipts: number; needs_review: number;
+  spend: number; valid_spend: number; disallowed: number; input_vat_lost: number;
+  outstanding: {
+    open: number; amount: number; overdue_days: number;
+    overdue: { liquidation_id: number; employee: string; purpose: string; released_on: string; days: number; amount: number }[];
+  };
+  disallowed_reasons: { reason: string; receipts: number; amount: number; receipt_ids: number[] }[];
+  by_category: { category: string; amount: number }[];
+  by_employee: { employee: string; valid_spend: number; disallowed: number }[];
+}

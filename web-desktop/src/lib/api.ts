@@ -19,9 +19,10 @@ export const api = {
   patch: <T>(path: string, json: unknown) =>
     request<T>(path, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify(json) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
-  upload: <T>(path: string, files: FileList | File[]) => {
+  upload: <T>(path: string, files: FileList | File[], fields: Record<string, string> = {}) => {
     const form = new FormData();
     for (const f of Array.from(files)) form.append("images", f);
+    for (const [k, v] of Object.entries(fields)) form.append(k, v);
     return request<T>(path, { method: "POST", body: form });
   },
 };

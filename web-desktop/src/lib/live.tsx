@@ -52,6 +52,7 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
             qc.invalidateQueries({ queryKey: ["receipt", e.receipt_id] });
             qc.invalidateQueries({ queryKey: ["liquidation", e.liquidation_id] });
             qc.invalidateQueries({ queryKey: ["cash-advances"] });
+            qc.invalidateQueries({ queryKey: ["overview"] });
             break;
           case "receipt.failed":
             qc.invalidateQueries({ queryKey: ["receipt", e.receipt_id] });
@@ -60,6 +61,7 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
           case "liquidation.updated":
             qc.invalidateQueries({ queryKey: ["liquidation", e.liquidation_id] });
             qc.invalidateQueries({ queryKey: ["cash-advances"] });
+            qc.invalidateQueries({ queryKey: ["overview"] });
             break;
           case "question.answered":
             qc.invalidateQueries({ queryKey: ["question", e.question_id] });
@@ -67,6 +69,7 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
             break;
           case "company.updated":
             qc.invalidateQueries({ queryKey: ["company"] });
+            qc.invalidateQueries({ queryKey: ["overview"] });
             break;
           case "queue.updated":
             setState((s) => ({ ...s, queue: { length: e.length, current: e.current } }));

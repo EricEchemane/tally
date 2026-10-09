@@ -54,7 +54,7 @@ export function EditCashAdvance({ liq, onDone }: { liq: Liquidation; onDone: () 
       >
         <Label label="Employee">
           <select className={selectClass} value={employee} onChange={(e) => setEmployee(e.target.value)} required>
-            {employees.data?.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            {employees.data?.filter((e) => e.active || e.id === ca.employee.id).map((e) => <option key={e.id} value={e.id}>{e.name}{e.active ? "" : " (inactive)"}</option>)}
             <option value={NEW_EMPLOYEE}>+ New Employee…</option>
           </select>
         </Label>

@@ -16,13 +16,13 @@ export function SetupGate() {
   const pulling = s.pull.state === "running";
   const pct = pulling && s.pull.total ? Math.floor(((s.pull.done ?? 0) / s.pull.total) * 100) : null;
   return (
-    <div className="mx-3 mt-1 rounded-full border border-warn/30 bg-warn-soft px-5 py-2 text-center text-sm lg:mx-auto lg:max-w-6xl">
+    <div className="mx-auto mt-1 max-w-6xl px-6"><div className="rounded-full border border-warn/30 bg-warn-soft px-5 py-2 text-center text-sm">
       {pulling
         ? `Downloading the AI model${pct !== null ? ` (${pct}%)` : ""}. Receipts you scan now wait until it finishes.`
         : s.ollama.state !== "running"
-          ? "Ollama isn’t running, so new receipts can’t be read yet."
-          : "The AI model isn’t downloaded yet, so new receipts can’t be read."}{" "}
+          ? "The AI isn’t running, so new receipts wait until it is."
+          : "The AI isn’t downloaded yet, so new receipts wait until it is."}{" "}
       <Link href="/setup/?step=ai" className="font-medium underline">Open setup</Link>
-    </div>
+    </div></div>
   );
 }

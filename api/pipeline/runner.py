@@ -75,11 +75,11 @@ async def _ocr_worker() -> None:
         receipt_id = await _ocr_queue.get()
         conn = db.connect()
         try:
-            row = conn.execute("SELECT image_path FROM receipt WHERE id = ?", (receipt_id,)).fetchone()
+            row = conn.execute("SELECT image_path, cropped_path FROM receipt WHERE id = ?", (receipt_id,)).fetchone()
             if row is None:  # deleted while queued
                 continue
             _set_stage(conn, receipt_id, "ocr")
-            result = await be.ocr(row["image_path"])
+            result = await be.ocr(row["image_path"], row["cropped_path"])
             conn.execute("UPDATE receipt SET ocr_text = ?, rotation = ? WHERE id = ?",
                          (result.text, result.rotation, receipt_id))
             conn.commit()

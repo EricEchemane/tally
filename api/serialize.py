@@ -61,7 +61,9 @@ def receipt_detail(conn: sqlite3.Connection, r: sqlite3.Row) -> dict:
     return {
         "id": r["id"], "liquidation_id": r["liquidation_id"], "stage": r["stage"], "status": r["status"],
         "checks_pending": r["stage"] == "done" and not r["checks_run"], "error": r["error"],
-        "image_url": f"/api/receipts/{r['id']}/image", "rotation": r["rotation"],
+        "image_url": f"/api/receipts/{r['id']}/image",
+        "cropped_image_url": f"/api/receipts/{r['id']}/cropped-image" if r["cropped_path"] else None,
+        "rotation": r["rotation"],
         "ocr_text": r["ocr_text"],
         "extraction": json.loads(r["extraction"]) if r["extraction"] else None,
         "derived": _amounts_to_pesos(derived) if r["derived"] else None,
@@ -76,14 +78,15 @@ def receipt_detail(conn: sqlite3.Connection, r: sqlite3.Row) -> dict:
 
 
 def _employee(conn, employee_id):
-    e = conn.execute("SELECT id, name FROM employee WHERE id = ?", (employee_id,)).fetchone()
-    return {"id": e["id"], "name": e["name"]}
+    e = conn.execute("SELECT id, name, active FROM employee WHERE id = ?", (employee_id,)).fetchone()
+    return {"id": e["id"], "name": e["name"], "active": bool(e["active"])}
 
 
 def cash_advance(conn: sqlite3.Connection, ca: sqlite3.Row) -> dict:
     return {
         "id": ca["id"], "employee": _employee(conn, ca["employee_id"]), "amount": to_pesos(ca["amount"]),
         "purpose": ca["purpose"], "released_on": ca["released_on"], "spending_end_on": ca["spending_end_on"],
+        "archived": ca["archived_at"] is not None,
     }
 
 
@@ -120,7 +123,7 @@ def liquidation_detail(conn: sqlite3.Connection, liq: sqlite3.Row) -> dict:
             "id": r["id"], "stage": r["stage"], "status": r["status"],
             "checks_pending": r["stage"] == "done" and not r["checks_run"], "seller_name": eff.get("seller_name"),
             "date": eff.get("date"), "total": to_pesos(eff.get("total")),
-            "thumbnail_url": f"/api/receipts/{r['id']}/image", "open_findings": open_findings,
+            "thumbnail_url": f"/api/receipts/{r['id']}/{'cropped-image' if r['cropped_path'] else 'image'}", "open_findings": open_findings,
         })
     # Receipts whose status is NEEDS_REVIEW: the ones that block approval.
     open_needs_review = conn.execute(

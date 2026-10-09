@@ -10,6 +10,9 @@ Mounted by desktop.py only, so the dev server and its tests are unchanged. The w
     POST /api/setup/model/pull        download the model with progress (resumes where it stopped)
     POST /api/setup/model/cancel
     POST /api/setup/complete          the wizard is done; the dashboard stops redirecting to it
+    GET  /api/setup/backup            one .zip with the database and every receipt photo
+    POST /api/setup/restore           replace everything with a backup (the current data is backed up first)
+    POST /api/setup/reveal            show a downloaded file in Finder (only files in ~/Downloads)
 
 Long jobs run in threads and report through the status route; the wizard polls it.
 """
@@ -30,16 +33,21 @@ from pathlib import Path
 from typing import Literal
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 from pydantic import BaseModel, Field
 
 import config
+import db
 import events
+import serialize
 from checks import service as checks
 from db import get_db
 
 router = APIRouter(prefix="/api/setup")
 
+APP_VERSION = "0.1.0"  # keep in step with desktop/src-tauri/tauri.conf.json
 MIN_OLLAMA = (0, 12, 5)  # first release where think:false works with a JSON-schema format
 MIN_RAM_GB = 8
 MIN_FREE_GB = 4  # the model is 2.5 GB, written to a pre-sized file
@@ -244,7 +252,8 @@ def status(conn: sqlite3.Connection = Depends(get_db)):
     ollama = _ollama()
     with _lock:
         jobs = {k: dict(v) for k, v in _jobs.items()}
-    return {"complete": setup_complete(), "machine": _machine(), "company": company,
+    return {"complete": setup_complete(), "version": APP_VERSION, "data_dir": str(config.DATA_DIR),
+            "machine": _machine(), "company": company,
             "company_ok": bool(company["name"] and len(company["tin"]) >= 9),
             "ollama": ollama, "model": {"name": config.MODEL, "present": ollama["state"] == "running" and _model_present()},
             "install": jobs["install"], "pull": jobs["pull"]}
@@ -309,3 +318,97 @@ def complete(conn: sqlite3.Connection = Depends(get_db)):
     config.DATA_DIR.mkdir(parents=True, exist_ok=True)
     _marker().write_text(json.dumps({"complete": True, "at": time.strftime("%Y-%m-%dT%H:%M:%S")}))
     return {"complete": True}
+
+
+# --- back up and restore
+
+
+def write_backup(conn: sqlite3.Connection, out: Path) -> Path:
+    """The database (a consistent copy, even while the app runs) plus every receipt photo."""
+    with tempfile.TemporaryDirectory() as tmp:
+        snapshot = Path(tmp) / "tally.db"
+        dest = sqlite3.connect(snapshot)
+        conn.backup(dest)
+        dest.close()
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
+            z.writestr("manifest.json", json.dumps({"app": "tally", "version": APP_VERSION,
+                                                    "created_at": time.strftime("%Y-%m-%dT%H:%M:%S")}))
+            z.write(snapshot, "tally.db")
+            for photo, cropped in conn.execute("SELECT image_path, cropped_path FROM receipt"):
+                for path in (photo, cropped):
+                    if path and Path(path).exists():
+                        z.write(path, f"images/{Path(path).name}")
+    return out
+
+
+@router.get("/backup")
+def backup(conn: sqlite3.Connection = Depends(get_db)):
+    tmp = Path(tempfile.mkdtemp(prefix="tally-backup-"))
+    out = write_backup(conn, tmp / f"tally-backup-{time.strftime('%Y-%m-%d')}.zip")
+    return FileResponse(out, filename=out.name, media_type="application/zip",
+                        background=BackgroundTask(shutil.rmtree, tmp, ignore_errors=True))
+
+
+@router.post("/restore")
+async def restore(file: UploadFile = File(...), conn: sqlite3.Connection = Depends(get_db)):
+    with tempfile.TemporaryDirectory() as tmp:
+        src = Path(tmp) / "backup.zip"
+        src.write_bytes(await file.read())
+        try:
+            with zipfile.ZipFile(src) as z:
+                manifest = json.loads(z.read("manifest.json"))
+                if manifest.get("app") != "tally" or "tally.db" not in z.namelist():
+                    raise ValueError
+                z.extractall(Path(tmp) / "x")
+        except (zipfile.BadZipFile, KeyError, ValueError):
+            raise HTTPException(422, "This file isn't a Tally backup") from None
+        restored = sqlite3.connect(Path(tmp) / "x" / "tally.db")
+        try:
+            restored.execute("SELECT COUNT(*) FROM company").fetchone()
+        except sqlite3.DatabaseError:
+            raise HTTPException(422, "The backup's database is damaged") from None
+
+        # Safety net: the data being replaced goes into a backup of its own first.
+        safety = config.DATA_DIR / "backups"
+        safety.mkdir(parents=True, exist_ok=True)
+        write_backup(conn, safety / f"before-restore-{time.strftime('%Y-%m-%d-%H%M%S')}.zip")
+
+        # Photos land in this computer's images folder; their paths are rewritten to match.
+        config.IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+        for img in (Path(tmp) / "x" / "images").glob("*") if (Path(tmp) / "x" / "images").exists() else []:
+            shutil.copy2(img, config.IMAGES_DIR / img.name)
+        def here(path):
+            return str(config.IMAGES_DIR / Path(path).name)
+
+        for rid, path in restored.execute("SELECT id, image_path FROM receipt").fetchall():
+            restored.execute("UPDATE receipt SET image_path = ? WHERE id = ?", (here(path), rid))
+        if "cropped_path" in {c[1] for c in restored.execute("PRAGMA table_info(receipt)")}:  # older backups lack it
+            for rid, path in restored.execute("SELECT id, cropped_path FROM receipt WHERE cropped_path IS NOT NULL").fetchall():
+                restored.execute("UPDATE receipt SET cropped_path = ? WHERE id = ?", (here(path), rid))
+        restored.commit()
+        restored.backup(conn)  # page-by-page copy into the live database
+        restored.close()
+    db.init_db(conn)  # a backup from an older version gets the newer columns
+    checks.recheck_open(conn, publish=False)
+    events.publish("company.updated", buyer_details_rule=conn.execute("SELECT buyer_details_rule FROM company").fetchone()[0])
+    for (lid,) in conn.execute("SELECT id FROM liquidation"):
+        events.publish("liquidation.updated", liquidation_id=lid, status=conn.execute(
+            "SELECT status FROM liquidation WHERE id = ?", (lid,)).fetchone()[0], totals=serialize.totals(conn, lid))
+    return {"restored": True, "from_version": manifest.get("version"), "created_at": manifest.get("created_at")}
+
+
+class RevealIn(BaseModel):
+    path: str
+
+
+@router.post("/reveal", status_code=204)
+def reveal(body: RevealIn):
+    """Show in Finder for the download toast. Limited to ~/Downloads: the page can't point it anywhere else."""
+    downloads = (Path.home() / "Downloads").resolve()
+    target = Path(body.path).resolve()
+    if downloads not in target.parents or not target.is_file():
+        raise HTTPException(404, "file not found in Downloads")
+    if sys.platform == "darwin":
+        subprocess.run(["open", "-R", str(target)], check=False)
+    elif sys.platform == "win32":
+        subprocess.run(["explorer", "/select,", str(target)], check=False)

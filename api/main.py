@@ -9,6 +9,7 @@ import events
 from checks import service as checks
 from db.seed import seed
 from pipeline import runner
+import overview
 from routes import company, exports, liquidations, ops, people, questions, receipts, ws
 
 
@@ -26,5 +27,5 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Tally API", lifespan=lifespan)
-for r in (ops, company, people, liquidations, receipts, questions, exports, ws):
+for r in (ops, company, people, liquidations, receipts, questions, exports, overview, ws):
     app.include_router(r.router)

@@ -1,81 +1,117 @@
 "use client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
 import { api, errorMessage } from "@/lib/api";
 import { BUYER_RULE } from "@/lib/labels";
 import { useLive } from "@/lib/live";
 import { useCompany, useHealth } from "@/lib/queries";
 import type { BuyerDetailsRule, Company } from "@/lib/types";
+import { DownloadToasts } from "./Downloads";
 import { QuestionsPanel } from "./QuestionsPanel";
 import { SetupGate } from "./SetupGate";
-import { Button, cx } from "./ui";
+import { useIndicator } from "@/lib/motion";
+import { cx, Segmented, Sparkle } from "./ui";
+
+const NAV = [
+  { href: "/", label: "Cash Advances", match: (p: string) => p === "/" || p.startsWith("/liquidations") || p.startsWith("/receipts") },
+  { href: "/overview/", label: "Overview", match: (p: string) => p.startsWith("/overview") },
+  { href: "/employees/", label: "Employees", match: (p: string) => p.startsWith("/employees") },
+];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [asking, setAsking] = useState(false);
+  const path = usePathname();
+  const navRef = useRef<HTMLElement>(null);
+  const active = NAV.find((n) => n.match(path))?.href;
+  const pill = useIndicator(navRef, active);
+  // ⌘K opens Ask Tally from anywhere.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.metaKey && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "k") { e.preventDefault(); setAsking((v) => !v); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   return (
     <>
-      <SetupGate />
-      <header className="sticky top-0 z-30 bg-linear-to-b from-paper from-70% to-transparent px-3 pb-2 pt-3">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 rounded-full border border-line bg-surface/90 py-2 pl-3 pr-2 shadow-card backdrop-blur">
-          <HistoryButtons />
-          <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-            <span aria-hidden className="grid size-8 place-items-center rounded-full bg-accent text-sm font-bold text-accent-ink">T</span>
-            Tally
-          </Link>
-          <CompanyName />
-          <div className="ml-auto flex flex-wrap items-center gap-3">
-            <BuyerRuleToggle />
-            <SystemStatus />
-            <Button variant="primary" size="sm" onClick={() => setAsking(true)}>Ask Tally</Button>
+      {/* Same width and side padding as <main>, so the bar's edges line up with the page content. */}
+      <header className="sticky top-0 z-30 bg-linear-to-b from-paper from-70% to-transparent pb-2 pt-3">
+        <div className="px-6">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-full border border-line bg-surface/90 py-2 pl-3 pr-2 shadow-card backdrop-blur">
+            <HistoryShortcuts />
+            <Link href="/" aria-label="Tally home" title="Tally" className="shrink-0">
+              {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
+              <img src="/logo.png" alt="" className="size-9" />
+            </Link>
+            <nav ref={navRef} aria-label="Main" className="relative flex items-center gap-1">
+              {pill && (
+                <span aria-hidden className="absolute rounded-full bg-accent-soft transition-all duration-200 ease-out"
+                  style={{ left: pill.left, top: pill.top, width: pill.width, height: pill.height }} />
+              )}
+              {NAV.map((n) => (
+                <Link key={n.href} href={n.href} aria-current={n.match(path) ? "page" : undefined} data-active={n.href === active}
+                  className={cx("relative rounded-full px-3.5 py-1.5 text-sm transition-colors duration-150",
+                    n.match(path) ? "font-medium text-accent" : "text-muted hover:bg-sunken hover:text-ink")}>
+                  {n.label}
+                </Link>
+              ))}
+            </nav>
+            <div className="ml-auto flex flex-wrap items-center gap-3">
+              <BuyerRuleToggle />
+              <SystemStatus />
+              <AskButton onClick={() => setAsking(true)} />
+              <Link href="/settings/" aria-label="Settings" title="Settings"
+                className={cx("grid size-8 place-items-center rounded-full transition-colors",
+                  path.startsWith("/settings") ? "bg-accent-soft text-accent" : "text-muted hover:bg-sunken hover:text-ink")}>
+                <svg viewBox="0 0 24 24" aria-hidden className="size-[18px]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3" />
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+                </svg>
+              </Link>
+            </div>
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+      <SetupGate />
+      {/* Keyed by page, so each page change replays the entrance. */}
+      <main key={path} className="page-enter mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
       <footer className="mx-auto w-full max-w-6xl px-6 pb-8 text-xs text-faint">
         Every receipt is read and checked on this computer. No request leaves the machine.
       </footer>
       <QuestionsPanel open={asking} onClose={() => setAsking(false)} />
+      <DownloadToasts />
     </>
   );
 }
 
-/** The app window has no browser toolbar: Back/Forward live here, plus ⌘[ ⌘] and ⌘← ⌘→. */
-function HistoryButtons() {
+function AskButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} title="Ask Tally (⌘K)"
+      className="ask-button inline-flex h-8 shrink-0 items-center gap-2 rounded-full pl-3 pr-2 text-sm font-medium text-white transition-transform duration-150 hover:-translate-y-px active:scale-[0.97]">
+      <Sparkle className="twinkle size-4" />
+      Ask Tally
+      <kbd className="rounded-full bg-white/20 px-1.5 py-px font-sans text-[11px] leading-4">⌘K</kbd>
+    </button>
+  );
+}
+
+/** No back/forward buttons (tabs and breadcrumbs cover navigation), but the Mac shortcuts still work:
+ *  ⌘[ ⌘] anywhere, ⌘← ⌘→ when not typing. Renders nothing. */
+function HistoryShortcuts() {
   const router = useRouter();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!e.metaKey || e.altKey || e.shiftKey) return;
-      const target = e.target as HTMLElement | null;
-      const typing = target?.closest("input, textarea, [contenteditable=true]");
+      const typing = (e.target as HTMLElement | null)?.closest("input, textarea, [contenteditable=true]");
       if (e.key === "[" || (!typing && e.key === "ArrowLeft")) { e.preventDefault(); router.back(); }
       if (e.key === "]" || (!typing && e.key === "ArrowRight")) { e.preventDefault(); router.forward(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [router]);
-  const btn = "grid size-8 place-items-center rounded-full text-muted hover:bg-sunken hover:text-ink";
-  return (
-    <div className="-mr-3 flex items-center">
-      <button type="button" className={btn} onClick={() => router.back()} title="Back (⌘[)" aria-label="Back">
-        <svg viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M12.5 4.5 7 10l5.5 5.5" /></svg>
-      </button>
-      <button type="button" className={btn} onClick={() => router.forward()} title="Forward (⌘])" aria-label="Forward">
-        <svg viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M7.5 4.5 13 10l-5.5 5.5" /></svg>
-      </button>
-    </div>
-  );
-}
-
-function CompanyName() {
-  const company = useCompany();
-  if (!company.data) return null;
-  return (
-    <span className="hidden text-sm text-muted sm:inline">
-      {company.data.name}
-    </span>
-  );
+  return null;
 }
 
 /** The live-toggle demo moment: every OPEN Liquidation re-checks when this changes (SPEC §5). */
@@ -89,25 +125,10 @@ function BuyerRuleToggle() {
   const current = set.isPending ? set.variables : company.data?.buyer_details_rule;
   return (
     <div className="flex items-center gap-2 text-sm" title={set.error ? errorMessage(set.error) : undefined}>
-      <span className="text-muted">Buyer details on</span>
-      <div role="radiogroup" aria-label="Buyer Details Rule" className="flex rounded-full border border-line-strong bg-sunken p-0.5">
-        {(Object.keys(BUYER_RULE) as BuyerDetailsRule[]).map((rule) => (
-          <button
-            key={rule}
-            type="button"
-            role="radio"
-            aria-checked={current === rule}
-            disabled={!company.data || set.isPending}
-            onClick={() => current !== rule && set.mutate(rule)}
-            className={cx(
-              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
-              current === rule ? "bg-surface text-accent shadow-card ring-1 ring-accent/30" : "text-muted hover:text-ink",
-            )}
-          >
-            {BUYER_RULE[rule]}
-          </button>
-        ))}
-      </div>
+      <span className="hidden text-muted xl:inline">Buyer details on</span>
+      <Segmented label="Buyer Details Rule" size="sm" value={current} disabled={!company.data || set.isPending}
+        onChange={(rule) => rule && set.mutate(rule)}
+        options={(Object.keys(BUYER_RULE) as BuyerDetailsRule[]).map((r) => ({ value: r, label: BUYER_RULE[r] }))} />
     </div>
   );
 }
@@ -117,19 +138,16 @@ function SystemStatus() {
   const health = useHealth();
   const h = health.data;
   const q = queue ?? h?.queue;
-  const model = !h ? "…" : h.ollama === "fake" ? "fake pipeline" : h.ollama === "down" ? "model offline" : h.model_loaded ? h.model : `${h.model} (not loaded)`;
-  const modelOk = h && (h.ollama === "fake" || (h.ollama === "up" && h.model_loaded));
+  // Plain words: the Reviewer needs "can Tally read receipts right now", not model names.
+  const aiOk = !!h && (h.ollama === "fake" || h.ollama === "up");
+  const label = !connected ? "Reconnecting…" : !h ? "…" : h.ollama === "down" ? "AI not running" : "AI ready";
   return (
     <div className="flex items-center gap-3 text-xs text-muted">
-      <span className="flex items-center gap-1.5" title={connected ? "Live updates connected" : "Reconnecting…"}>
-        <span className={cx("size-2 rounded-full", connected ? "bg-ok" : "pulse bg-warn")} />
-        {connected ? "Live" : "Offline"}
+      <span className="flex items-center gap-1.5" title={h ? `Local AI: ${h.model}${h.model_loaded ? " (loaded)" : ""}` : undefined}>
+        <span className={cx("size-2 rounded-full", !connected ? "pulse bg-warn" : aiOk ? "bg-ok" : "bg-bad")} />
+        {label}
       </span>
-      <span className="flex items-center gap-1.5" title="Local model (Ollama)">
-        <span className={cx("size-2 rounded-full", modelOk ? "bg-ok" : "bg-bad")} />
-        {model}
-      </span>
-      {q && q.length > 0 && <span className="num" title="Waiting for the local model">{q.length} in queue</span>}
+      {q && q.length > 0 && <span className="num" title="Receipts and questions waiting for the AI">{q.length} waiting</span>}
     </div>
   );
 }

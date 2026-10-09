@@ -3,21 +3,24 @@
 /* Tally design tokens: a calm ledger. Paper surfaces, one deep green accent, status colours that
    read on a projector. Every colour has a dark-mode pair. */
 :root {
-  --paper: #f6f5f0;
+  /* Neutral grays: the only colour in the UI is the emerald accent and the status tones. */
+  --paper: #fcfcfc; /* near white; cards separate by their soft borders */
   --surface: #ffffff;
-  --sunken: #efede6;
-  --ink: #1b1f1c;
-  --muted: #5d655f;
-  --faint: #8a918b;
-  --line: #e2dfd6;
-  --line-strong: #cfcbc0;
-  --accent: #1d5c43;
-  --accent-hover: #164a36;
+  --sunken: #f3f4f6; /* inactive pills, toggle tracks, hovers */
+  --ink: #1c1c1e;
+  --muted: #5f6368; /* 6.0:1 on white */
+  --faint: #8e8e93;
+  --line: #e5e7eb;
+  --line-strong: #d1d5db;
+  /* Emerald. White on it 5.5:1, it on the page 5.3:1, it on its soft tint 4.8:1 (all WCAG AA). */
+  --accent: #047857;
+  --accent-hover: #065f46;
   --accent-ink: #ffffff;
-  --accent-soft: #e2eee7;
+  --accent-soft: #d9f5e7;
+  --accent-bright: #10b981; /* decoration only (gradients, glows), never text */
 
-  --ok: #1d6f47;
-  --ok-soft: #e1f1e7;
+  --ok: #047857;
+  --ok-soft: #d9f5e7;
   --warn: #8a5a00;
   --warn-soft: #fbefd5;
   --bad: #ab2a1f;
@@ -32,21 +35,22 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #111412;
-    --surface: #191d1a;
-    --sunken: #151816;
-    --ink: #e7eae6;
-    --muted: #a0a8a2;
-    --faint: #737b75;
-    --line: #2a302c;
-    --line-strong: #3a423d;
-    --accent: #6cc39a;
-    --accent-hover: #86d2ad;
-    --accent-ink: #0d1f17;
-    --accent-soft: #1b3127;
+    --paper: #121214;
+    --surface: #1a1a1d;
+    --sunken: #222226;
+    --ink: #ececee;
+    --muted: #a1a1aa;
+    --faint: #71717a;
+    --line: #2c2c31;
+    --line-strong: #3d3d43;
+    --accent: #34d399;
+    --accent-hover: #6ee7b7;
+    --accent-ink: #052e1f;
+    --accent-soft: #0f2e22;
+    --accent-bright: #34d399;
 
-    --ok: #73c99c;
-    --ok-soft: #173023;
+    --ok: #34d399;
+    --ok-soft: #0f2e22;
     --warn: #e6b65a;
     --warn-soft: #33280f;
     --bad: #f1897e;
@@ -74,6 +78,7 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-ink: var(--accent-ink);
   --color-accent-soft: var(--accent-soft);
+  --color-accent-bright: var(--accent-bright);
   --color-ok: var(--ok);
   --color-ok-soft: var(--ok-soft);
   --color-warn: var(--warn);
@@ -107,9 +112,24 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
+/* Radios and checkboxes in the accent colour, not the system blue. */
+input[type="radio"],
+input[type="checkbox"] {
+  accent-color: var(--accent);
+}
+
 :focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
+}
+
+/* ---------- motion ----------
+   Subtle and fast: 120–250 ms, opacity and transform only, one easing. A few moments say "something
+   changed" (a status landing, a total moving); none of them ever shows a number that isn't real. */
+:root {
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --t-fast: 120ms;
+  --t-base: 200ms;
 }
 
 @keyframes tally-pulse {
@@ -120,14 +140,138 @@ body {
   animation: tally-pulse 1.4s ease-in-out infinite;
 }
 
+/* Something appearing: a card, a row, a form that opens, a confirm prompt. */
 @keyframes tally-in {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
 .enter {
-  animation: tally-in 0.25s ease-out;
+  animation: tally-in var(--t-base) var(--ease-out) both;
 }
 
+/* Page change: the content fades and rises; the top bar stays put. */
+.page-enter {
+  animation: tally-in 240ms var(--ease-out) both;
+}
+
+/* Lists arrive as a quick cascade (30 ms apart, capped so long lists don't wait). */
+.stagger > * {
+  animation: tally-in var(--t-base) var(--ease-out) both;
+}
+.stagger > *:nth-child(2) { animation-delay: 30ms; }
+.stagger > *:nth-child(3) { animation-delay: 60ms; }
+.stagger > *:nth-child(4) { animation-delay: 90ms; }
+.stagger > *:nth-child(5) { animation-delay: 120ms; }
+.stagger > *:nth-child(6) { animation-delay: 150ms; }
+.stagger > *:nth-child(7) { animation-delay: 180ms; }
+.stagger > *:nth-child(n + 8) { animation-delay: 210ms; }
+
+/* A receipt's status landing (✓ or ✕): one small pop. */
+@keyframes tally-pop {
+  0% { transform: scale(0.85); opacity: 0.4; }
+  55% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.pop {
+  animation: tally-pop 320ms var(--ease-out) both;
+}
+
+/* A total that just changed: a soft flash of its tone, then back to normal. */
+@keyframes tally-flash {
+  0%, 35% { background-color: var(--flash, var(--accent-soft)); }
+  100% { background-color: var(--surface); }
+}
+.flash-up { --flash: var(--ok-soft); animation: tally-flash 1.1s ease-out; }
+.flash-down { --flash: var(--bad-soft); animation: tally-flash 1.1s ease-out; }
+.flash { animation: tally-flash 1.1s ease-out; }
+
+/* ---------- Ask Tally ---------- */
+/* The button: emerald gradient (text stays on the dark end, 5.5:1+) with a light sweep on hover. */
+.ask-button {
+  position: relative;
+  overflow: hidden;
+  background-image: linear-gradient(135deg, var(--accent-hover), var(--accent) 55%, color-mix(in srgb, var(--accent) 80%, var(--accent-bright)));
+}
+.ask-button::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 700ms var(--ease-out);
+}
+.ask-button:hover::after { transform: translateX(120%); }
+@keyframes tally-twinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  50% { transform: scale(0.8) rotate(20deg); opacity: 0.75; }
+}
+.twinkle { animation: tally-twinkle 2.4s ease-in-out infinite; transform-origin: center; }
+
+/* The panel springs in (a little overshoot), the page behind blurs. */
+.ask-panel { transition: transform 460ms cubic-bezier(0.2, 1.15, 0.3, 1), opacity 240ms var(--ease-out); }
+
+/* Thinking: an emerald light running along a track. */
+@keyframes tally-run {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(250%); }
+}
+.thinking-track { position: relative; overflow: hidden; height: 3px; border-radius: 9999px; background: var(--accent-soft); }
+.thinking-track::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, var(--accent-bright), var(--accent), transparent);
+  animation: tally-run 1.1s ease-in-out infinite;
+}
+
+/* A fresh answer arrives word by word (the whole answer is already computed; this is only the reveal). */
+@keyframes tally-word {
+  from { opacity: 0; filter: blur(3px); transform: translateY(3px); }
+  to { opacity: 1; filter: none; transform: none; }
+}
+.word-in { display: inline-block; animation: tally-word 320ms var(--ease-out) both; white-space: pre; }
+.after-words { animation: tally-in 300ms var(--ease-out) both; }
+
+/* Toasts slide up from the corner. */
+@keyframes tally-toast {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+.toast-in {
+  animation: tally-toast 260ms var(--ease-out) both;
+}
+
+/* Overview bars grow from the left when the page or the period changes. */
+@keyframes tally-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+.bar-grow {
+  transform-origin: left center;
+  animation: tally-grow 600ms var(--ease-out) both;
+}
+
+/* Loading: a soft sheen instead of a blink. */
+@keyframes tally-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+.shimmer {
+  background: linear-gradient(90deg, var(--sunken) 30%, color-mix(in srgb, var(--surface) 70%, var(--sunken)) 50%, var(--sunken) 70%);
+  background-size: 200% 100%;
+  animation: tally-shimmer 1.6s linear infinite;
+}
+
+/* "Reduce motion" in macOS: every change is instant. Loading indicators keep moving, so work still shows. */
 @media (prefers-reduced-motion: reduce) {
-  .pulse, .enter { animation: none; }
+  *:not(.pulse):not(.shimmer):not(.animate-spin):not(.thinking-track),
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+  .thinking-track::after { animation-duration: 1.1s !important; }
 }

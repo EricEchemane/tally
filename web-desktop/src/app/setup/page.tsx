@@ -53,7 +53,8 @@ function Shell({ children }: { children: React.ReactNode }) {
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-12">
       <div className="mb-8 flex items-center gap-2 text-lg font-semibold tracking-tight">
-        <span aria-hidden className="grid size-8 place-items-center rounded-full bg-accent text-sm font-bold text-accent-ink">T</span>
+        {/* eslint-disable-next-line @next/next/no-img-element -- static export */}
+        <img src="/logo.png" alt="" className="size-9" />
         Set up Tally
       </div>
       {children}

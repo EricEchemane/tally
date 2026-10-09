@@ -2,12 +2,14 @@
 // The Liquidation screen: totals, live receipts, approve/return (SPEC §5, §7).
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { DownloadButton } from "@/components/Downloads";
 import { EditCashAdvance } from "@/components/EditCashAdvance";
+import { MoveReceipts } from "@/components/MoveReceipts";
 import { CapturePanel, UploadDropzone } from "@/components/Upload";
 import {
-  Button, ButtonLink, Card, CardHeader, cx, Empty, LiquidationStatusPill, Money, Notice, PageHeader, ReceiptStatusPill, Skeleton, Stat, textareaClass,
+  Button, Card, CardHeader, cx, Empty, LiquidationStatusPill, Money, Notice, PageHeader, ReceiptStatusPill, Skeleton, Stat, textareaClass,
 } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { formatDate, STAGE, STAGE_ORDER } from "@/lib/labels";
@@ -20,6 +22,8 @@ function LiquidationView() {
   const id = Number(useSearchParams().get("id"));
   const liq = useLiquidation(id);
   const [editing, setEditing] = useState(false);
+  const [selecting, setSelecting] = useState(false);
+  const [selected, setSelected] = useState<number[]>([]);
 
   if (!id) return <Notice tone="bad">Liquidation not found.</Notice>;
 
@@ -58,6 +62,7 @@ function LiquidationView() {
         </Notice>
       )}
       {l.status === "APPROVED" && <Notice tone="ok">Approved. Totals are frozen.</Notice>}
+      {ca.archived && <Notice tone="info">Archived. It’s off the working list but still counts in the Overview and exports.</Notice>}
 
       <Totals liq={l} />
 
@@ -66,9 +71,18 @@ function LiquidationView() {
           <CardHeader
             title={`Receipts (${l.receipts.length})`}
             sub={l.open_needs_review > 0 ? `${l.open_needs_review} Finding${l.open_needs_review === 1 ? "" : "s"} need${l.open_needs_review === 1 ? "s" : ""} your review` : undefined}
+            actions={open && l.receipts.length > 0 && (selecting
+              ? <Button size="sm" variant="ghost" onClick={() => { setSelecting(false); setSelected([]); }}>Done</Button>
+              : <Button size="sm" variant="ghost" onClick={() => setSelecting(true)}>Select</Button>)}
           />
-          {open && <div className="border-b border-line p-4"><UploadDropzone liquidationId={id} /></div>}
-          {l.receipts.length === 0 ? <Empty>No receipts yet. Scan the QR code with a phone or upload photos.</Empty> : <ReceiptList receipts={l.receipts} />}
+          {selecting && (
+            <BulkBar liq={l} selected={selected} setSelected={setSelected} />
+          )}
+          {open && !selecting && <div className="border-b border-line p-4"><UploadDropzone liquidationId={id} /></div>}
+          {l.receipts.length === 0 ? <Empty>No receipts yet. Scan the QR code with a phone or upload photos.</Empty> : (
+            <ReceiptList receipts={l.receipts} selection={selecting ? { selected, toggle: (rid) =>
+              setSelected((s) => (s.includes(rid) ? s.filter((x) => x !== rid) : [...s, rid])) } : undefined} />
+          )}
         </Card>
         {open && <aside className="space-y-6"><CapturePanel liquidationId={id} /></aside>}
       </div>
@@ -81,14 +95,14 @@ function Totals({ liq }: { liq: Liquidation }) {
   return (
     <dl className="grid grid-cols-2 gap-4 md:grid-cols-5">
       <Stat label="Cash Advance" value={t.advance} />
-      <Stat label="Valid Spend" value={t.valid_spend} />
-      <Stat label="Disallowed Amount" value={t.disallowed} tone={t.disallowed > 0 ? "bad" : undefined} hint="Rejected receipts" />
+      <Stat label="Valid Spend" value={t.valid_spend} better="up" />
+      <Stat label="Disallowed Amount" value={t.disallowed} tone={t.disallowed > 0 ? "bad" : undefined} hint="Rejected receipts" better="down" />
       {t.excess_spend > 0 ? (
         <Stat label="Excess Spend" value={t.excess_spend} hint="Reimbursable, subject to approval" />
       ) : (
-        <Stat label="Amount to Return" value={t.amount_to_return} tone={t.amount_to_return > 0 ? "warn" : "ok"} hint="Employee returns this" />
+        <Stat label="Amount to Return" value={t.amount_to_return} tone={t.amount_to_return > 0 ? "warn" : "ok"} hint="Employee returns this" better="down" />
       )}
-      <Stat label="Claimable input VAT" value={t.claimable_input_vat} tone="ok" />
+      <Stat label="Claimable input VAT" value={t.claimable_input_vat} tone="ok" better="up" />
     </dl>
   );
 }
@@ -111,6 +125,18 @@ function Actions({ liq, onEdit }: { liq: Liquidation; onEdit?: () => void }) {
     },
   });
   const reopen = useMutation({ mutationFn: () => api.post<Liquidation>(`/api/liquidations/${liq.id}/reopen`), onSuccess: done });
+  const router = useRouter();
+  const ca = liq.cash_advance;
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ["liquidation", liq.id] });
+    qc.invalidateQueries({ queryKey: ["cash-advances"] });
+  };
+  const archive = useMutation({ mutationFn: () => api.post(`/api/cash-advances/${ca.id}/${ca.archived ? "unarchive" : "archive"}`), onSuccess: refresh });
+  const [deleting, setDeleting] = useState(false);
+  const del = useMutation({
+    mutationFn: () => api.delete(`/api/cash-advances/${ca.id}`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cash-advances"] }); router.push("/"); },
+  });
   // A blocked-approval message goes stale as soon as the Findings change.
   const { reset } = approve;
   useEffect(() => reset(), [liq.open_needs_review, liq.receipts.length, reset]);
@@ -119,18 +145,33 @@ function Actions({ liq, onEdit }: { liq: Liquidation; onEdit?: () => void }) {
     ? (approve.error.body as { error?: string; receipt_ids?: number[] } | null) : null;
 
   return (
-    <div className="flex max-w-md flex-col items-end gap-2">
-      <div className="flex flex-wrap justify-end gap-2">
+    // Buttons stay on one row; only the messages below them are width-limited.
+    <div className="flex flex-col items-end gap-2 [&>*:not(:first-child)]:max-w-md">
+      <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-nowrap">
         {onEdit && <Button variant="ghost" onClick={onEdit}>Edit details</Button>}
-        <ButtonLink href={`/api/liquidations/${liq.id}/summary.xlsx`} download>Summary (.xlsx)</ButtonLink>
+        <DownloadButton href={`/api/liquidations/${liq.id}/summary.xlsx`}>Summary (.xlsx)</DownloadButton>
         {liq.status === "OPEN" && (
           <>
             <Button onClick={() => setReturning((v) => !v)}>Return…</Button>
             <Button variant="primary" busy={approve.isPending} onClick={() => approve.mutate()}>Approve</Button>
           </>
         )}
+        {liq.status !== "OPEN" && (
+          <Button variant="ghost" busy={archive.isPending} onClick={() => archive.mutate()}>{ca.archived ? "Unarchive" : "Archive"}</Button>
+        )}
+        {liq.receipts.length === 0 && !deleting && <Button variant="ghost" onClick={() => setDeleting(true)}>Delete</Button>}
         {liq.status === "RETURNED" && <Button variant="primary" busy={reopen.isPending} onClick={() => reopen.mutate()}>Reopen</Button>}
       </div>
+      {deleting && (
+        <Notice tone="warn" className="enter w-full">
+          <p>Delete this Cash Advance for {ca.employee.name}? It has no receipts, so nothing else is lost.</p>
+          <div className="mt-3 flex justify-end gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setDeleting(false)}>Keep</Button>
+            <Button size="sm" variant="danger" busy={del.isPending} onClick={() => del.mutate()}>Delete Cash Advance</Button>
+          </div>
+        </Notice>
+      )}
+      {(archive.isError || del.isError) && <Notice tone="bad" className="w-full">{errorMessage(archive.error ?? del.error)}</Notice>}
 
       {blocked && liq.status === "OPEN" && (
         <Notice tone="bad" className="enter w-full">
@@ -156,7 +197,7 @@ function Actions({ liq, onEdit }: { liq: Liquidation; onEdit?: () => void }) {
 
       {returning && liq.status === "OPEN" && (
         <form
-          className="enter w-full space-y-3 rounded-3xl border border-line bg-surface p-4 shadow-card"
+          className="enter w-full space-y-3 rounded-3xl border border-line bg-surface p-4"
           onSubmit={(e) => {
             e.preventDefault();
             ret.mutate();
@@ -175,21 +216,73 @@ function Actions({ liq, onEdit }: { liq: Liquidation; onEdit?: () => void }) {
   );
 }
 
-function ReceiptList({ receipts }: { receipts: ReceiptSummary[] }) {
+type Selection = { selected: number[]; toggle: (id: number) => void };
+
+function BulkBar({ liq, selected, setSelected }: { liq: Liquidation; selected: number[]; setSelected: (ids: number[]) => void }) {
+  const qc = useQueryClient();
+  const [mode, setMode] = useState<"idle" | "move" | "delete">("idle");
+  const del = useMutation({
+    mutationFn: async () => { for (const rid of selected) await api.delete(`/api/receipts/${rid}`); },
+    onSuccess: () => { setSelected([]); setMode("idle"); qc.invalidateQueries({ queryKey: ["liquidation", liq.id] }); qc.invalidateQueries({ queryKey: ["cash-advances"] }); },
+  });
+  const all = liq.receipts.map((r) => r.id);
+  const n = selected.length;
   return (
-    <ul className="space-y-1 p-2">
-      {receipts.map((r) => <ReceiptRow key={r.id} r={r} />)}
+    <div className="enter flex flex-wrap items-center gap-3 border-b border-line bg-sunken/50 px-6 py-3 text-sm">
+      <span className="font-medium">{n ? `${n} selected` : "Select receipts"}</span>
+      <Button size="sm" variant="ghost" onClick={() => setSelected(n === all.length ? [] : all)}>{n === all.length ? "Clear" : "Select all"}</Button>
+      <span className="ml-auto flex flex-wrap items-center gap-2">
+        {mode === "move" ? (
+          <MoveReceipts receiptIds={selected} employeeId={liq.cash_advance.employee.id} fromLiquidationId={liq.id}
+            onDone={() => { setSelected([]); setMode("idle"); }} onCancel={() => setMode("idle")} />
+        ) : mode === "delete" ? (
+          <>
+            <span>Delete {n} receipt{n === 1 ? "" : "s"} and their photos?</span>
+            <Button size="sm" variant="danger" busy={del.isPending} onClick={() => del.mutate()}>Delete</Button>
+            <Button size="sm" variant="ghost" onClick={() => setMode("idle")}>Keep</Button>
+          </>
+        ) : (
+          <>
+            <Button size="sm" disabled={!n} onClick={() => setMode("move")}>Move to…</Button>
+            <Button size="sm" variant="danger" disabled={!n} onClick={() => setMode("delete")}>Delete</Button>
+          </>
+        )}
+      </span>
+      {del.isError && <span className="w-full text-xs text-bad">{errorMessage(del.error)}</span>}
+    </div>
+  );
+}
+
+function ReceiptList({ receipts, selection }: { receipts: ReceiptSummary[]; selection?: Selection }) {
+  return (
+    <ul className="stagger space-y-1 p-2">
+      {receipts.map((r) => <ReceiptRow key={r.id} r={r} selection={selection} />)}
     </ul>
   );
 }
 
-function ReceiptRow({ r }: { r: ReceiptSummary }) {
+function ReceiptRow({ r, selection }: { r: ReceiptSummary; selection?: Selection }) {
   const live = useLive();
   const preview = live.previews[r.id];
   const queuePos = live.stages[r.id]?.queue_position;
   const processing = r.stage !== "done" && r.stage !== "failed";
   return (
-    <li className="enter group relative flex items-center gap-4 rounded-2xl p-3 hover:bg-sunken/60">
+    <li className={cx("group relative flex items-center gap-4 rounded-2xl p-3 transition-colors duration-150 hover:bg-sunken/60",
+      selection?.selected.includes(r.id) && "bg-accent-soft/60 hover:bg-accent-soft")}>
+      {selection && (
+        // In select mode the whole row toggles the checkbox instead of opening the receipt.
+        <label className="absolute inset-0 z-10 cursor-pointer rounded-2xl">
+          <input type="checkbox" className="sr-only" checked={selection.selected.includes(r.id)} onChange={() => selection.toggle(r.id)}
+            aria-label={`Select ${r.seller_name ?? `receipt #${r.id}`}`} />
+        </label>
+      )}
+      {selection && (
+        <span key={String(selection.selected.includes(r.id))} aria-hidden className={cx("grid size-5 shrink-0 place-items-center rounded-full border transition-colors duration-150",
+          selection.selected.includes(r.id) && "pop",
+          selection.selected.includes(r.id) ? "border-accent bg-accent text-accent-ink" : "border-line-strong bg-surface")}>
+          {selection.selected.includes(r.id) && <svg viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3.5 8.5l3 3 6-7" /></svg>}
+        </span>
+      )}
       {/* eslint-disable-next-line @next/next/no-img-element -- local API image, no optimizer offline */}
       <img src={r.thumbnail_url} alt="" loading="lazy" className="size-14 shrink-0 rounded-2xl border border-line bg-sunken object-cover" />
       <div className="min-w-0 flex-1">
@@ -200,7 +293,7 @@ function ReceiptRow({ r }: { r: ReceiptSummary }) {
           <div className="mt-1 space-y-1">
             <StageTrack stage={r.stage} />
             <p className="truncate font-mono text-xs text-muted">
-              {preview ?? (r.stage === "queued" && queuePos ? `Waiting for the local model (#${queuePos} in queue)` : STAGE[r.stage] + "…")}
+              {preview ?? (r.stage === "queued" && queuePos ? `Waiting for the AI (#${queuePos} in line)` : STAGE[r.stage] + "…")}
             </p>
           </div>
         ) : (

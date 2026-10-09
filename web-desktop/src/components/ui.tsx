@@ -5,7 +5,8 @@
 // sections stack 32 px apart (space-y-8), grids gap 16–24 px.
 // Type: page title 24 px > key figures 24 px > panel title 16 px > body 14 px > labels 12 px.
 import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import { type ComponentProps, type ReactNode, useRef } from "react";
+import { useChangeCount, useDirection, useIndicator } from "@/lib/motion";
 import { peso } from "@/lib/api";
 import { LIQUIDATION_STATUS, RECEIPT_STATUS, SEVERITY, STAGE } from "@/lib/labels";
 import type { LiquidationStatus, ReceiptStatus, Severity, Stage } from "@/lib/types";
@@ -17,9 +18,12 @@ export function cx(...c: (string | false | null | undefined)[]) {
 // ---------- buttons ----------
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
+// Press: a quick shrink. Hover: filled buttons lift 1 px with a soft shadow.
+const MOTION = "transition-[color,background-color,border-color,box-shadow,transform] duration-150 ease-out active:scale-[0.97] " +
+  "disabled:active:scale-100";
 const VARIANTS: Record<Variant, string> = {
-  primary: "bg-accent text-accent-ink hover:bg-accent-hover border-transparent",
-  secondary: "bg-surface text-ink border-line-strong hover:bg-sunken",
+  primary: "bg-accent text-accent-ink hover:bg-accent-hover border-transparent hover:-translate-y-px disabled:hover:translate-y-0",
+  secondary: "bg-surface text-ink border-line-strong hover:bg-sunken hover:-translate-y-px disabled:hover:translate-y-0",
   ghost: "bg-transparent text-muted border-transparent hover:bg-sunken hover:text-ink",
   danger: "bg-surface text-bad border-line-strong hover:bg-bad-soft",
 };
@@ -33,7 +37,7 @@ export function Button({
       type="button"
       disabled={disabled || busy}
       className={cx(
-        "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium transition-colors",
+        "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium", MOTION,
         "disabled:cursor-not-allowed disabled:opacity-50",
         VARIANTS[variant], SIZES[size], className,
       )}
@@ -50,7 +54,7 @@ export function ButtonLink({
 }: ComponentProps<"a"> & { variant?: Variant; size?: keyof typeof SIZES }) {
   return (
     <a
-      className={cx("inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium transition-colors",
+      className={cx("inline-flex shrink-0 items-center justify-center gap-2 rounded-full border font-medium", MOTION,
         VARIANTS[variant], SIZES[size], className)}
       {...rest}
     />
@@ -69,7 +73,7 @@ export function Spinner({ className }: { className?: string }) {
 // ---------- surfaces ----------
 
 export function Card({ className, ...rest }: ComponentProps<"section">) {
-  return <section className={cx("overflow-hidden rounded-3xl border border-line bg-surface shadow-card", className)} {...rest} />;
+  return <section className={cx("overflow-hidden rounded-3xl border border-line bg-surface", className)} {...rest} />;
 }
 
 export function CardHeader({ title, sub, actions }: { title: ReactNode; sub?: ReactNode; actions?: ReactNode }) {
@@ -115,7 +119,7 @@ export function Empty({ children }: { children: ReactNode }) {
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cx("pulse rounded-2xl bg-sunken", className)} />;
+  return <div className={cx("shimmer rounded-2xl", className)} />;
 }
 
 // ---------- pills ----------
@@ -160,7 +164,17 @@ export function ReceiptStatusPill({ status, stage, checksPending }: { status: Re
   if (stage === "failed") return <Pill tone="bad">Couldn’t read</Pill>;
   if (stage !== "done") return <Pill tone="accent"><Spinner className="size-3" />{STAGE[stage]}</Pill>;
   if (checksPending || !status) return <Pill tone="neutral"><Spinner className="size-3" />Checking</Pill>;
-  return <Pill tone={STATUS_TONE[status]}><StatusIcon status={status} />{RECEIPT_STATUS[status]}</Pill>;
+  return <LandedStatus status={status} />;
+}
+
+/** The verdict pops once when it lands or changes, not when a page first shows it. */
+function LandedStatus({ status }: { status: ReceiptStatus }) {
+  const changes = useChangeCount(status);
+  return (
+    <span key={changes} className={cx("inline-flex", changes > 0 && "pop")}>
+      <Pill tone={STATUS_TONE[status]}><StatusIcon status={status} />{RECEIPT_STATUS[status]}</Pill>
+    </span>
+  );
 }
 
 const SEVERITY_TONE: Record<Severity, Tone> = { REJECT: "bad", NEEDS_REVIEW: "warn", NO_INPUT_VAT: "info" };
@@ -180,9 +194,15 @@ export function Money({ value, className }: { value: number | null | undefined; 
   return <span className={cx("num", value == null && "text-faint", className)}>{peso(value)}</span>;
 }
 
-export function Stat({ label, value, tone, hint }: { label: string; value: number | null | undefined; tone?: "bad" | "ok" | "warn"; hint?: string }) {
+/** A key figure. When it changes it flashes once: green if the change is good news, red if bad
+ *  (`better` says which direction is good), neutral if neither. The number itself never animates. */
+export function Stat({ label, value, tone, hint, better }: {
+  label: string; value: number | null | undefined; tone?: "bad" | "ok" | "warn"; hint?: string; better?: "up" | "down";
+}) {
+  const dir = useDirection(value);
+  const flash = !dir ? undefined : !better ? "flash" : dir === better ? "flash-up" : "flash-down";
   return (
-    <div className="rounded-3xl border border-line bg-surface px-5 py-4 shadow-card">
+    <div key={flash ? `${value}` : "still"} className={cx("rounded-3xl border border-line bg-surface px-5 py-4", flash)}>
       <dt className="text-xs font-medium uppercase tracking-wide text-muted">{label}</dt>
       <dd className={cx("mt-2 text-2xl font-semibold tracking-tight", tone === "bad" && "text-bad", tone === "ok" && "text-ok", tone === "warn" && "text-warn")}>
         <Money value={value} />
@@ -223,5 +243,41 @@ export function Crumbs({ items }: { items: { label: string; href?: string }[] })
         </span>
       ))}
     </nav>
+  );
+}
+
+/** Segmented control / tabs with a highlight that slides to the chosen option. */
+export function Segmented<T extends string | undefined>({ options, value, onChange, label, role = "radiogroup", size = "md", disabled }: {
+  options: { value: T; label: ReactNode }[]; value: T; onChange: (v: T) => void; label: string;
+  role?: "radiogroup" | "tablist"; size?: "sm" | "md"; disabled?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const box = useIndicator(ref, value);
+  const item = role === "tablist" ? "tab" : "radio";
+  return (
+    <div ref={ref} role={role} aria-label={label} className="relative inline-flex w-fit max-w-full flex-wrap rounded-full border border-line-strong bg-sunken p-0.5">
+      {box && (
+        <span aria-hidden className="absolute rounded-full bg-surface ring-1 ring-accent/30 transition-all duration-200 ease-out"
+          style={{ left: box.left, top: box.top, width: box.width, height: box.height }} />
+      )}
+      {options.map((o) => (
+        <button key={String(o.value ?? "all")} type="button" role={item} data-active={value === o.value}
+          aria-checked={item === "radio" ? value === o.value : undefined} aria-selected={item === "tab" ? value === o.value : undefined}
+          disabled={disabled} onClick={() => value !== o.value && onChange(o.value)}
+          className={cx("relative rounded-full transition-colors duration-150", size === "sm" ? "px-3 py-1 text-xs font-medium" : "px-3.5 py-1.5 text-sm",
+            value === o.value ? "font-medium text-accent" : "text-muted hover:text-ink")}>
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export function Sparkle({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className} fill="currentColor">
+      <path d="M11 1.5l2.4 6.6 6.6 2.4-6.6 2.4L11 19.5l-2.4-6.6L2 10.5l6.6-2.4z" />
+      <path d="M19 14.5l1.1 2.9 2.9 1.1-2.9 1.1-1.1 2.9-1.1-2.9-2.9-1.1 2.9-1.1z" opacity=".8" />
+    </svg>
   );
 }

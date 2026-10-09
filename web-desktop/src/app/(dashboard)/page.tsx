@@ -4,19 +4,20 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button, ButtonLink, Card, CardHeader, cx, Empty, inputClass, Label, LiquidationStatusPill, Money, Notice, PageHeader, selectClass, Skeleton } from "@/components/ui";
+import { DownloadButton } from "@/components/Downloads";
+import { Button, Card, CardHeader, cx, Empty, inputClass, Label, LiquidationStatusPill, Money, Notice, PageHeader, Segmented, selectClass, Skeleton } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, LIQUIDATION_STATUS } from "@/lib/labels";
 import { useCashAdvances, useEmployees } from "@/lib/queries";
 import { liquidationHref } from "@/lib/routes";
 import type { CashAdvance, Employee, LiquidationStatus } from "@/lib/types";
 
-type Filter = LiquidationStatus | undefined;
+type Filter = LiquidationStatus | "ARCHIVED" | undefined;
 
 export default function Home() {
   const [filter, setFilter] = useState<Filter>(undefined);
   const [creating, setCreating] = useState(false);
-  const advances = useCashAdvances(filter);
+  const advances = useCashAdvances(filter === "ARCHIVED" ? undefined : filter, filter === "ARCHIVED");
 
   return (
     <div className="space-y-8">
@@ -29,28 +30,22 @@ export default function Home() {
       {creating && <NewCashAdvance onDone={() => setCreating(false)} />}
 
       <Card>
-        <div className="flex flex-wrap gap-1 border-b border-line px-4 py-3" role="tablist" aria-label="Filter by status">
-          {([undefined, "OPEN", "RETURNED", "APPROVED"] as Filter[]).map((f) => (
-            <button
-              key={f ?? "ALL"}
-              type="button"
-              role="tab"
-              aria-selected={filter === f}
-              onClick={() => setFilter(f)}
-              className={cx("rounded-full px-4 py-1.5 text-sm", filter === f ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-sunken hover:text-ink")}
-            >
-              {f ? LIQUIDATION_STATUS[f] : "All"}
-            </button>
-          ))}
+        <div className="border-b border-line px-4 py-3">
+          <Segmented role="tablist" label="Filter by status" value={filter} onChange={setFilter}
+            options={([undefined, "OPEN", "RETURNED", "APPROVED", "ARCHIVED"] as Filter[]).map((f) => ({
+              value: f, label: f === "ARCHIVED" ? "Archived" : f ? LIQUIDATION_STATUS[f] : "All",
+            }))} />
         </div>
         {advances.isPending ? (
           <div className="space-y-2 p-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14" />)}</div>
         ) : advances.isError ? (
           <div className="p-4"><Notice tone="bad">Couldn’t load Cash Advances: {errorMessage(advances.error)}</Notice></div>
         ) : advances.data.length === 0 ? (
-          <Empty>No Cash Advances{filter ? ` with status ${LIQUIDATION_STATUS[filter].toLowerCase()}` : " yet"}.</Empty>
+          <Empty>{filter === "ARCHIVED" ? "Nothing archived. Approved or Returned Cash Advances can be archived from their Liquidation." : `No Cash Advances${filter ? ` with status ${LIQUIDATION_STATUS[filter].toLowerCase()}` : " yet"}.`}</Empty>
         ) : (
-          <AdvanceTable rows={advances.data} />
+          <div className={cx("transition-opacity duration-150", advances.isPlaceholderData && "opacity-60")}>
+            <AdvanceTable rows={advances.data} />
+          </div>
         )}
       </Card>
 
@@ -74,7 +69,7 @@ function AdvanceTable({ rows }: { rows: CashAdvance[] }) {
             <th className="px-4 py-2 text-right font-medium">Balance</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-line">
+        <tbody className="stagger divide-y divide-line">
           {rows.map((ca) => {
             const t = ca.liquidation.totals;
             return (
@@ -155,7 +150,7 @@ function NewCashAdvance({ onDone }: { onDone: () => void }) {
         <Label label="Employee">
           <select className={selectClass} value={employee} onChange={(e) => setEmployee(e.target.value)} required>
             <option value="" disabled>Choose…</option>
-            {employees.data?.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            {employees.data?.filter((e) => e.active).map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             <option value={NEW_EMPLOYEE}>+ New Employee…</option>
           </select>
         </Label>
@@ -199,9 +194,9 @@ function SlspExport() {
       />
       <div className="flex flex-wrap items-center gap-3 px-6 py-4">
         <input type="month" className={cx(inputClass, "w-48!")} value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month" />
-        <ButtonLink href={month ? `/api/exports/slsp.csv?month=${month}` : undefined} aria-disabled={!month} download>
+        <DownloadButton href={month ? `/api/exports/slsp.csv?month=${month}` : undefined} disabled={!month}>
           Download CSV
-        </ButtonLink>
+        </DownloadButton>
       </div>
     </Card>
   );

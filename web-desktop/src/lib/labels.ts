@@ -23,8 +23,8 @@ export const LIQUIDATION_STATUS: Record<LiquidationStatus, string> = {
 export const STAGE: Record<Stage, string> = {
   queued: "Queued",
   ocr: "Reading text",
-  extracting: "Extracting fields",
-  checking: "Checking BIR rules",
+  extracting: "Reading details",
+  checking: "Checking against BIR rules",
   done: "Done",
   failed: "Failed",
 };
@@ -34,7 +34,7 @@ export const CHECK: Record<string, string> = {
   DOC_TYPE: "Document type",
   SELLER_TIN: "Seller TIN",
   BUYER_DETAILS: "Buyer details",
-  VAT_ARITHMETIC: "VAT arithmetic",
+  VAT_ARITHMETIC: "VAT computation",
   DUPLICATE: "Duplicate",
   DATE: "Date",
 };
@@ -109,6 +109,13 @@ export const FIELD_GROUPS: { title: string; fields: FieldDef[] }[] = [
     ],
   },
 ];
+
+/** 123456789 / 12345678900000 -> 123-456-789 / 123-456-789-00000 (any branch length). */
+export function formatTinFull(v: string): string {
+  const d = v.replace(/\D/g, "");
+  if (d.length < 9) return v;
+  return `${d.slice(0, 3)}-${d.slice(3, 6)}-${d.slice(6, 9)}${d.length > 9 ? `-${d.slice(9)}` : ""}`;
+}
 
 export function formatTin(v: unknown): string {
   const s = String(v ?? "");
