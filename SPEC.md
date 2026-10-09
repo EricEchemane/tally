@@ -149,7 +149,8 @@ No line items. The prompt rules, refined from the benchmark:
 ### Corrections (Reviewer)
 
 - **The value used** for a field is the correction if there is one, otherwise the derived value.
-- **Editable:** seller TIN and branch, invoice number, date, the 4 amounts, total, buyer name and TIN, doc type, VAT status, Expense Category, particulars, `withholding_tax` (Reviewer-only, never computed).
+- **Editable:** seller TIN and branch, invoice number, date, the 4 amounts, total, buyer name and TIN, doc type, VAT status, Expense Category, particulars, `withholding_tax` (Reviewer-only, never computed), and **seller name** (display-only).
+- Seller name was made editable after the fixtures showed OCR often misses or garbles store names (logos, torn or faded headers), and a prompt change couldn't fix it.
 - The original Extraction is always kept.
 
 ---
