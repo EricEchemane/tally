@@ -3,7 +3,7 @@
 **Name:** **Tally**, chosen by the user over Vouch. It reads as "the receipts tally with the cash advance". If the name is ever made public beyond the hackathon, note that TallyPrime (accounting software) and Tally (forms) exist.
 **Tagline:** *Tally: every receipt checked against BIR rules, on your own laptop.*
 **Format:** 5 min pitch/demo + 3 min Q&A, live and remote. Submission: video, public repo, LinkedIn post.
-**Roles:** updated for Eric on macOS and Simon on Windows. Eric runs the live demo from the Mac: dashboard, phone, network monitor and clip, since the phone must be on the Mac's network. Simon presents the problem and why-local beats (0:00–1:00) from slides and takes the deployment and e-invoice Q&A questions.
+**Roles:** Both are in the same room. Eric narrates and drives the dashboard on the Mac. Simon holds the phone (on the Mac's network), watches the network monitor window, starts the internet-off clip, and takes the deployment and e-invoice Q&A questions.
 **Story:** "A real liquidation from an accountant we interviewed": a ₱15,000 Cash Advance, ₱14,500 spent, ₱500 to return. Demo Company: Bayanihan Demo Corp (TIN 123-456-789-00000).
 
 ## Live demo (5:00)

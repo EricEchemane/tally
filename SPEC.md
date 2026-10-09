@@ -323,7 +323,7 @@ All of them read the DB through Eric's schema; Eric wires the routes to them.
 **Syncing:**
 - Short-lived branches per area, merged to `main` often (at least every 2 hours).
 - Eric pulls Simon's UI onto the Mac for real end-to-end runs at hours 8, 12 and 14.
-- For an occasional remote real run, share Eric's Mac over Tailscale. This is for development only, never in the demo.
+- **Same room:** for a real run any time, Simon points his `web/` rewrite at Eric's Mac over the shared Wi-Fi (`API_URL=http://<eric-mac-ip>:8000`). Eric starts FastAPI with `--host 0.0.0.0` **during development only**; in the demo it stays on localhost. Fake pipeline mode remains Simon's default, so the 8GB Mac isn't loaded twice.
 
 **Cut list if behind** (cut in this order):
 1. The SLSP CSV
@@ -344,7 +344,7 @@ All of them read the DB through Eric's schema; Eric wires the routes to them.
 
 ## 10. Demo
 
-The full script is in [research/09-demo-script.md](.wayfinder/liquidation-review/research/09-demo-script.md). Format: 5 min demo + 3 min Q&A. Eric runs the live demo from the Mac: dashboard, phone, network monitor and clip, since the phone must be on the Mac's network. Simon presents the problem and why-local beats (0:00–1:00) from slides and takes the deployment and e-invoice Q&A questions.
+The full script is in [research/09-demo-script.md](.wayfinder/liquidation-review/research/09-demo-script.md). Format: 5 min demo + 3 min Q&A. Both are in the same room. Eric narrates and drives the dashboard on the Mac. Simon holds the phone (on the Mac's network), watches the network monitor window, starts the internet-off clip, and takes the deployment and e-invoice Q&A questions.
 
 1. Problem (the accountant's words)
 2. Why local
