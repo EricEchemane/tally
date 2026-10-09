@@ -18,6 +18,7 @@ import { useLive } from "@/lib/live";
 import { useLiquidation } from "@/lib/queries";
 import { receiptHref } from "@/lib/routes";
 import type { Liquidation, ReceiptSummary } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 function LiquidationView() {
   const id = Number(useSearchParams().get("id"));
@@ -116,27 +117,31 @@ function Actions({ liq, onEdit }: { liq: Liquidation; onEdit?: () => void }) {
     qc.setQueryData(["liquidation", liq.id], l);
     qc.invalidateQueries({ queryKey: ["cash-advances"] });
   };
-  const approve = useMutation({ mutationFn: () => api.post<Liquidation>(`/api/liquidations/${liq.id}/approve`), onSuccess: done });
+  const approve = useMutation({ mutationFn: () => api.post<Liquidation>(`/api/liquidations/${liq.id}/approve`),
+    onSuccess: (l) => { done(l); toast("Liquidation approved", { body: "Totals are now frozen." }); } });
   const ret = useMutation({
     mutationFn: () => api.post<Liquidation>(`/api/liquidations/${liq.id}/return`, { note: note.trim() || null }),
     onSuccess: (l) => {
       done(l);
+      toast(`Returned to ${liq.cash_advance.employee.name}`, { body: "The open Findings went back as the reasons." });
       setReturning(false);
       setNote("");
     },
   });
-  const reopen = useMutation({ mutationFn: () => api.post<Liquidation>(`/api/liquidations/${liq.id}/reopen`), onSuccess: done });
+  const reopen = useMutation({ mutationFn: () => api.post<Liquidation>(`/api/liquidations/${liq.id}/reopen`),
+    onSuccess: (l) => { done(l); toast("Liquidation reopened", { body: "Receipts can be added and reviewed again." }); } });
   const router = useRouter();
   const ca = liq.cash_advance;
   const refresh = () => {
     qc.invalidateQueries({ queryKey: ["liquidation", liq.id] });
     qc.invalidateQueries({ queryKey: ["cash-advances"] });
   };
-  const archive = useMutation({ mutationFn: () => api.post(`/api/cash-advances/${ca.id}/${ca.archived ? "unarchive" : "archive"}`), onSuccess: refresh });
+  const archive = useMutation({ mutationFn: () => api.post(`/api/cash-advances/${ca.id}/${ca.archived ? "unarchive" : "archive"}`),
+    onSuccess: () => { refresh(); toast(ca.archived ? "Back on the working list" : "Archived", { body: ca.archived ? undefined : "It still counts in the Overview and exports." }); } });
   const [deleting, setDeleting] = useState(false);
   const del = useMutation({
     mutationFn: () => api.delete(`/api/cash-advances/${ca.id}`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cash-advances"] }); router.push("/"); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cash-advances"] }); toast("Cash Advance deleted"); router.push("/"); },
   });
   // A blocked-approval message goes stale as soon as the Findings change.
   const { reset } = approve;
@@ -247,7 +252,7 @@ function BulkBar({ liq, selected, setSelected }: { liq: Liquidation; selected: n
   const [mode, setMode] = useState<"idle" | "move" | "delete">("idle");
   const del = useMutation({
     mutationFn: async () => { for (const rid of selected) await api.delete(`/api/receipts/${rid}`); },
-    onSuccess: () => { setSelected([]); setMode("idle"); qc.invalidateQueries({ queryKey: ["liquidation", liq.id] }); qc.invalidateQueries({ queryKey: ["cash-advances"] }); },
+    onSuccess: () => { toast(`${selected.length} receipt${selected.length === 1 ? "" : "s"} deleted`); setSelected([]); setMode("idle"); qc.invalidateQueries({ queryKey: ["liquidation", liq.id] }); qc.invalidateQueries({ queryKey: ["cash-advances"] }); },
   });
   const all = liq.receipts.map((r) => r.id);
   const n = selected.length;

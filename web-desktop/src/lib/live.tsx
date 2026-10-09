@@ -44,6 +44,7 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
             setState((s) => ({ ...s, stages: { ...s.stages, [e.receipt_id]: { stage: e.stage, queue_position: e.queue_position } } }));
             qc.invalidateQueries({ queryKey: ["receipt", e.receipt_id] });
             qc.invalidateQueries({ queryKey: ["liquidation", e.liquidation_id] });
+            qc.invalidateQueries({ queryKey: ["cash-advances"] }); // the list's "Next step" shows reading/review counts
             break;
           case "receipt.ocr_done":
             setState((s) => ({ ...s, previews: { ...s.previews, [e.receipt_id]: e.preview } }));

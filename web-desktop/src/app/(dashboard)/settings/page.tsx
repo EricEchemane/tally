@@ -12,6 +12,7 @@ import { BUYER_RULE, formatTinFull } from "@/lib/labels";
 import { useCompany } from "@/lib/queries";
 import { useSetupStatus } from "@/lib/setup";
 import type { BuyerDetailsRule, Company } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 export default function SettingsPage() {
   const setup = useSetupStatus();
@@ -42,6 +43,7 @@ function CompanyCard() {
   const save = useMutation({
     mutationFn: () => api.patch<Company>("/api/company", { name, tin, buyer_details_rule: rule }),
     onSuccess: (c) => {
+      toast("Company details saved", { body: "Open Liquidations were re-checked." });
       qc.setQueryData(["company"], c);
       qc.invalidateQueries({ queryKey: ["setup"] });
     },
@@ -68,7 +70,6 @@ function CompanyCard() {
           ))}
         </fieldset>
         {save.isError && <Notice tone="bad" className="sm:col-span-2">{errorMessage(save.error)}</Notice>}
-        {save.isSuccess && !changed && <Notice tone="ok" className="sm:col-span-2">Saved. Open Liquidations were re-checked.</Notice>}
         <div className="sm:col-span-2">
           <Button type="submit" variant="primary" busy={save.isPending} disabled={!changed}>Save changes</Button>
         </div>
@@ -115,7 +116,8 @@ function DataCard() {
       if (!res.ok) throw new ApiError(res.status, body);
       return body as { from_version: string; created_at: string };
     },
-    onSuccess: () => {
+    onSuccess: (r) => {
+      toast("Backup restored", { body: `From ${r.created_at.replace("T", " ")}. Your previous data was backed up first.` });
       setFile(null);
       qc.invalidateQueries();
     },
@@ -144,9 +146,6 @@ function DataCard() {
             </>}>
             {restore.isError && <Notice tone="bad">{errorMessage(restore.error)}</Notice>}
           </Dialog>
-          {restore.isSuccess && (
-            <Notice tone="ok">Restored the backup from {restore.data.created_at.replace("T", " ")}.</Notice>
-          )}
         </div>
 
         {s && (

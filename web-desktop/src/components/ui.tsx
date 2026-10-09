@@ -5,7 +5,7 @@
 // sections stack 32 px apart (space-y-8), grids gap 16–24 px.
 // Type: page title 24 px > key figures 24 px > panel title 16 px > body 14 px > labels 12 px.
 import Link from "next/link";
-import { type ComponentProps, type ReactNode, useRef } from "react";
+import { type ComponentProps, type ReactNode, useLayoutEffect, useRef } from "react";
 import { useChangeCount, useDirection, useIndicator } from "@/lib/motion";
 import { peso } from "@/lib/api";
 import { LIQUIDATION_STATUS, RECEIPT_STATUS, SEVERITY, STAGE } from "@/lib/labels";
@@ -102,7 +102,7 @@ export function PageHeader({ crumbs, title, badge, sub, actions }: {
 }) {
   return (
     <div className="space-y-3">
-      <div className="h-5">{crumbs && <Crumbs items={crumbs} />}</div>
+      <div className="flex h-7 items-center gap-3">{crumbs && <><BackButton crumbs={crumbs} /><Crumbs items={crumbs} /></>}</div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">{title}{badge}</h1>
@@ -126,10 +126,26 @@ export function CardList({ className, ...rest }: ComponentProps<"ul">) {
 }
 export const ROW = "rounded-2xl px-4 py-3";
 
+const NOTICE_ICON: Partial<Record<Tone, string>> = {
+  ok: "M3.5 8.5l3 3 6-7",
+  warn: "M8 4.5v4.5M8 11.5v.01",
+  bad: "M4.5 4.5l7 7M11.5 4.5l-7 7",
+  info: "M8 7.5v4M8 4.5v.01",
+};
+
+/** A message in the page: an icon for its kind, and it fades in when it appears. */
 export function Notice({ tone = "info", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
+  const d = NOTICE_ICON[tone];
   return (
-    <div role={tone === "bad" ? "alert" : "status"} className={cx("rounded-2xl border px-4 py-3 text-sm", TONES[tone], className)}>
-      {children}
+    <div role={tone === "bad" ? "alert" : "status"} className={cx("enter flex gap-3 rounded-2xl border px-4 py-3 text-sm", TONES[tone], className)}>
+      {d && (
+        <span aria-hidden className="mt-px grid size-5 shrink-0 place-items-center rounded-full bg-current/10">
+          <svg viewBox="0 0 16 16" className="draw size-3" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+            <path d={d} pathLength={1} />
+          </svg>
+        </span>
+      )}
+      <div className="min-w-0 flex-1">{children}</div>
     </div>
   );
 }
@@ -203,8 +219,29 @@ export function SeverityPill({ severity }: { severity: Severity }) {
 }
 
 const LIQ_TONE: Record<LiquidationStatus, Tone> = { OPEN: "accent", APPROVED: "ok", RETURNED: "warn" };
+/** Pops once when the status changes in front of you (Open -> Approved), not on page load. */
 export function LiquidationStatusPill({ status }: { status: LiquidationStatus }) {
-  return <Pill tone={LIQ_TONE[status]}>{LIQUIDATION_STATUS[status]}</Pill>;
+  const changes = useChangeCount(status);
+  return (
+    <span key={changes} className={cx("inline-flex", changes > 0 && "pop")}>
+      <Pill tone={LIQ_TONE[status]}>{LIQUIDATION_STATUS[status]}</Pill>
+    </span>
+  );
+}
+
+/** What the Reviewer does next with a Liquidation, in the order it gets decided: a Returned one waits on
+ *  the Employee; an Open one is read, then reviewed, then approved. Shown in the Cash Advance list. */
+export function NextStep({ status, counts }: {
+  status: LiquidationStatus; counts: { receipts: number; processing: number; failed: number; needs_review: number };
+}) {
+  const n = (k: number, one: string, many = `${one}s`) => `${k} ${k === 1 ? one : many}`;
+  if (status === "APPROVED") return <span className="text-sm text-muted">Done</span>;
+  if (status === "RETURNED") return <Pill tone="warn">Waiting on Employee</Pill>;
+  if (counts.receipts === 0) return <span className="text-sm text-muted">Scan receipts</span>;
+  if (counts.processing > 0) return <Pill tone="accent"><Spinner className="size-3" />Reading {n(counts.processing, "receipt")}</Pill>;
+  if (counts.needs_review > 0) return <Pill tone="warn">Review {n(counts.needs_review, "receipt")}</Pill>;
+  if (counts.failed > 0) return <Pill tone="bad">{n(counts.failed, "photo")} to retake</Pill>;
+  return <Pill tone="ok"><StatusIcon status="ACCEPTED" />Ready to approve</Pill>;
 }
 
 // ---------- figures ----------
@@ -240,6 +277,69 @@ export const inputClass =
 
 export const selectClass = inputClass + " appearance-none pr-10 select-chevron";
 
+// ---------- money ----------
+
+/** Keep what a peso amount can be: digits, one decimal point, at most 2 decimals. "₱15,000.50" -> "15000.50". */
+export function cleanAmount(text: string): string {
+  const s = text.replace(/[^\d.]/g, "");
+  const dot = s.indexOf(".");
+  const whole = (dot === -1 ? s : s.slice(0, dot)).replace(/^0+(?=\d)/, "");
+  return dot === -1 ? whole : `${whole || "0"}.${s.slice(dot + 1).replace(/\./g, "").slice(0, 2)}`;
+}
+/** "15000.5" -> "15,000.5" (display only; the value stays plain digits). */
+export function groupAmount(raw: string): string {
+  const [whole, dec] = raw.split(".");
+  const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return dec === undefined ? grouped : `${grouped}.${dec}`;
+}
+
+/** A peso amount field. Commas appear as you type (the cursor keeps its place among the digits); leaving the
+ *  field adds the two decimals. `value` and `onChange` use the plain number text ("15000.50"), which the API takes. */
+export function MoneyInput({ value, onChange, className, onBlur, ...rest }:
+  Omit<ComponentProps<"input">, "value" | "onChange" | "type"> & { value: string; onChange: (raw: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null);
+  const caret = useRef<number | null>(null); // digits (and the point) before the cursor, to restore after formatting
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el || caret.current === null || document.activeElement !== el) return;
+    let seen = 0, pos = 0;
+    while (pos < el.value.length && seen < caret.current) { if (/[\d.]/.test(el.value[pos])) seen++; pos++; }
+    el.setSelectionRange(pos, pos);
+    caret.current = null;
+  });
+  return (
+    <div className={cx("relative", className)}>
+      <span aria-hidden className="pointer-events-none absolute inset-y-0 left-4 grid place-items-center text-sm text-muted">₱</span>
+      <input
+        ref={ref}
+        {...rest}
+        type="text"
+        inputMode="decimal"
+        autoComplete="off"
+        className={cx(inputClass, "num h-full pl-8")}
+        value={groupAmount(value)}
+        onChange={(e) => {
+          const before = e.target.value.slice(0, e.target.selectionStart ?? e.target.value.length);
+          caret.current = before.replace(/[^\d.]/g, "").length;
+          onChange(cleanAmount(e.target.value));
+        }}
+        onBlur={(e) => {
+          if (value !== "" && Number(value) >= 0) onChange(Number(value).toFixed(2));
+          onBlur?.(e);
+        }}
+      />
+    </div>
+  );
+}
+
+export function PlusIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden className={cx("size-4", className)} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+      <path d="M8 3v10M3 8h10" />
+    </svg>
+  );
+}
+
 /** Multi-line fields can't be pills: same look, panel-inner radius. */
 export const textareaClass = inputClass.replace("h-10 ", "").replace("rounded-full", "rounded-2xl") + " min-h-20 py-2.5";
 
@@ -250,6 +350,20 @@ export function Label({ label, children, hint }: { label: string; children: Reac
       {children}
       {hint && <span className="block text-xs text-muted">{hint}</span>}
     </label>
+  );
+}
+
+/** On a detail page: back to the parent, the breadcrumb just before this page (a receipt -> its Liquidation). */
+function BackButton({ crumbs }: { crumbs: { label: string; href?: string }[] }) {
+  const parent = [...crumbs].reverse().find((c) => c.href);
+  if (!parent?.href) return null;
+  return (
+    <Link href={parent.href} aria-label={`Back to ${parent.label}`} title={`Back to ${parent.label}`}
+      className="grid size-7 shrink-0 place-items-center rounded-full border border-line text-muted transition-[color,background-color,transform] duration-150 hover:-translate-x-0.5 hover:bg-sunken hover:text-ink active:scale-95">
+      <svg viewBox="0 0 16 16" aria-hidden className="size-3.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10 3.5L5.5 8l4.5 4.5" />
+      </svg>
+    </Link>
   );
 }
 

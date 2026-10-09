@@ -21,7 +21,10 @@ export interface Totals {
 export interface CashAdvance {
   id: number; employee: Employee; amount: number; purpose: string;
   released_on: string; spending_end_on: string; archived: boolean;
-  liquidation: { id: number; status: LiquidationStatus; totals: Totals };
+  liquidation: {
+    id: number; status: LiquidationStatus; totals: Totals;
+    counts: { receipts: number; processing: number; failed: number; needs_review: number };
+  };
 }
 
 export interface ReceiptSummary {

@@ -8,7 +8,7 @@ import { BUYER_RULE } from "@/lib/labels";
 import { useLive } from "@/lib/live";
 import { useCompany, useHealth } from "@/lib/queries";
 import type { BuyerDetailsRule, Company } from "@/lib/types";
-import { DownloadToasts } from "./Downloads";
+import { Toasts } from "./Toasts";
 import { QuitGuard } from "./QuitGuard";
 import { QuestionsPanel } from "./QuestionsPanel";
 import { SetupGate } from "./SetupGate";
@@ -90,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         Every receipt is read and checked on this computer. No request leaves the machine.
       </footer>
       <QuestionsPanel open={asking} onClose={() => setAsking(false)} />
-      <DownloadToasts />
+      <Toasts />
       <QuitGuard />
     </>
   );

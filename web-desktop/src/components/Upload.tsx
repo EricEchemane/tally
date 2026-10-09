@@ -5,6 +5,7 @@ import { api, errorMessage } from "@/lib/api";
 import { useCaptureLink } from "@/lib/queries";
 import { Dialog } from "./Dialog";
 import { Button, Card, CardHeader, cx, Notice, Spinner } from "./ui";
+import { toast } from "@/lib/toast";
 
 const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
 
@@ -15,7 +16,10 @@ export function UploadDropzone({ liquidationId }: { liquidationId: number }) {
   const [over, setOver] = useState(false);
   const upload = useMutation({
     mutationFn: (files: File[]) => api.upload<{ id: number }[]>(`/api/liquidations/${liquidationId}/receipts`, files),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["liquidation", liquidationId] }),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["liquidation", liquidationId] });
+      toast(`${r.length} photo${r.length === 1 ? "" : "s"} added`, { body: "Tally is reading them now." });
+    },
   });
 
   const send = (list: FileList | null) => {

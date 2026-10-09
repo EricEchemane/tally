@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import {
-  Button, Card, CardHeader, cx, inputClass, Money, Notice, PageHeader, Pill, ReceiptStatusPill, SeverityPill, Skeleton, StatusIcon,
+  Button, Card, CardHeader, cx, inputClass, Money, MoneyInput, Notice, PageHeader, Pill, ReceiptStatusPill, SeverityPill, Skeleton, StatusIcon,
 } from "@/components/ui";
 import { api, ApiError, errorMessage, peso } from "@/lib/api";
 import { CHECK, FIELD_GROUPS, formatDate, formatTin, STAGE, type FieldDef } from "@/lib/labels";
@@ -15,6 +15,7 @@ import { liquidationHref } from "@/lib/routes";
 import { Dialog } from "@/components/Dialog";
 import { MoveReceipts } from "@/components/MoveReceipts";
 import type { Finding, Receipt } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 function ReceiptView() {
   const id = Number(useSearchParams().get("id"));
@@ -199,7 +200,7 @@ function FindingRow({ f, receiptId, canAct }: { f: Finding; receiptId: number; c
           className="enter flex flex-wrap gap-2 pt-1"
           onSubmit={(e) => {
             e.preventDefault();
-            if (reason.trim()) dismiss.mutate(undefined, { onSuccess: () => setDismissing(false) });
+            if (reason.trim()) dismiss.mutate(undefined, { onSuccess: () => { setDismissing(false); toast("Accepted anyway", { body: "Your reason is kept with the Finding." }); } });
           }}
         >
           <input className={cx(inputClass, "h-8 min-w-0 flex-1")} autoFocus placeholder="Why is this fine? (required)"
@@ -262,14 +263,14 @@ function FieldRow({ r, def, correction, editable }: {
   const revert = useReceiptAction(r.id, () => api.delete<Receipt>(`/api/receipts/${r.id}/corrections/${def.key}`));
 
   const start = () => {
-    setDraft(value == null ? "" : def.kind === "bool" ? String(Boolean(value)) : String(value));
+    setDraft(value == null ? "" : def.kind === "bool" ? String(Boolean(value)) : def.kind === "amount" ? Number(value).toFixed(2) : String(value));
     setEditing(true);
     save.reset();
   };
   const submit = () => {
     // Values go to the API as typed; it validates and normalizes them (amounts to centavos, TINs to digits).
     const v = def.kind === "bool" ? (draft === "" ? null : draft === "true") : draft.trim() === "" ? null : draft.trim();
-    save.mutate(v, { onSuccess: () => setEditing(false) });
+    save.mutate(v, { onSuccess: () => { setEditing(false); toast(`${groupLabel(def)} corrected`, { body: "The checks ran again." }); } });
   };
 
   return (
@@ -340,14 +341,17 @@ function FieldInput({ def, value, onChange, label }: { def: FieldDef; value: str
       </select>
     );
   }
+  if (def.kind === "amount") {
+    return <MoneyInput className="h-8 min-w-0 flex-1" aria-label={label} autoFocus placeholder="0.00" value={value} onChange={onChange} />;
+  }
   return (
     <input
-      className={cx(cls, def.kind === "amount" && "num")}
+      className={cls}
       aria-label={label}
       autoFocus
       type={def.kind === "date" ? "date" : "text"}
-      inputMode={def.kind === "amount" ? "decimal" : def.kind === "tin" ? "numeric" : undefined}
-      placeholder={def.kind === "tin" ? "123-456-789-00000" : def.kind === "amount" ? "0.00" : undefined}
+      inputMode={def.kind === "tin" ? "numeric" : undefined}
+      placeholder={def.kind === "tin" ? "123-456-789-00000" : undefined}
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
@@ -358,7 +362,7 @@ function FailedNotice({ r, canRetry }: { r: Receipt; canRetry: boolean }) {
   const qc = useQueryClient();
   const retry = useMutation({
     mutationFn: () => api.post(`/api/receipts/${r.id}/retry`),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["receipt", r.id] }); qc.invalidateQueries({ queryKey: ["liquidation", r.liquidation_id] }); },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["receipt", r.id] }); qc.invalidateQueries({ queryKey: ["liquidation", r.liquidation_id] }); toast("Reading the photo again", { tone: "info" }); },
   });
   return (
     <Notice tone="bad">
@@ -390,6 +394,7 @@ function DeleteReceipt({ r }: { r: Receipt }) {
   const del = useMutation({
     mutationFn: () => api.delete(`/api/receipts/${r.id}`),
     onSuccess: () => {
+      toast("Receipt deleted");
       qc.removeQueries({ queryKey: ["receipt", r.id] });
       qc.invalidateQueries({ queryKey: ["liquidation", r.liquidation_id] });
       router.push(liquidationHref(r.liquidation_id));

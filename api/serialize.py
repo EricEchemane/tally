@@ -108,7 +108,14 @@ def totals(conn: sqlite3.Connection, liquidation_id: int) -> dict[str, float]:
 
 
 def liquidation_summary(conn: sqlite3.Connection, liq: sqlite3.Row) -> dict:
-    return {"id": liq["id"], "status": liq["status"], "totals": totals(conn, liq["id"])}
+    """For lists: status, totals, and the receipt counts that decide the Reviewer's next step."""
+    counts = conn.execute(
+        "SELECT COUNT(*) AS receipts,"
+        " COALESCE(SUM(stage NOT IN ('done', 'failed') OR (stage = 'done' AND checks_run = 0)), 0) AS processing,"
+        " COALESCE(SUM(stage = 'failed'), 0) AS failed,"
+        " COALESCE(SUM(status = 'NEEDS_REVIEW'), 0) AS needs_review"
+        " FROM receipt WHERE liquidation_id = ?", (liq["id"],)).fetchone()
+    return {"id": liq["id"], "status": liq["status"], "totals": totals(conn, liq["id"]), "counts": dict(counts)}
 
 
 def liquidation_detail(conn: sqlite3.Connection, liq: sqlite3.Row) -> dict:

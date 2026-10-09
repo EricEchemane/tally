@@ -139,3 +139,8 @@ def test_backup_then_restore_round_trip(client):
     assert client.get(f"/api/receipts/{rid}/image").status_code == 200              # photos came back too
     bad = admin.post("/api/setup/restore", files={"file": ("x.zip", b"not a zip", "application/zip")})
     assert bad.status_code == 422
+
+
+def test_list_carries_the_counts_for_the_next_step(client):
+    ca = client.get("/api/cash-advances").json()[0]
+    assert ca["liquidation"]["counts"] == {"receipts": 4, "processing": 0, "failed": 0, "needs_review": 1}

@@ -38,13 +38,21 @@ The decisions behind the desktop dashboard's look, and the reasons. Values (colo
 - **Numbers never animate:** an accounting screen never shows an amount that isn't real, so no count-up.
 - **Page changes crossfade** through React `<ViewTransition>`. Lists cascade. Dialogs scale in.
 - **Ask Tally** is the one expressive place: gradient button, springing panel, a thinking track, and answers revealed word by word. Everything else stays calm.
+- **Every action confirms itself:** a toast in the bottom-right corner (`toast()` in `src/lib/toast.ts`). Its icon draws in; it slides away after about 4 s, or 7 s for downloads with Show in Finder. Use one short title saying what happened ("Liquidation approved"), plus one line of consequence only when useful ("Totals are now frozen."). In-page notices carry an icon for their kind and fade in. A Liquidation's status pill pops when it changes.
 - **Reduce motion:** with macOS "Reduce motion" on, everything is instant except loading indicators.
 
 ## Home page
 
 - **Scanning is the page's main action:** a plain "Scan receipts" button (primary), with "New Cash Advance" beside it, and photos can be dropped anywhere on the page. The user rejected a feature card with a glow, a gradient badge, onboarding steps and marketing copy as cluttered "AI slop", so highlight by placement and hierarchy, not decoration.
 - **A receipt always belongs to a Liquidation,** so scanning starts with "For which Cash Advance?". It's skipped when only one is open; when none is, New Cash Advance comes first. While the AI works, the subtitle says "Reading N receipts…".
+- **No separate Liquidations page:** a Cash Advance and its Liquidation are 1:1, so a second list would repeat the first. Instead, the list's **Next step** column (replacing Status) says what the Reviewer does next: Scan receipts → Reading N receipts → Review N receipts → Ready to approve, or Waiting on Employee (Returned), or Done (Approved). That makes the list double as the review queue.
 - **No phone QR code on the home page:** it would need a capture link not tied to one Liquidation.
+
+## Money
+
+- **Shown:** every amount with ₱, thousands commas and two decimals (`peso()`), in tabular figures.
+- **Typed:** every amount field is a `MoneyInput`: ₱ inside the field, commas as you type, two decimals added on leaving the field. It accepts pasted `₱15,000.50`. The value sent to the API stays plain digits.
+- **Create buttons** (New Cash Advance, Add Employee) carry a plus icon.
 
 ## Words
 

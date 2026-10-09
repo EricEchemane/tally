@@ -7,12 +7,13 @@ import { useEffect, useState } from "react";
 import { DownloadButton } from "@/components/Downloads";
 import { ScanButton, ScanDropArea, useScan } from "@/components/Scan";
 import { useLive } from "@/lib/live";
-import { Button, Card, CardHeader, cx, Empty, inputClass, Label, LiquidationStatusPill, Money, Notice, PageHeader, Segmented, selectClass, Skeleton, Spinner } from "@/components/ui";
+import { Button, Card, CardHeader, cx, Empty, inputClass, Label, Money, NextStep, Notice, MoneyInput, PageHeader, PlusIcon, Segmented, selectClass, Skeleton, Spinner } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, LIQUIDATION_STATUS } from "@/lib/labels";
 import { useCashAdvances, useEmployees } from "@/lib/queries";
 import { liquidationHref } from "@/lib/routes";
 import type { CashAdvance, Employee, LiquidationStatus } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 type Filter = LiquidationStatus | "ARCHIVED" | undefined;
 
@@ -32,7 +33,7 @@ export default function Home() {
           ? <span className="inline-flex items-center gap-2"><Spinner /> Reading {reading} receipt{reading === 1 ? "" : "s"}…</span>
           : "Scan receipts, or drop photos anywhere on this page."}
         actions={!creating && <>
-          <Button onClick={() => setCreating(true)}>New Cash Advance</Button>
+          <Button onClick={() => setCreating(true)}><PlusIcon />New Cash Advance</Button>
           <ScanButton scan={scan} />
         </>}
       />
@@ -74,7 +75,7 @@ function AdvanceTable({ rows }: { rows: CashAdvance[] }) {
           <tr className="border-b border-line">
             <th className="px-4 py-3 font-medium">Employee</th>
             <th className="px-4 py-3 font-medium">Spending Period</th>
-            <th className="px-4 py-3 font-medium">Status</th>
+            <th className="px-4 py-3 font-medium">Next step</th>
             <th className="px-4 py-2 text-right font-medium">Cash Advance</th>
             <th className="px-4 py-2 text-right font-medium">Valid Spend</th>
             <th className="px-4 py-2 text-right font-medium">Balance</th>
@@ -94,7 +95,7 @@ function AdvanceTable({ rows }: { rows: CashAdvance[] }) {
                   <span className="block text-muted">{ca.purpose}</span>
                 </td>
                 <td className="whitespace-nowrap px-4 py-3 text-muted">{formatDate(ca.released_on)} – {formatDate(ca.spending_end_on)}</td>
-                <td className="px-4 py-3"><LiquidationStatusPill status={ca.liquidation.status} /></td>
+                <td className="px-4 py-3"><NextStep status={ca.liquidation.status} counts={ca.liquidation.counts} /></td>
                 <td className="px-4 py-3 text-right"><Money value={ca.amount} /></td>
                 <td className="px-4 py-3 text-right"><Money value={t.valid_spend} /></td>
                 <td className="whitespace-nowrap px-4 py-3 text-right">
@@ -140,6 +141,7 @@ function NewCashAdvance({ onDone }: { onDone: () => void }) {
       });
     },
     onSuccess: (ca) => {
+      toast("Cash Advance created", { body: `${ca.employee.name}: ${ca.purpose}` });
       qc.invalidateQueries({ queryKey: ["cash-advances"] });
       qc.invalidateQueries({ queryKey: ["employees"] });
       router.push(liquidationHref(ca.liquidation.id));
@@ -170,9 +172,8 @@ function NewCashAdvance({ onDone }: { onDone: () => void }) {
             <input className={inputClass} value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus required />
           </Label>
         ) : <div className="hidden sm:block" />}
-        <Label label="Amount (₱)">
-          <input className={cx(inputClass, "num")} inputMode="decimal" type="number" min="0.01" step="0.01"
-            value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="15000.00" required />
+        <Label label="Amount">
+          <MoneyInput className="h-10" value={amount} onChange={setAmount} placeholder="15,000.00" required />
         </Label>
         <Label label="Purpose">
           <input className={inputClass} value={purpose} onChange={(e) => setPurpose(e.target.value)} placeholder="Field sales trip, South Luzon" required />

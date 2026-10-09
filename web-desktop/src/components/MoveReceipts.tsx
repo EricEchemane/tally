@@ -7,6 +7,7 @@ import { api, errorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/labels";
 import { useCashAdvances } from "@/lib/queries";
 import { Button, cx, selectClass } from "./ui";
+import { toast } from "@/lib/toast";
 
 export function MoveReceipts({ receiptIds, employeeId, fromLiquidationId, onDone, onCancel }: {
   receiptIds: number[]; employeeId: number; fromLiquidationId: number; onDone: (to: number) => void; onCancel: () => void;
@@ -20,6 +21,8 @@ export function MoveReceipts({ receiptIds, employeeId, fromLiquidationId, onDone
       for (const id of receiptIds) await api.post(`/api/receipts/${id}/move`, { liquidation_id: Number(to) });
     },
     onSuccess: () => {
+      const target = targets.find((c) => c.liquidation.id === Number(to));
+      toast(`${receiptIds.length} receipt${receiptIds.length === 1 ? "" : "s"} moved`, { body: target ? `To ${target.purpose}. Checked against its Spending Period.` : undefined });
       qc.invalidateQueries({ queryKey: ["liquidation"] });
       qc.invalidateQueries({ queryKey: ["receipt"] });
       qc.invalidateQueries({ queryKey: ["cash-advances"] });

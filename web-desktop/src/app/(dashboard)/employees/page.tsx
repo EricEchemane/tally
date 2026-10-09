@@ -4,10 +4,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Dialog } from "@/components/Dialog";
-import { Button, Card, CardHeader, ROW, cx, Empty, inputClass, Notice, PageHeader, Pill, Skeleton } from "@/components/ui";
+import { Button, Card, CardHeader, PlusIcon, ROW, cx, Empty, inputClass, Notice, PageHeader, Pill, Skeleton } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
 import { useEmployees } from "@/lib/queries";
 import type { Employee } from "@/lib/types";
+import { toast } from "@/lib/toast";
 
 export default function EmployeesPage() {
   const qc = useQueryClient();
@@ -15,7 +16,8 @@ export default function EmployeesPage() {
   const [name, setName] = useState("");
   const add = useMutation({
     mutationFn: () => api.post<Employee>("/api/employees", { name: name.trim() }),
-    onSuccess: () => {
+    onSuccess: (emp) => {
+      toast(`${emp.name} added`);
       setName("");
       qc.invalidateQueries({ queryKey: ["employees"] });
     },
@@ -32,7 +34,7 @@ export default function EmployeesPage() {
         <CardHeader title="Add an Employee" />
         <form className="flex flex-wrap items-center gap-3 px-6 py-4" onSubmit={(e) => { e.preventDefault(); if (name.trim()) add.mutate(); }}>
           <input className={cx(inputClass, "max-w-sm")} value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" aria-label="Full name" />
-          <Button type="submit" variant="primary" busy={add.isPending} disabled={!name.trim()}>Add</Button>
+          <Button type="submit" variant="primary" busy={add.isPending} disabled={!name.trim()}>{!add.isPending && <PlusIcon />}Add</Button>
           {add.isError && <Notice tone="bad" className="w-full">{errorMessage(add.error)}</Notice>}
         </form>
       </Card>
@@ -73,9 +75,13 @@ function EmployeeRow({ e }: { e: Employee }) {
   };
   const save = useMutation({
     mutationFn: (body: { name?: string; active?: boolean }) => api.patch<Employee>(`/api/employees/${e.id}`, body),
-    onSuccess: () => { setRenaming(false); setDeactivating(false); done(); },
+    onSuccess: (emp, body) => {
+      setRenaming(false); setDeactivating(false); done();
+      toast(body.name ? `Renamed to ${emp.name}` : emp.active ? `${emp.name} is active again` : `${emp.name} is now inactive`,
+        { body: body.active === false ? "Their records stay; no new Cash Advances." : undefined });
+    },
   });
-  const del = useMutation({ mutationFn: () => api.delete(`/api/employees/${e.id}`), onSuccess: done });
+  const del = useMutation({ mutationFn: () => api.delete(`/api/employees/${e.id}`), onSuccess: () => { done(); toast(`${e.name} deleted`); } });
   const advances = e.cash_advances ?? 0;
   const open = e.open_liquidations ?? 0;
   const error = save.error ?? del.error;

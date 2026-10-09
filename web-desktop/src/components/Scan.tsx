@@ -12,6 +12,7 @@ import { liquidationHref } from "@/lib/routes";
 import type { CashAdvance } from "@/lib/types";
 import { Dialog } from "./Dialog";
 import { Button, Notice } from "./ui";
+import { toast } from "@/lib/toast";
 
 const photos = (list: FileList | null) =>
   Array.from(list ?? []).filter((f) => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name));
@@ -25,7 +26,8 @@ export function useScan(onNewCashAdvance: () => void) {
   const upload = useMutation({
     mutationFn: ({ ca, files }: { ca: CashAdvance; files: File[] }) =>
       api.upload(`/api/liquidations/${ca.liquidation.id}/receipts`, files).then(() => ca),
-    onSuccess: (ca) => {
+    onSuccess: (ca, { files }) => {
+      toast(`${files.length} photo${files.length === 1 ? "" : "s"} added`, { body: `To ${ca.employee.name}: ${ca.purpose}. Tally is reading them now.` });
       qc.invalidateQueries({ queryKey: ["liquidation", ca.liquidation.id] });
       router.push(liquidationHref(ca.liquidation.id));
     },

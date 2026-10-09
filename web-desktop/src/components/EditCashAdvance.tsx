@@ -6,7 +6,8 @@ import { useState } from "react";
 import { api, errorMessage } from "@/lib/api";
 import { useEmployees } from "@/lib/queries";
 import type { CashAdvance, Employee, Liquidation } from "@/lib/types";
-import { Button, Card, CardHeader, cx, inputClass, Label, Notice, selectClass } from "./ui";
+import { Button, Card, CardHeader, cx, inputClass, Label, MoneyInput, Notice, selectClass } from "./ui";
+import { toast } from "@/lib/toast";
 
 const NEW_EMPLOYEE = "new";
 
@@ -16,7 +17,7 @@ export function EditCashAdvance({ liq, onDone }: { liq: Liquidation; onDone: () 
   const employees = useEmployees();
   const [employee, setEmployee] = useState(String(ca.employee.id));
   const [newName, setNewName] = useState("");
-  const [amount, setAmount] = useState(String(ca.amount));
+  const [amount, setAmount] = useState(ca.amount.toFixed(2));
   const [purpose, setPurpose] = useState(ca.purpose);
   const [released, setReleased] = useState(ca.released_on);
   const [end, setEnd] = useState(ca.spending_end_on);
@@ -32,6 +33,7 @@ export function EditCashAdvance({ liq, onDone }: { liq: Liquidation; onDone: () 
       });
     },
     onSuccess: () => {
+      toast("Cash Advance updated", { body: liq.receipts.length ? "Every receipt was re-checked." : undefined });
       qc.invalidateQueries({ queryKey: ["liquidation", liq.id] });
       qc.invalidateQueries({ queryKey: ["cash-advances"] });
       qc.invalidateQueries({ queryKey: ["employees"] });
@@ -63,9 +65,8 @@ export function EditCashAdvance({ liq, onDone }: { liq: Liquidation; onDone: () 
             <input className={inputClass} value={newName} onChange={(e) => setNewName(e.target.value)} autoFocus required />
           </Label>
         ) : <div className="hidden sm:block" />}
-        <Label label="Amount (₱)">
-          <input className={cx(inputClass, "num")} inputMode="decimal" type="number" min="0.01" step="0.01"
-            value={amount} onChange={(e) => setAmount(e.target.value)} required />
+        <Label label="Amount">
+          <MoneyInput className="h-10" value={amount} onChange={setAmount} placeholder="15,000.00" required />
         </Label>
         <Label label="Purpose">
           <input className={inputClass} value={purpose} onChange={(e) => setPurpose(e.target.value)} required />
