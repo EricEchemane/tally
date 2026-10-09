@@ -119,11 +119,14 @@ JOIN eff ON eff.id = f.receipt_id
 WHERE f."check" = 'DUPLICATE' AND f.state != 'DISMISSED' AND {IN_PERIOD}
 ORDER BY eff.id"""
 
+# Only receipts whose status is NEEDS_REVIEW, the same rule that blocks approval: an open NEEDS_REVIEW
+# Finding on an already rejected receipt changes nothing, so it isn't on the Reviewer's list.
 SQL_NEEDS_REVIEW = EFF + """
 SELECT eff.id, eff.liquidation_id, eff.employee, eff.seller_name, f.message
 FROM finding f
 JOIN eff ON eff.id = f.receipt_id
-WHERE f.state = 'OPEN' AND f.severity = 'NEEDS_REVIEW' AND eff.liquidation_status = 'OPEN'
+WHERE f.state = 'OPEN' AND f.severity = 'NEEDS_REVIEW' AND eff.status = 'NEEDS_REVIEW'
+  AND eff.liquidation_status = 'OPEN'
 ORDER BY eff.liquidation_id, eff.id, f.id"""
 
 

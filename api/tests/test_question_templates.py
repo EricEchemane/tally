@@ -201,6 +201,9 @@ def test_q7_what_still_needs_my_review(conn):
     add_receipt(conn, 1, "NEEDS_REVIEW", [("SELLER_TIN", "missing", "NEEDS_REVIEW"), ("DATE", "missing", "NEEDS_REVIEW")],
                 seller_name="Lawson")
     add_receipt(conn, 1, "REJECT", [("VAT_ARITHMETIC", "mismatch", "REJECT", "CONFIRMED")])  # resolved
+    # Already rejected: its open NEEDS_REVIEW Finding changes nothing, so it isn't listed (same rule as approval).
+    add_receipt(conn, 1, "REJECT", [("DOC_TYPE", "official_receipt", "REJECT"), ("SELLER_TIN", "missing", "NEEDS_REVIEW")],
+                seller_name="Cebu restaurant")
     liq2 = add_employee_advance(conn, "Maria Santos", 3000, "2026-04-01")
     add_receipt(conn, liq2, "NEEDS_REVIEW", [("DATE", "missing", "NEEDS_REVIEW")])
     conn.execute("UPDATE liquidation SET status = 'RETURNED' WHERE id = ?", (liq2,))
