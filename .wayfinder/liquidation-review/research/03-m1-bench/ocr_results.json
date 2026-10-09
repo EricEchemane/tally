@@ -1,0 +1,106 @@
+[
+ {
+  "file": "dup-7eleven-blurry",
+  "ocr_s": 0.69,
+  "rotated": 0,
+  "rows": 40,
+  "mean_conf": 0.932,
+  "min_conf": 0.3
+ },
+ {
+  "file": "dup-mrdiy-rotated",
+  "ocr_s": 1.63,
+  "rotated": -90,
+  "rows": 44,
+  "mean_conf": 1.0,
+  "min_conf": 1.0
+ },
+ {
+  "file": "foreign-us-receipt",
+  "ocr_s": 0.28,
+  "rotated": 0,
+  "rows": 19,
+  "mean_conf": 0.963,
+  "min_conf": 0.3
+ },
+ {
+  "file": "nonvat-mouthfeel",
+  "ocr_s": 0.41,
+  "rotated": 0,
+  "rows": 31,
+  "mean_conf": 1.0,
+  "min_conf": 1.0
+ },
+ {
+  "file": "or-cebu-2022-multi-finding",
+  "ocr_s": 0.35,
+  "rotated": 0,
+  "rows": 29,
+  "mean_conf": 0.988,
+  "min_conf": 0.5
+ },
+ {
+  "file": "out-of-period-jollibee-2025",
+  "ocr_s": 0.39,
+  "rotated": 0,
+  "rows": 41,
+  "mean_conf": 0.981,
+  "min_conf": 0.5
+ },
+ {
+  "file": "valid-7eleven",
+  "ocr_s": 0.71,
+  "rotated": 0,
+  "rows": 51,
+  "mean_conf": 0.951,
+  "min_conf": 0.3
+ },
+ {
+  "file": "valid-bf-sinangag",
+  "ocr_s": 0.4,
+  "rotated": 0,
+  "rows": 33,
+  "mean_conf": 0.989,
+  "min_conf": 0.5
+ },
+ {
+  "file": "valid-landmark-vat-exempt-mix",
+  "ocr_s": 0.46,
+  "rotated": 0,
+  "rows": 42,
+  "mean_conf": 0.992,
+  "min_conf": 0.5
+ },
+ {
+  "file": "valid-lawson-torn",
+  "ocr_s": 0.58,
+  "rotated": 0,
+  "rows": 45,
+  "mean_conf": 0.974,
+  "min_conf": 0.5
+ },
+ {
+  "file": "valid-llaollao-service-invoice",
+  "ocr_s": 0.44,
+  "rotated": 0,
+  "rows": 37,
+  "mean_conf": 0.936,
+  "min_conf": 0.3
+ },
+ {
+  "file": "valid-mrdiy-date-cropped",
+  "ocr_s": 0.49,
+  "rotated": 0,
+  "rows": 36,
+  "mean_conf": 0.967,
+  "min_conf": 0.3
+ },
+ {
+  "file": "valid-petron-fuel",
+  "ocr_s": 0.47,
+  "rotated": 0,
+  "rows": 29,
+  "mean_conf": 0.99,
+  "min_conf": 0.5
+ }
+]
