@@ -54,7 +54,7 @@ export type Answer =
   | { kind: "clarify"; sentence: string; choices: { label: string; text: string }[] }
   | { kind: "unsupported"; sentence: string; supported: string[] };
 
-export interface Question { id: number; text: string; state: "queued" | "answering" | "done"; answer: Answer | null }
+export interface Question { id: number; text: string; state: "queued" | "answering" | "done"; created_at: string; answer: Answer | null }
 
 export interface Health {
   ollama: "up" | "down" | "fake"; model: string; model_loaded: boolean; fake_pipeline: boolean;
