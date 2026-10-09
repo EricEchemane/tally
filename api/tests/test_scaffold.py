@@ -117,7 +117,7 @@ def test_questions_are_async(client):
             assert e["event"] == "queue.updated"
         assert e == {"event": "question.answered", "question_id": qid}
     q = client.get(f"/api/questions/{qid}").json()
-    assert q["state"] == "done" and q["answer"]["kind"] == "unsupported" and len(q["answer"]["supported"]) == 7
+    assert q["state"] == "done" and q["answer"]["how"]["question_id"] == 2
     assert client.get("/api/questions").json()[0]["id"] == qid
 
 

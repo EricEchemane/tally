@@ -223,11 +223,18 @@ From [Question set and query approach](.wayfinder/liquidation-review/issues/07-q
 
 Anything else gets "I can't answer that yet" plus the list.
 
-**How a question is answered:**
-1. One qwen3:4b call returns `{question_id, employee, expense_category, period, days}` (about 30 output tokens). The prompt has 2–3 English and Taglish examples.
-2. `period` is `THIS_MONTH | LAST_MONTH | THIS_QUARTER | MONTH:YYYY-MM | RANGE:a..b`. **Code resolves the dates.**
-3. Code runs a fixed, parameterized, read-only SQL template (one pytest test each), then writes an English answer from a template. **No model-written numbers.**
-4. An ambiguous Employee name gets a clarifying choice.
+**How a question is answered** (`llm/question_picker.py`, `questions/service.py`):
+1. **The pick.** One qwen3:4b call returns `{question_id (0 = unsupported), employee, expense_category, period, days}`, about 30 output tokens. The prompt describes each question with Filipino synonyms and has 8 English/Filipino/Taglish examples. The output is validated in code; anything malformed becomes null or question 0.
+   - **Measured on the Mac: 16/16 exact** on English, Filipino and Taglish phrasings, 10 of them outside the prompt's examples. **~2–3 s** per question (~6 s cold).
+   - In fake pipeline mode, a keyword picker stands in for the model.
+2. `period` is `THIS_MONTH | LAST_MONTH | THIS_QUARTER | LAST_QUARTER | THIS_YEAR | MONTH:MM | MONTH:YYYY-MM | RANGE:a..b`. The model writes `MONTH:04` for "Abril", because it never knows the year. **Code resolves the dates** (`templates.resolve_period`; `MONTH:MM` = the most recent such month on or before today).
+3. **The Employee is resolved in code:** every word typed must start a word of the name, so "Juan" matches Juan Dela Cruz.
+   - Two or more matches: `kind: "clarify"`, with choices whose `text` is the question re-worded with the full name; re-asking it resolves the name.
+   - No match: "couldn't find" plus a list of Employees.
+4. Code calls `questions.templates.run(conn, question_id, slots, today)` (Simon). It runs a fixed, parameterized, read-only SQL template (one pytest test each) and writes an English answer from a template. **No model-written numbers.**
+   - `slots = {employee_id, employee_name, expense_category, period, days}`
+   - `today = config.today()`; pin it with `TALLY_TODAY=YYYY-MM-DD` for rehearsals.
+   - Until the templates exist, the answer says which question was understood.
 5. The answer shows a sentence, a table, links into the records, and a "how I got this" line (the matched question and the period).
 6. Questions are async and **jump the LLM queue**: the worst-case wait is one receipt (~15 s).
 
