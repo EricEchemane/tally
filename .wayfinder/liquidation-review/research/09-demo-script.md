@@ -3,7 +3,7 @@
 **Name:** **Tally**, chosen by the user over Vouch. It reads as "the receipts tally with the cash advance". If the name is ever made public beyond the hackathon, note that TallyPrime (accounting software) and Tally (forms) exist.
 **Tagline:** *Tally: every receipt checked against BIR rules, on your own laptop.*
 **Format:** 5 min pitch/demo + 3 min Q&A, live and remote. Submission: video, public repo, LinkedIn post.
-**Roles:** the **user** narrates and drives the dashboard. The **teammate** handles the phone camera and the network monitor window, and starts the internet-off clip.
+**Roles:** updated for Eric on macOS and Simon on Windows. Eric runs the live demo from the Mac: dashboard, phone, network monitor and clip, since the phone must be on the Mac's network. Simon presents the problem and why-local beats (0:00–1:00) from slides and takes the deployment and e-invoice Q&A questions.
 **Story:** "A real liquidation from an accountant we interviewed": a ₱15,000 Cash Advance, ₱14,500 spent, ₱500 to return. Demo Company: Bayanihan Demo Corp (TIN 123-456-789-00000).
 
 ## Live demo (5:00)
@@ -33,12 +33,12 @@
 
 | Likely question | Answer | Who |
 |---|---|---|
-| Why not GPT-4 / Google Vision? | Liquidation reports and the SLSP are confidential (the accountant said so); cloud calls also cost per receipt and fail without signal. | User |
-| How accurate is it? | 90% of fields on 13 real PH receipts; every wrong amount was caught by the VAT arithmetic check, so errors are flagged, never silent. | User |
-| What if the AI misreads? | It rejects only on printed evidence; missing values go to the Reviewer; corrections are audited; code, not the AI, applies the BIR rules. | User |
-| How would a company deploy it? | One Mac or mini-PC in the finance office with phones on the office Wi-Fi. A Windows version would need RapidOCR. | Teammate |
-| Why 15 s per receipt? | An 8GB laptop with a 4B model. Text shows in under 1 s, captures queue so the phone never waits; 16GB would be about 2–3x faster. | User |
-| E-invoices and the 2026 mandate? | E-invoices skip OCR entirely, so that's next, plus falsification signals across Employees (duplicates are already caught). | Teammate |
+| Why not GPT-4 / Google Vision? | Liquidation reports and the SLSP are confidential (the accountant said so); cloud calls also cost per receipt and fail without signal. | Eric |
+| How accurate is it? | 90% of fields on 13 real PH receipts; every wrong amount was caught by the VAT arithmetic check, so errors are flagged, never silent. | Eric |
+| What if the AI misreads? | It rejects only on printed evidence; missing values go to the Reviewer; corrections are audited; code, not the AI, applies the BIR rules. | Eric |
+| How would a company deploy it? | One Mac or mini-PC in the finance office with phones on the office Wi-Fi. A Windows version would need RapidOCR. | Simon |
+| Why 15 s per receipt? | An 8GB laptop with a 4B model. Text shows in under 1 s, captures queue so the phone never waits; 16GB would be about 2–3x faster. | Eric |
+| E-invoices and the 2026 mandate? | E-invoices skip OCR entirely, so that's next, plus falsification signals across Employees (duplicates are already caught). | Simon |
 
 ## Videos: one recording, two cuts
 

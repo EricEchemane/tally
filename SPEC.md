@@ -44,7 +44,7 @@ Mac dashboard ─┘   (rewrites; one origin)   └─ SQLite + data/images/ └
 ```
 
 - **Backend:** Python 3.12 (uv), FastAPI, `ocrmac`, Pillow + `pillow-heif`, `openpyxl`, SQLite, pytest. **It owns all logic and all tests.**
-- **Frontend:** Next.js (client components), react-query, one WebSocket. It is a thin client; the teammate redesigns it freely against the API contract.
+- **Frontend:** Next.js (client components), react-query, one WebSocket. It is a thin client built against the API contract; Simon owns it.
 - **Network:**
   - Next.js runs with `-H 0.0.0.0` on the Mac's LAN IP or a phone hotspot, and rewrites `/api/*` and `/ws` to FastAPI.
   - FastAPI and Ollama stay on localhost.
@@ -55,6 +55,14 @@ Mac dashboard ─┘   (rewrites; one origin)   └─ SQLite + data/images/ └
 - `model: qwen3:4b`, `think: false`, `temperature: 0`, `format: <JSON Schema>`
 - `num_ctx: 4096` (2048 is probably enough), `num_predict: 600`, `keep_alive: -1`
 - Environment: `OLLAMA_MAX_LOADED_MODELS=1`
+
+**Fake pipeline mode (for development on Windows):** `TALLY_FAKE_PIPELINE=1`.
+- The backend skips `ocrmac` and Ollama and serves the committed fixtures from `api/tests/fixtures/receipts/<sample>/`, which hold `ocr.txt` and `extraction.json`.
+- An upload matching a known sample (by `image_hash`) gets that sample's real OCR text and extraction. An unknown upload gets a random fixture after a ~3 s delay, so the live stages and events still play out.
+- The question picker falls back to keyword matching onto the 7 questions.
+- Everything else is real: derive, VAT repair, checks, events, exports and questions SQL.
+- **`ocrmac` must be imported only inside the real OCR function**, or the app won't start on Windows.
+- Real end-to-end runs happen only on Eric's Mac.
 
 ---
 
@@ -242,9 +250,9 @@ Anything else gets "I can't answer that yet" plus the list.
 
 ---
 
-## 8. Tests (the teammate can't break these)
+## 8. Tests (nobody merges with failing pytest)
 
-- pytest against the API with the **LLM mocked by fixture extractions**: one JSON per sample in `samples/receipts/`.
+- pytest against the API in **fake pipeline mode**. The fixtures (`ocr.txt` + `extraction.json` per sample) are generated once by Eric on the Mac by running the real pipeline on every file in `samples/receipts/`, then committed. The whole suite runs on Windows and macOS.
 - Expected statuses and Findings come from `samples/receipts/README.md`, re-evaluated against §5. Under `ALL_RECEIPTS`, every real sample also gets the blank-buyer REJECT. The synthetic receipts are the passing cases.
 - Unit tests:
   - row grouping and upright detection
@@ -259,30 +267,63 @@ Anything else gets "I can't answer that yet" plus the list.
 
 ---
 
-## 9. Build plan (20 h, two people)
+## 9. Build plan (20 h, Eric on macOS + Simon on Windows)
 
-**You (fundamentals; backend first, then a working basic UI):**
+**Why the split looks like this:** OCR (`ocrmac`) only runs on macOS, and the demo machine is Eric's 8GB MacBook. So Eric owns everything that touches Apple OCR, the model, or the demo machine. Simon owns the web app and the backend modules that only read the database, and works against the real backend in fake pipeline mode (§2).
+
+### Ownership
+
+| | Eric (MacBook) | Simon (Windows) |
+|---|---|---|
+| **Code** | `api/pipeline/` (ingest, HEIC, OCR, extraction, derive, VAT repair), `api/llm/` (Ollama client, prompts, priority queue, question picker), `api/checks/` (checks, totals, lifecycle, Reviewer actions), `api/routes/` + WebSocket, `api/db/` (**schema and migrations**), fake pipeline mode, `setup.sh` | `web/` (all of Next.js), `api/exports/` (summary `.xlsx`, SLSP CSV), `api/questions/templates/` (7 SQL templates, period resolution, answer sentences) |
+| **Tests** | Pipeline, normalization, repair, checks, totals, lifecycle, API routes | Exports, question templates, period resolution |
+| **Fixtures and data** | Generates and commits the per-sample fixtures; seed script; synthetic receipts and blurring (has the physical receipts) | — |
+| **Demo** | Demo machine: network monitor, internet-off hotspot clip, live run, raw screen recordings | Slides, video editing (incl. AI-generated parts), LinkedIn cut, public README |
+
+**Interfaces Simon's modules plug into:**
+- `exports.summary_xlsx(liquidation_id) -> bytes`
+- `exports.slsp_csv(month) -> str`
+- `questions.run(question_id, slots, today) -> Answer`
+
+All of them read the DB through Eric's schema; Eric wires the routes to them.
+
+### Hour 0 (together, ~30 min)
+1. Walk through the API contract and the fixture format.
+2. Agree the folder ownership above.
+3. Add `.gitattributes` (`* text=auto eol=lf`) for Windows/macOS line endings.
+4. Agree the rules: the UI never does money arithmetic; nobody merges with failing `pytest`; only Eric changes the schema (Simon asks).
+5. Eric pushes the schema and stub routes that return the contract's example payloads, so Simon can start.
+
+### Eric (MacBook)
 
 | Hours | Work | Done when |
 |---|---|---|
-| 0–1 | Repo `api/` and `web/`, `setup.sh` (brew, uv, ollama pull), SQLite schema, seed Company | `pytest` runs; Next.js proxies `/api/health` |
-| 1–4 | Pipeline: port `ocr.py`/`post.py`/`repair.py`, extraction call, derive; fixture extractions for 13 samples | The pipeline test passes on all samples |
-| 4–6 | Checks, totals, lifecycle as pure functions + tests | Check table §5 fully covered |
-| 6–8 | Endpoints, LLM priority queue, WebSocket events, corrections/dismiss/confirm | API tests green; live events fire |
-| 8–11 | Basic UI: Cash Advance list, Liquidation screen (totals, receipts, live stages), receipt detail (image, fields, Findings, correct/dismiss), QR + phone capture page, drag-drop upload, rule toggle | The full flow works phone → dashboard |
-| 11–13 | Questions (picker + 7 templates + tests), Excel summary, SLSP CSV | Demo questions answer correctly |
-| 13–14 | Seed script (2 Liquidations, ~8 processed receipts, the duplicate, the misread 7-Eleven), health/warmup | One-command demo reset |
+| 0–1 | Repo `api/` + `web/` skeleton, `setup.sh`, SQLite schema, stub routes, seed Company | Simon can run `api` + `web` locally |
+| 1–3 | Pipeline: port `ocr.py`/`post.py`/`repair.py`, extraction call, derive. **Generate and commit the fixtures** for all samples. | Fixtures pushed (Simon's tests depend on them) |
+| 3–4 | Fake pipeline mode | Simon runs the real backend on Windows |
+| 4–7 | Checks, totals, lifecycle, Reviewer actions + tests | Check table §5 fully covered |
+| 7–10 | Real routes, LLM priority queue, WebSocket events, capture token/QR link, HEIC | API tests green; events fire end to end on the Mac |
+| 10–12 | Question picker (LLM call + Taglish examples); wire Simon's templates and exports into routes | The demo questions answer on the real model |
+| 12–14 | Seed script (2 Liquidations, ~8 processed receipts, the duplicate, the misread 7-Eleven), warmup/health, synthetic receipt photos | One-command demo reset |
 | **14** | **Feature freeze** | |
-| 14–20 | Bugs, rehearse 3×, record the internet-off clip and full takes | |
+| 14–20 | Integration bugs on the Mac, rehearse 3×, record the internet-off clip and full takes; hand the raw footage to Simon by hour 17 | |
 
-**Teammate (demo assets first, then UI polish once features exist):**
+### Simon (Windows)
 
-| Hours | Work |
-|---|---|
-| 0–6 | Blur card numbers and cashier names in `samples/`; make 1–2 synthetic receipts (Bayanihan Demo Corp + TIN handwritten); set up LuLu/`nettop` and the hotspot (mobile data off); draft slides for the problem and why-local beats; plan any AI-generated video parts (product footage stays real) |
-| 6–12 | Design the visual system and components against the contract's example payloads |
-| 12–17 | Polish the real screens (Liquidation, receipt detail, capture page, questions panel) without changing the API |
-| 17–20 | Edit the ~2 min submission cut and the ~60 s vertical LinkedIn cut with captions; README for the public repo |
+| Hours | Work | Done when |
+|---|---|---|
+| 0–3 | Next.js skeleton, rewrites, react-query, WebSocket client, design system; screens against the stub routes | Liquidation screen renders contract data |
+| 3–8 | Real screens in fake pipeline mode: Cash Advance list/create, Liquidation (totals, receipts, live stages, OCR preview), receipt detail (image, fields, Findings, correct/dismiss/confirm), approve/return, rule toggle | The full Reviewer flow works on Windows |
+| 8–11 | `api/exports/` (summary `.xlsx` with the accountant's columns, SLSP CSV) and `api/questions/templates/` (7 SQL templates + period resolution + sentences) + tests | pytest green; Eric can wire them |
+| 11–14 | Phone capture page (Take photo / Choose from gallery), QR display, drag-drop upload, questions panel (async answers, "how I got this", clarify choices) | Everything in §7 has a screen |
+| **14** | **Feature freeze** | |
+| 14–17 | UI polish only (no API changes); fix bugs Eric reports from Mac runs; slides | |
+| 17–20 | Edit the ~2 min submission cut and the ~60 s vertical LinkedIn cut from Eric's footage; public README | |
+
+**Syncing:**
+- Short-lived branches per area, merged to `main` often (at least every 2 hours).
+- Eric pulls Simon's UI onto the Mac for real end-to-end runs at hours 8, 12 and 14.
+- For an occasional remote real run, share Eric's Mac over Tailscale. This is for development only, never in the demo.
 
 **Cut list if behind** (cut in this order):
 1. The SLSP CSV
@@ -303,7 +344,7 @@ Anything else gets "I can't answer that yet" plus the list.
 
 ## 10. Demo
 
-The full script is in [research/09-demo-script.md](.wayfinder/liquidation-review/research/09-demo-script.md). Format: 5 min demo + 3 min Q&A. You narrate and drive the dashboard; the teammate runs the phone, the network monitor and the clip.
+The full script is in [research/09-demo-script.md](.wayfinder/liquidation-review/research/09-demo-script.md). Format: 5 min demo + 3 min Q&A. Eric runs the live demo from the Mac: dashboard, phone, network monitor and clip, since the phone must be on the Mac's network. Simon presents the problem and why-local beats (0:00–1:00) from slides and takes the deployment and e-invoice Q&A questions.
 
 1. Problem (the accountant's words)
 2. Why local
