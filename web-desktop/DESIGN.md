@@ -54,6 +54,10 @@ The decisions behind the desktop dashboard's look, and the reasons. Values (colo
 - **Typed:** every amount field is a `MoneyInput`: ₱ inside the field, commas as you type, two decimals added on leaving the field. It accepts pasted `₱15,000.50`. The value sent to the API stays plain digits.
 - **Create buttons** (New Cash Advance, Add Employee) carry a plus icon.
 
+## Exports
+
+- **Preview before download:** the Liquidation's **Summary** button opens a preview of the Excel summary (header block, one row per receipt, totals), with Copy table and Download .xlsx. The preview and the file render the same backend data (`summary_data` in `api/exports`), so they can't disagree.
+
 ## Words
 
 - **Accountants' terms stay:** Cash Advance, Liquidation, Disallowed Amount, Finding, Particulars (see `GLOSSARY.md`).

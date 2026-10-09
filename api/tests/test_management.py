@@ -144,3 +144,20 @@ def test_backup_then_restore_round_trip(client):
 def test_list_carries_the_counts_for_the_next_step(client):
     ca = client.get("/api/cash-advances").json()[0]
     assert ca["liquidation"]["counts"] == {"receipts": 4, "processing": 0, "failed": 0, "needs_review": 1}
+
+
+def test_summary_preview_matches_the_excel_file(client):
+    import io
+
+    from openpyxl import load_workbook
+
+    lid = client.get("/api/cash-advances").json()[0]["liquidation"]["id"]
+    preview = client.get(f"/api/liquidations/{lid}/summary").json()
+    ws = load_workbook(io.BytesIO(client.get(f"/api/liquidations/{lid}/summary.xlsx").content)).active
+    cells = [[c.value for c in row] for row in ws.iter_rows()]
+    start = next(i for i, row in enumerate(cells) if row[0] == "TIN") + 1   # the receipt rows follow the column header
+    assert preview["columns"] == cells[start - 1]
+    for got, row in zip(preview["rows"], cells[start:start + len(preview["rows"])]):
+        assert got == [v.date().isoformat() if hasattr(v, "date") else v for v in row]
+    assert preview["totals"][1] == ["Valid Spend", client.get(f"/api/liquidations/{lid}").json()["totals"]["valid_spend"]]
+    assert client.get("/api/liquidations/999/summary").status_code == 404

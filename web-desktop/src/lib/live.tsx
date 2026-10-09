@@ -61,6 +61,7 @@ export function LiveProvider({ children }: { children: React.ReactNode }) {
             break;
           case "liquidation.updated":
             qc.invalidateQueries({ queryKey: ["liquidation", e.liquidation_id] });
+            qc.invalidateQueries({ queryKey: ["summary", e.liquidation_id] });
             qc.invalidateQueries({ queryKey: ["cash-advances"] });
             qc.invalidateQueries({ queryKey: ["overview"] });
             break;

@@ -5,9 +5,9 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { Dialog } from "@/components/Dialog";
-import { DownloadButton } from "@/components/Downloads";
 import { EditCashAdvance } from "@/components/EditCashAdvance";
 import { MoveReceipts } from "@/components/MoveReceipts";
+import { SummaryPreview } from "@/components/SummaryPreview";
 import { CapturePanel, UploadDropzone } from "@/components/Upload";
 import {
   Button, Card, CardBody, CardHeader, CardList, ROW, cx, Empty, LiquidationStatusPill, Money, Notice, PageHeader, ReceiptStatusPill, Skeleton, Stat, textareaClass,
@@ -155,7 +155,7 @@ function Actions({ liq, onEdit }: { liq: Liquidation; onEdit?: () => void }) {
     <div className="flex flex-col items-end gap-2 [&>*:not(:first-child)]:max-w-md">
       <div className="flex flex-wrap items-center justify-end gap-2 lg:flex-nowrap">
         {onEdit && <Button variant="ghost" onClick={onEdit}>Edit details</Button>}
-        <DownloadButton href={`/api/liquidations/${liq.id}/summary.xlsx`}>Summary (.xlsx)</DownloadButton>
+        <SummaryPreview liquidationId={liq.id} />
         {liq.status === "OPEN" && (
           <>
             <Button onClick={() => setReturning(true)}>Return…</Button>

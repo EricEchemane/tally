@@ -60,22 +60,21 @@ def _findings_text(conn, receipt_id: int) -> str:
     return "\n".join(lines)
 
 
-def summary_xlsx(conn: sqlite3.Connection, liquidation_id: int) -> bytes:
-    """Liquidation summary: TIN, date, seller name, seller address, particulars, amount,
-    withholding tax, VAT, VAT-exempt + status, Findings and a totals block."""
+SUMMARY_COLUMNS = ["TIN", "Date", "Seller name", "Seller address", "Particulars", "Amount", "Withholding tax", "VAT",
+                   "VAT-exempt", "Status", "Findings"]
+SUMMARY_MONEY_COLUMNS = {5, 6, 7, 8}  # 0-based: Amount, Withholding tax, VAT, VAT-exempt
+
+
+def summary_data(conn: sqlite3.Connection, liquidation_id: int) -> dict:
+    """The Liquidation summary's content: the header block, one row per receipt in SUMMARY_COLUMNS, and the
+    totals. The .xlsx (summary_xlsx) and the in-app preview both render this, so they always agree.
+    Dates are datetime.date (or the unparsed text); money is pesos as float."""
     liq = conn.execute("SELECT * FROM liquidation WHERE id = ?", (liquidation_id,)).fetchone()
     ca = conn.execute("SELECT * FROM cash_advance WHERE id = ?", (liq["cash_advance_id"],)).fetchone()
     employee = conn.execute("SELECT name FROM employee WHERE id = ?", (ca["employee_id"],)).fetchone()["name"]
     company = conn.execute("SELECT name, tin FROM company WHERE id = 1").fetchone()
     totals = serialize.totals_centavos(conn, liquidation_id)
 
-    wb = Workbook()
-    ws = wb.active
-    ws.title = f"Liquidation {liquidation_id}"
-    bold = Font(bold=True)
-
-    ws.append([f"Liquidation #{liquidation_id}"])
-    ws["A1"].font = Font(bold=True, size=14)
     header = [
         ("Company", f"{company['name']} (TIN {_tin(company['tin'][:9], company['tin'][9:] or None)})"),
         ("Employee", employee),
@@ -85,20 +84,8 @@ def summary_xlsx(conn: sqlite3.Connection, liquidation_id: int) -> bytes:
     ]
     if liq["return_note"]:
         header.append(("Return note", liq["return_note"]))
-    for label, value in header:
-        ws.append([label, value])
-        ws.cell(ws.max_row, 1).font = bold
-    ws.append([])
 
-    columns = ["TIN", "Date", "Seller name", "Seller address", "Particulars", "Amount", "Withholding tax", "VAT",
-               "VAT-exempt", "Status", "Findings"]
-    ws.append(columns)
-    header_row = ws.max_row
-    for cell in ws[header_row]:
-        cell.font = bold
-        cell.fill = PatternFill("solid", fgColor="E7EEF7")
-    ws.freeze_panes = f"A{header_row + 1}"
-
+    rows = []
     for r, eff in _receipts(conn, "liquidation_id = ?", (liquidation_id,)):
         status = r["status"] if r["stage"] == "done" and r["checks_run"] else None
         date = eff.get("date")
@@ -106,12 +93,42 @@ def summary_xlsx(conn: sqlite3.Connection, liquidation_id: int) -> bytes:
             date = dt.date.fromisoformat(date) if date else None
         except ValueError:
             pass  # keep the unparsed text
-        ws.append([
+        rows.append([
             _tin(eff.get("seller_tin"), eff.get("seller_branch")), date, eff.get("seller_name"), eff.get("seller_address"),
             eff.get("particulars"), _pesos(eff.get("total")), _pesos(eff.get("withholding_tax")),
             _pesos(eff.get("vat_amount")), _pesos(eff.get("vat_exempt_sales")),
             STATUS_LABELS[status] if r["stage"] != "failed" else "Failed to read", _findings_text(conn, r["id"]),
         ])
+
+    return {"title": f"Liquidation #{liquidation_id}", "header": header, "columns": SUMMARY_COLUMNS, "rows": rows,
+            "totals": [(label, _pesos(totals[key])) for key, label in TOTAL_LABELS]}
+
+
+def summary_xlsx(conn: sqlite3.Connection, liquidation_id: int) -> bytes:
+    """Liquidation summary: TIN, date, seller name, seller address, particulars, amount,
+    withholding tax, VAT, VAT-exempt + status, Findings and a totals block."""
+    data = summary_data(conn, liquidation_id)
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Liquidation {liquidation_id}"
+    bold = Font(bold=True)
+
+    ws.append([data["title"]])
+    ws["A1"].font = Font(bold=True, size=14)
+    for label, value in data["header"]:
+        ws.append([label, value])
+        ws.cell(ws.max_row, 1).font = bold
+    ws.append([])
+
+    ws.append(data["columns"])
+    header_row = ws.max_row
+    for cell in ws[header_row]:
+        cell.font = bold
+        cell.fill = PatternFill("solid", fgColor="E7EEF7")
+    ws.freeze_panes = f"A{header_row + 1}"
+
+    for values in data["rows"]:
+        ws.append(values)
         row = ws.max_row
         ws.cell(row, 2).number_format = "yyyy-mm-dd"
         for col in (6, 7, 8, 9):
@@ -121,8 +138,8 @@ def summary_xlsx(conn: sqlite3.Connection, liquidation_id: int) -> bytes:
     ws.append([])
     ws.append(["Totals"])
     ws.cell(ws.max_row, 1).font = bold
-    for key, label in TOTAL_LABELS:
-        ws.append([label, _pesos(totals[key])])
+    for label, value in data["totals"]:
+        ws.append([label, value])
         ws.cell(ws.max_row, 2).number_format = MONEY
 
     for i, width in enumerate([20, 12, 30, 36, 22, 13, 15, 12, 12, 15, 60], start=1):
