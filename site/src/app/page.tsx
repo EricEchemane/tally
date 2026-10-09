@@ -1,27 +1,29 @@
-import { PrimaryCta, SecondaryCta } from "@/components/Cta";
-import { Placeholder } from "@/components/Placeholder";
+import { Checks, ChecksBand } from "@/components/sections/Checks";
+import { Download, Faq, Requirements } from "@/components/sections/Closing";
+import { Exports } from "@/components/sections/Exports";
+import { Hero, Stats } from "@/components/sections/Hero";
+import { HowItWorks } from "@/components/sections/HowItWorks";
+import { Privacy } from "@/components/sections/Privacy";
+import { Problem } from "@/components/sections/Problem";
+import { Review } from "@/components/sections/Review";
 
+// Section order and copy follow LANDING.md. Privacy comes before the features on purpose.
+// The look follows the reference kit (dark night blocks, lime highlights, rounded containers).
 export default function Home() {
   return (
     <>
-      <section className="mx-auto w-full max-w-6xl px-4 pt-16 pb-12 sm:pt-24">
-        <h1 className="max-w-3xl text-4xl font-semibold tracking-tight sm:text-6xl">
-          Spot the slip before the audit trip.
-        </h1>
-        <p className="mt-4 text-lg text-muted sm:text-xl">BIR-checked liquidations, offline.</p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <PrimaryCta />
-          <SecondaryCta />
-        </div>
-      </section>
-
-      <Placeholder id="sample-review" title="See it check a receipt">
-        Pick a real receipt and watch Tally find its Findings and work out the Amount to Return.
-      </Placeholder>
-
-      <Placeholder id="early-access" title="Request early access">
-        Tell us about your company and how many cash advances you liquidate a month.
-      </Placeholder>
+      <Hero />
+      <Stats />
+      <Problem />
+      <Privacy />
+      <HowItWorks />
+      <ChecksBand />
+      <Checks />
+      <Review />
+      <Exports />
+      <Requirements />
+      <Faq />
+      <Download />
     </>
   );
 }
