@@ -74,3 +74,14 @@ def test_heic_upload_is_converted(clean_client):
         time.sleep(0.02)
     img = c.get(d["image_url"])
     assert img.status_code == 200 and img.content[:3] == b"\xff\xd8\xff"     # stored as JPEG
+
+
+def test_demo_reset_endpoint(client):
+    with client.websocket_connect("/ws") as ws:
+        res = client.post("/api/admin/demo-reset").json()
+        seen = _drain(ws, lambda s: sum(e["event"] == "liquidation.updated" for e in s) == len(res["liquidations"]))
+    assert seen[0] == {"event": "company.updated", "buyer_details_rule": "ALL_RECEIPTS"}
+    advances = client.get("/api/cash-advances").json()
+    assert {(a["employee"]["name"], a["purpose"]) for a in advances} == {
+        ("Juan Dela Cruz", "Field sales trip, South Luzon"), ("Juan Dela Cruz", "Office supplies restock"),
+        ("Maria Santos", "Pharmacy and pantry supplies")}

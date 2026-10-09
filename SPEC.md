@@ -83,6 +83,21 @@ Money is stored as **integer centavos** (₱355.00 → `35500`). The API sends p
 
 Demo Company: **Bayanihan Demo Corp, TIN 123-456-789-00000** (fictional), Buyer Details Rule `ALL_RECEIPTS`.
 
+**Starting data** (`TALLY_SEED`, used only when the database is empty):
+- `demo` (default): the demo data below.
+- `placeholders`: the API tests' data.
+- `minimal`: the Company plus one Cash Advance, no receipts.
+
+**Demo data** (`db/demo.py`): instant and model-free. Receipts come from the committed real-pipeline fixtures, then go through derive and the checks.
+
+| Liquidation | Spending Period | Seeded receipts | Demo moment |
+|---|---|---|---|
+| Juan Dela Cruz, field sales trip, ₱2,500 | 2026-03-30 to 05-02 | 8 real samples | Toggling to ₱1,000+ turns 5 ✅; amount to return ₱2,217.05 → ₱280.40 |
+| Juan Dela Cruz, office supplies, ₱1,500 | 2026-10-01 to 10-31 | blurry 7-Eleven (duplicate of the field trip's, amounts misread) | **Live scans:** `bayanihan-corp-1` → ✅ and the 2022 OR → REJECT; the amount correction |
+| Maria Santos, pharmacy supplies, ₱1,500 | 2026-09 | 2 Mercury Drug (seller TIN unreadable) | Material for "what needs my review" and per-Employee questions |
+
+**Resetting:** `./demo.sh` (with `./dev.sh` running) resets the data, warms the model, checks health and swap, and prints the dashboard and phone URLs. `POST /api/admin/demo-reset` does the reset alone, and open dashboards refresh through live events.
+
 ---
 
 ## 4. Receipt pipeline

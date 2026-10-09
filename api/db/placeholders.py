@@ -2,7 +2,7 @@
 
 Hand-written to match SPEC §4 (extraction/derived shapes) and §5 (Findings). Uses real sample
 images and their committed OCR text. Replaced by the real demo seed at hours 12–14 (SPEC §9).
-Disable with TALLY_SEED_PLACEHOLDERS=0.
+Used by the API tests (TALLY_SEED=placeholders); the app itself starts from db/demo.py.
 """
 import hashlib
 import json
