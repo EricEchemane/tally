@@ -32,19 +32,19 @@ class FakeBackend:
     async def ocr(self, image_path: str) -> OcrResult:
         await asyncio.sleep(0.5 * config.FAKE_DELAY)
         fixture = _fixture_for(image_path)
-        meta = json.loads((fixture / "meta.json").read_text())
-        return OcrResult(text=(fixture / "ocr.txt").read_text(), rotation=meta["rotation"])
+        meta = json.loads((fixture / "meta.json").read_text(encoding="utf-8"))
+        return OcrResult(text=(fixture / "ocr.txt").read_text(encoding="utf-8"), rotation=meta["rotation"])
 
     async def extract(self, ocr_text: str, image_path: str) -> dict:
         await asyncio.sleep(3 * config.FAKE_DELAY)
-        return json.loads((_fixture_for(image_path) / "extraction.json").read_text())
+        return json.loads((_fixture_for(image_path) / "extraction.json").read_text(encoding="utf-8"))
 
 
 @lru_cache
 def _fixtures_by_hash() -> dict[str, Path]:
     out = {}
     for meta in sorted(FIXTURES.glob("*/meta.json")):
-        out[json.loads(meta.read_text())["image_sha256"]] = meta.parent
+        out[json.loads(meta.read_text(encoding="utf-8"))["image_sha256"]] = meta.parent
     return out
 
 

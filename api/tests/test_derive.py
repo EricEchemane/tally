@@ -83,7 +83,7 @@ def test_slsp_bucket():
 
 def _derived(name):
     d = FIXTURES / name
-    return derive(json.loads((d / "extraction.json").read_text()), (d / "ocr.txt").read_text())
+    return derive(json.loads((d / "extraction.json").read_text(encoding="utf-8")), (d / "ocr.txt").read_text(encoding="utf-8"))
 
 
 def _matches(field, got, want):
