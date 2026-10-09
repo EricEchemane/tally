@@ -19,7 +19,7 @@ Each beat should map to a judging criterion.
 ## Answer
 
 **The full script is in [research/09-demo-script.md](../research/09-demo-script.md).** Key decisions:
-- **Name:** **Vouch** (shown publicly as **Vouch Local**). "Vouching" is the audit term for checking a transaction against its receipt.
+- **Name:** **Tally**. Vouch (the audit term) was first picked; the user switched to Tally afterwards.
 - **Format:** 5 min pitch/demo + 3 min Q&A. The user narrates and drives the dashboard; the teammate runs the phone, the network monitor and the clip.
 - **Story:** the contact's real numbers (₱15,000 advanced, ₱14,500 spent, ₱500 returned), framed as "a real liquidation from an accountant we interviewed".
 - **Beats:** each is mapped to a judging criterion.

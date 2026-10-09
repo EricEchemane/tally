@@ -1,7 +1,7 @@
-# Vouch Local: demo script and video plan
+# Tally: demo script and video plan
 
-**Name:** Vouch (shown publicly as **Vouch Local** or VouchPH, since a US insurance startup is called Vouch). "Vouching" is the audit term for checking a transaction against its supporting receipt.
-**Tagline:** *Vouch: every receipt checked against BIR rules, on your own laptop.*
+**Name:** **Tally**, chosen by the user over Vouch. It reads as "the receipts tally with the cash advance". If the name is ever made public beyond the hackathon, note that TallyPrime (accounting software) and Tally (forms) exist.
+**Tagline:** *Tally: every receipt checked against BIR rules, on your own laptop.*
 **Format:** 5 min pitch/demo + 3 min Q&A, live and remote. Submission: video, public repo, LinkedIn post.
 **Roles:** the **user** narrates and drives the dashboard. The **teammate** handles the phone camera and the network monitor window, and starts the internet-off clip.
 **Story:** "A real liquidation from an accountant we interviewed": a ₱15,000 Cash Advance, ₱14,500 spent, ₱500 to return. Demo Company: Bayanihan Demo Corp (TIN 123-456-789-00000).
@@ -43,4 +43,4 @@
 ## Videos: one recording, two cuts
 
 - **Submission cut (~2 min):** problem (accountant's words), then the internet-off flow end to end, then 2 questions, then why local.
-- **LinkedIn cut (~60 s, vertical, captions burned in):** hook "₱500 of receipts rejected, eyeballed by hand", the phone snap, ✅ and ⚠️ appearing, then "runs offline on an 8GB MacBook. Vouch Local."
+- **LinkedIn cut (~60 s, vertical, captions burned in):** hook "₱500 of receipts rejected, eyeballed by hand", the phone snap, ✅ and ⚠️ appearing, then "runs offline on an 8GB MacBook. Tally."

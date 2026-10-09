@@ -1,4 +1,4 @@
-# Vouch Local: Build Spec
+# Tally: Build Spec
 
 > Every receipt checked against BIR rules, on your own laptop.
 
@@ -18,7 +18,7 @@ Sources: [map](.wayfinder/liquidation-review/map.md) · [API contract](.wayfinde
 - A rejected receipt means the Employee returns that money.
 - Consolidated reports and the SLSP are always confidential: **"privacy is the priority."**
 
-**What Vouch does:**
+**What Tally does:**
 1. The Reviewer opens a Cash Advance and scans its QR code with a phone (or uploads files).
 2. Each receipt photo is read on the Mac (Apple Vision OCR, then qwen3:4b), checked by code against BIR rules, and appears on the dashboard live with ✅ or ⚠️.
 3. The Reviewer corrects misreads, dismisses Findings with reasons, and approves or returns the Liquidation.
