@@ -7,6 +7,7 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpStream;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
 use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -18,6 +19,12 @@ const PREFERRED_PORT: u16 = 8765;
 const HEALTH_TIMEOUT: Duration = Duration::from_secs(90); // first launch can be slow (macOS scans the bundle)
 
 struct Backend(Mutex<Option<Child>>);
+
+/// The backend's port once it is up (0 = not yet), and whether the Reviewer already chose to quit.
+static PORT: AtomicU16 = AtomicU16::new(0);
+static QUIT_CONFIRMED: AtomicBool = AtomicBool::new(false);
+/// The page navigates here when the Reviewer picks "Quit anyway" in the quit dialog.
+const QUIT_PATH: &str = "/__tally/quit";
 
 fn backend_exe(app: &tauri::AppHandle) -> tauri::Result<PathBuf> {
     let name = if cfg!(windows) { "tally-api.exe" } else { "tally-api" };
@@ -53,6 +60,48 @@ fn healthy(port: u16) -> bool {
     }
     let mut head = [0u8; 12];
     s.read_exact(&mut head).is_ok() && head.ends_with(b"200")
+}
+
+/// Receipts and questions still waiting for the AI, from GET /api/setup/pending ({"length": N}).
+fn pending_work() -> u32 {
+    let port = PORT.load(Ordering::SeqCst);
+    if port == 0 {
+        return 0;
+    }
+    let Ok(mut s) = TcpStream::connect_timeout(&([127, 0, 0, 1], port).into(), Duration::from_millis(800)) else {
+        return 0;
+    };
+    let _ = s.set_read_timeout(Some(Duration::from_millis(3000)));
+    if s.write_all(b"GET /api/setup/pending HTTP/1.0\r\nHost: 127.0.0.1\r\n\r\n").is_err() {
+        return 0;
+    }
+    let mut body = String::new();
+    let _ = s.read_to_string(&mut body);
+    body.split("\"length\":")
+        .nth(1)
+        .and_then(|rest| rest.trim_start().split(|c: char| !c.is_ascii_digit()).next())
+        .and_then(|n| n.parse().ok())
+        .unwrap_or(0)
+}
+
+/// Quitting with work still queued loses nothing (it resumes at the next launch), but say so first.
+/// Returns true when the quit should be held back while the page asks.
+fn hold_quit(app: &tauri::AppHandle) -> bool {
+    if QUIT_CONFIRMED.load(Ordering::SeqCst) {
+        return false;
+    }
+    let n = pending_work();
+    if n == 0 {
+        return false;
+    }
+    match app.get_webview_window("main") {
+        Some(w) => {
+            let _ = w.set_focus();
+            let _ = w.eval(&format!("window.dispatchEvent(new CustomEvent('tally:confirm-quit', {{ detail: {{ pending: {n} }} }}));"));
+            true
+        }
+        None => false,
+    }
 }
 
 fn show_error(win: &WebviewWindow, message: &str) {
@@ -151,6 +200,7 @@ fn start_backend(app: &tauri::AppHandle, win: WebviewWindow) -> tauri::Result<()
             };
             let Ok(port) = port.parse::<u16>() else { continue };
             ready = true;
+            PORT.store(port, Ordering::SeqCst);
             let started = Instant::now();
             let win = win.clone();
             thread::spawn(move || {
@@ -200,6 +250,7 @@ pub fn run() {
             }
         }))
         .setup(|app| {
+            let quit_handle = app.handle().clone();
             let win = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
                 .title("Tally")
                 .inner_size(1280.0, 840.0)
@@ -207,17 +258,38 @@ pub fn run() {
                 // Lets the page know it runs inside the app (downloads report back; see on_download).
                 .initialization_script("window.__TALLY_DESKTOP__ = true;")
                 .on_download(on_download)
+                .on_navigation(move |url| {
+                    if url.path() == QUIT_PATH {
+                        QUIT_CONFIRMED.store(true, Ordering::SeqCst);
+                        quit_handle.exit(0);
+                        return false;
+                    }
+                    true
+                })
                 .build()?;
+            let close_handle = app.handle().clone();
+            win.on_window_event(move |event| {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    if hold_quit(&close_handle) {
+                        api.prevent_close();
+                    }
+                }
+            });
             start_backend(app.handle(), win)?;
             Ok(())
         })
         .build(tauri::generate_context!())
         .expect("error while building Tally");
 
-    app.run(|app, event| {
-        if let RunEvent::Exit = event {
-            stop_backend(app);
+    app.run(|app, event| match event {
+        // ⌘Q / Quit from the menu: same check as closing the window.
+        RunEvent::ExitRequested { api, .. } => {
+            if hold_quit(app) {
+                api.prevent_exit();
+            }
         }
+        RunEvent::Exit => stop_backend(app),
+        _ => {}
     });
 }
 

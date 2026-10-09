@@ -3,7 +3,8 @@
 // one who never received a Cash Advance. GLOSSARY: Inactive Employee.
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Button, Card, CardHeader, cx, Empty, inputClass, Notice, PageHeader, Pill, Skeleton } from "@/components/ui";
+import { Dialog } from "@/components/Dialog";
+import { Button, Card, CardHeader, ROW, cx, Empty, inputClass, Notice, PageHeader, Pill, Skeleton } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
 import { useEmployees } from "@/lib/queries";
 import type { Employee } from "@/lib/types";
@@ -80,7 +81,7 @@ function EmployeeRow({ e }: { e: Employee }) {
   const error = save.error ?? del.error;
 
   return (
-    <li className="rounded-2xl px-4 py-3 transition-colors duration-150 hover:bg-sunken/60">
+    <li className={cx(ROW, "transition-colors duration-150 hover:bg-sunken/60")}>
       <div className="flex flex-wrap items-center gap-3">
         {renaming ? (
           <form className="flex min-w-0 flex-1 flex-wrap items-center gap-2" onSubmit={(ev) => { ev.preventDefault(); if (name.trim()) save.mutate({ name: name.trim() }); }}>
@@ -98,7 +99,7 @@ function EmployeeRow({ e }: { e: Employee }) {
           </div>
         )}
         {!e.active && <Pill>Inactive</Pill>}
-        {!renaming && !sure && !deactivating && (
+        {!renaming && !deactivating && (
           <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" variant="ghost" onClick={() => setRenaming(true)}>Rename</Button>
             {e.active ? (
@@ -107,15 +108,15 @@ function EmployeeRow({ e }: { e: Employee }) {
             ) : (
               <Button size="sm" onClick={() => save.mutate({ active: true })} busy={save.isPending && save.variables?.active === true}>Make active</Button>
             )}
-            {advances === 0 && <Button size="sm" variant="ghost" onClick={() => setSure(true)}>Delete</Button>}
+            {advances === 0 && <Button size="sm" variant="danger" onClick={() => setSure(true)}>Delete</Button>}
           </div>
         )}
-        {sure && (
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="danger" busy={del.isPending} onClick={() => del.mutate()}>Delete {e.name}</Button>
-            <Button size="sm" variant="ghost" onClick={() => setSure(false)}>Keep</Button>
-          </div>
-        )}
+        <Dialog open={sure} onClose={() => setSure(false)} tone="danger" title={`Delete ${e.name}?`}
+          description="They never received a Cash Advance, so no records are lost."
+          footer={<>
+            <Button variant="ghost" onClick={() => setSure(false)} data-autofocus>Keep</Button>
+            <Button variant="danger" busy={del.isPending} onClick={() => del.mutate()}>Delete</Button>
+          </>} />
       </div>
       {deactivating && (
         <Notice tone="warn" className="enter mt-3">

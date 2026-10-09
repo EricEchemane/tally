@@ -30,7 +30,7 @@ export default function Home() {
       {creating && <NewCashAdvance onDone={() => setCreating(false)} />}
 
       <Card>
-        <div className="border-b border-line px-4 py-3">
+        <div className="border-b border-line px-6 py-3">
           <Segmented role="tablist" label="Filter by status" value={filter} onChange={setFilter}
             options={([undefined, "OPEN", "RETURNED", "APPROVED", "ARCHIVED"] as Filter[]).map((f) => ({
               value: f, label: f === "ARCHIVED" ? "Archived" : f ? LIQUIDATION_STATUS[f] : "All",

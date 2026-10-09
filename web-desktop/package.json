@@ -7,7 +7,9 @@
     "dev": "next dev",
     "prebuild": "node scripts/copy-vendor.mjs",
     "build": "next build",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:layout": "next build && node scripts/layout-check.mjs",
+    "ui:backend": "node scripts/ui-backend.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.1",
@@ -23,6 +25,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.4.0",
+    "playwright-core": "^1.56.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

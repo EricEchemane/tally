@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { api, errorMessage, peso } from "@/lib/api";
 import { pageHref } from "@/lib/routes";
 import type { Answer, Question } from "@/lib/types";
-import { Button, cx, inputClass, Notice, Sparkle } from "./ui";
+import { Button, cx, inputClass, Notice, Sparkle, Spinner } from "./ui";
 
 const EXAMPLES = [
   "How much input VAT did we lose in April?",
@@ -132,9 +132,15 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
               onChange={(e) => setText(e.target.value)}
               maxLength={300}
             />
-            <Button type="submit" variant="primary" busy={ask.isPending} disabled={!text.trim()} aria-label="Ask" className="w-10 px-0">
-              {!ask.isPending && <svg viewBox="0 0 16 16" aria-hidden className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" /></svg>}
-            </Button>
+            <button type="submit" disabled={!text.trim() || ask.isPending} aria-label="Ask"
+              className={cx("grid size-10 shrink-0 place-items-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-95",
+                text.trim() ? "ask-button text-white hover:-translate-y-px" : "border border-line bg-sunken text-faint")}>
+              {ask.isPending ? <Spinner /> : (
+                <svg viewBox="0 0 16 16" aria-hidden className="size-4" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M8 13V3M3.5 7.5L8 3l4.5 4.5" />
+                </svg>
+              )}
+            </button>
           </div>
           {count > 0 && (
             <div className="mt-2 flex flex-wrap gap-1.5">

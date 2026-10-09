@@ -15,6 +15,12 @@ export function cx(...c: (string | false | null | undefined)[]) {
   return c.filter(Boolean).join(" ");
 }
 
+// ---------- layout ----------
+
+/** The page column. The top bar, the setup banner, the page and the footer all use it, so their edges
+ *  line up: full width with 24 px gutters, capped at 1440 px of content on very wide screens (DESIGN.md). */
+export const PAGE = "mx-auto w-full max-w-[90rem] px-6";
+
 // ---------- buttons ----------
 
 type Variant = "primary" | "secondary" | "ghost" | "danger";
@@ -25,7 +31,7 @@ const VARIANTS: Record<Variant, string> = {
   primary: "bg-accent text-accent-ink hover:bg-accent-hover border-transparent hover:-translate-y-px disabled:hover:translate-y-0",
   secondary: "bg-surface text-ink border-line-strong hover:bg-sunken hover:-translate-y-px disabled:hover:translate-y-0",
   ghost: "bg-transparent text-muted border-transparent hover:bg-sunken hover:text-ink",
-  danger: "bg-surface text-bad border-line-strong hover:bg-bad-soft",
+  danger: "bg-surface text-bad border-bad/45 hover:bg-bad-soft hover:border-bad/70",
 };
 const SIZES = { sm: "h-8 px-3.5 text-sm", md: "h-10 px-5 text-sm" };
 
@@ -94,7 +100,7 @@ export function PageHeader({ crumbs, title, badge, sub, actions }: {
 }) {
   return (
     <div className="space-y-3">
-      {crumbs && <Crumbs items={crumbs} />}
+      <div className="h-5">{crumbs && <Crumbs items={crumbs} />}</div>
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">{title}{badge}</h1>
@@ -105,6 +111,18 @@ export function PageHeader({ crumbs, title, badge, sub, actions }: {
     </div>
   );
 }
+
+/** Card content at the card's one inset: text lines up with the card title, 24 px in. */
+export function CardBody({ className, ...rest }: ComponentProps<"div">) {
+  return <div className={cx("px-6 py-4", className)} {...rest} />;
+}
+
+/** A list of rows inside a card. The list insets 8 px (so hover highlights don't touch the card edge) and
+ *  each row adds 16 px, putting row text at the same 24 px as the card title. Use with ROW. */
+export function CardList({ className, ...rest }: ComponentProps<"ul">) {
+  return <ul className={cx("space-y-1 p-2", className)} {...rest} />;
+}
+export const ROW = "rounded-2xl px-4 py-3";
 
 export function Notice({ tone = "info", children, className }: { tone?: Tone; children: ReactNode; className?: string }) {
   return (
@@ -255,9 +273,9 @@ export function Segmented<T extends string | undefined>({ options, value, onChan
   const box = useIndicator(ref, value);
   const item = role === "tablist" ? "tab" : "radio";
   return (
-    <div ref={ref} role={role} aria-label={label} className="relative inline-flex w-fit max-w-full flex-wrap rounded-full border border-line-strong bg-sunken p-0.5">
+    <div ref={ref} role={role} aria-label={label} className="relative inline-flex w-fit max-w-full flex-wrap rounded-full border border-line bg-sunken p-0.5">
       {box && (
-        <span aria-hidden className="absolute rounded-full bg-surface ring-1 ring-accent/30 transition-all duration-200 ease-out"
+        <span aria-hidden className="absolute rounded-full border border-line-strong/70 bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.08)] transition-all duration-200 ease-out"
           style={{ left: box.left, top: box.top, width: box.width, height: box.height }} />
       )}
       {options.map((o) => (
@@ -265,7 +283,7 @@ export function Segmented<T extends string | undefined>({ options, value, onChan
           aria-checked={item === "radio" ? value === o.value : undefined} aria-selected={item === "tab" ? value === o.value : undefined}
           disabled={disabled} onClick={() => value !== o.value && onChange(o.value)}
           className={cx("relative rounded-full transition-colors duration-150", size === "sm" ? "px-3 py-1 text-xs font-medium" : "px-3.5 py-1.5 text-sm",
-            value === o.value ? "font-medium text-accent" : "text-muted hover:text-ink")}>
+            value === o.value ? "font-semibold text-ink" : "text-muted hover:text-ink")}>
           {o.label}
         </button>
       ))}

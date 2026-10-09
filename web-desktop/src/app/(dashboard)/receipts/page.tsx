@@ -12,6 +12,7 @@ import { CHECK, FIELD_GROUPS, formatDate, formatTin, STAGE, type FieldDef } from
 import { useLive } from "@/lib/live";
 import { useLiquidation, useReceipt } from "@/lib/queries";
 import { liquidationHref } from "@/lib/routes";
+import { Dialog } from "@/components/Dialog";
 import { MoveReceipts } from "@/components/MoveReceipts";
 import type { Finding, Receipt } from "@/lib/types";
 
@@ -394,13 +395,18 @@ function DeleteReceipt({ r }: { r: Receipt }) {
       router.push(liquidationHref(r.liquidation_id));
     },
   });
-  if (!sure) return <Button variant="ghost" size="sm" onClick={() => setSure(true)}>Delete</Button>;
   return (
-    <span className="flex items-center gap-2">
-      <Button variant="danger" size="sm" busy={del.isPending} onClick={() => del.mutate()}>Delete receipt</Button>
-      <Button variant="ghost" size="sm" onClick={() => setSure(false)}>Keep</Button>
-      {del.isError && <span className="text-xs text-bad">{errorMessage(del.error)}</span>}
-    </span>
+    <>
+      <Button variant="danger" size="sm" onClick={() => setSure(true)}>Delete</Button>
+      <Dialog open={sure} onClose={() => setSure(false)} tone="danger" title="Delete this receipt?"
+        description="The photo and everything read from it are removed. This can’t be undone."
+        footer={<>
+          <Button variant="ghost" onClick={() => setSure(false)} data-autofocus>Keep</Button>
+          <Button variant="danger" busy={del.isPending} onClick={() => del.mutate()}>Delete receipt</Button>
+        </>}>
+        {del.isError && <Notice tone="bad">{errorMessage(del.error)}</Notice>}
+      </Dialog>
+    </>
   );
 }
 

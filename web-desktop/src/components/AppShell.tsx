@@ -2,17 +2,18 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, ViewTransition } from "react";
 import { api, errorMessage } from "@/lib/api";
 import { BUYER_RULE } from "@/lib/labels";
 import { useLive } from "@/lib/live";
 import { useCompany, useHealth } from "@/lib/queries";
 import type { BuyerDetailsRule, Company } from "@/lib/types";
 import { DownloadToasts } from "./Downloads";
+import { QuitGuard } from "./QuitGuard";
 import { QuestionsPanel } from "./QuestionsPanel";
 import { SetupGate } from "./SetupGate";
 import { useIndicator } from "@/lib/motion";
-import { cx, Segmented, Sparkle } from "./ui";
+import { cx, PAGE, Segmented, Sparkle } from "./ui";
 
 const NAV = [
   { href: "/", label: "Cash Advances", match: (p: string) => p === "/" || p.startsWith("/liquidations") || p.startsWith("/receipts") },
@@ -26,6 +27,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const navRef = useRef<HTMLElement>(null);
   const active = NAV.find((n) => n.match(path))?.href;
   const pill = useIndicator(navRef, active);
+  const [vtSupported, setVtSupported] = useState(true);
+  useEffect(() => setVtSupported("startViewTransition" in document), []);
   // ⌘K opens Ask Tally from anywhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -38,22 +41,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <>
       {/* Same width and side padding as <main>, so the bar's edges line up with the page content. */}
       <header className="sticky top-0 z-30 bg-linear-to-b from-paper from-70% to-transparent pb-2 pt-3">
-        <div className="px-6">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-full border border-line bg-surface/90 py-2 pl-3 pr-2 shadow-card backdrop-blur">
+        <div className={PAGE}>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-line bg-surface/90 py-2 pl-3 pr-2 shadow-card backdrop-blur">
             <HistoryShortcuts />
             <Link href="/" aria-label="Tally home" title="Tally" className="shrink-0">
               {/* eslint-disable-next-line @next/next/no-img-element -- static export, no image optimizer */}
               <img src="/logo.png" alt="" className="size-9" />
             </Link>
-            <nav ref={navRef} aria-label="Main" className="relative flex items-center gap-1">
+            <nav ref={navRef} aria-label="Main" className="relative flex items-center gap-0.5 rounded-full border border-line bg-sunken p-0.5">
               {pill && (
-                <span aria-hidden className="absolute rounded-full bg-accent-soft transition-all duration-200 ease-out"
+                <span aria-hidden className="absolute rounded-full border border-line-strong/70 bg-surface shadow-[0_1px_2px_rgb(0_0_0/0.08)] transition-all duration-200 ease-out"
                   style={{ left: pill.left, top: pill.top, width: pill.width, height: pill.height }} />
               )}
               {NAV.map((n) => (
                 <Link key={n.href} href={n.href} aria-current={n.match(path) ? "page" : undefined} data-active={n.href === active}
                   className={cx("relative rounded-full px-3.5 py-1.5 text-sm transition-colors duration-150",
-                    n.match(path) ? "font-medium text-accent" : "text-muted hover:bg-sunken hover:text-ink")}>
+                    n.match(path) ? "font-semibold text-ink" : "text-muted hover:text-ink")}>
                   {n.label}
                 </Link>
               ))}
@@ -75,13 +78,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <SetupGate />
-      {/* Keyed by page, so each page change replays the entrance. */}
-      <main key={path} className="page-enter mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
-      <footer className="mx-auto w-full max-w-6xl px-6 pb-8 text-xs text-faint">
+      {/* Page changes crossfade (the browser's View Transitions; navigations are React transitions, so
+          <ViewTransition> animates them). The top bar sits outside it and stays still. Where WebKit has
+          no View Transitions, each page fades in on its own instead. */}
+      <ViewTransition default="page-fade">
+        <main key={vtSupported ? undefined : path} className={cx(PAGE, "flex-1 py-8", !vtSupported && "page-enter")}>
+          {children}
+        </main>
+      </ViewTransition>
+      <footer className={cx(PAGE, "pb-8 text-xs text-faint")}>
         Every receipt is read and checked on this computer. No request leaves the machine.
       </footer>
       <QuestionsPanel open={asking} onClose={() => setAsking(false)} />
       <DownloadToasts />
+      <QuitGuard />
     </>
   );
 }

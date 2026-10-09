@@ -13,6 +13,7 @@ Mounted by desktop.py only, so the dev server and its tests are unchanged. The w
     GET  /api/setup/backup            one .zip with the database and every receipt photo
     POST /api/setup/restore           replace everything with a backup (the current data is backed up first)
     POST /api/setup/reveal            show a downloaded file in Finder (only files in ~/Downloads)
+    GET  /api/setup/pending           how much work is still queued (the app asks before quitting)
 
 Long jobs run in threads and report through the status route; the wizard polls it.
 """
@@ -412,3 +413,11 @@ def reveal(body: RevealIn):
         subprocess.run(["open", "-R", str(target)], check=False)
     elif sys.platform == "win32":
         subprocess.run(["explorer", "/select,", str(target)], check=False)
+
+
+@router.get("/pending")
+def pending():
+    """Fast and local (unlike /api/health, which also asks Ollama and can be slow while the model works)."""
+    from pipeline import runner
+
+    return {"length": runner.queue_state()["length"]}

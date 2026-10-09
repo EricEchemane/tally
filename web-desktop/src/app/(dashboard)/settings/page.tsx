@@ -4,6 +4,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { Dialog } from "@/components/Dialog";
 import { DownloadButton } from "@/components/Downloads";
 import { Button, Card, CardHeader, cx, inputClass, Label, Notice, PageHeader } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
@@ -134,18 +135,15 @@ function DataCard() {
           <p className="text-sm text-muted">This replaces everything in Tally with the backup. Your current data is backed up automatically first.</p>
           <input ref={input} type="file" accept=".zip,application/zip" hidden
             onChange={(e) => { setFile(e.target.files?.[0] ?? null); restore.reset(); e.target.value = ""; }} />
-          {!file ? (
-            <Button onClick={() => input.current?.click()}>Choose a backup file…</Button>
-          ) : (
-            <Notice tone="warn" className="enter">
-              <p>Replace everything in Tally with <span className="font-medium">{file.name}</span>?</p>
-              <div className="mt-3 flex gap-2">
-                <Button size="sm" variant="danger" busy={restore.isPending} onClick={() => restore.mutate(file)}>Replace and restore</Button>
-                <Button size="sm" variant="ghost" onClick={() => setFile(null)}>Cancel</Button>
-              </div>
-            </Notice>
-          )}
-          {restore.isError && <Notice tone="bad">{errorMessage(restore.error)}</Notice>}
+          <Button onClick={() => input.current?.click()}>Choose a backup file…</Button>
+          <Dialog open={!!file} onClose={() => setFile(null)} tone="danger" title="Replace everything in Tally?"
+            description={<>Restore <span className="font-medium text-ink">{file?.name}</span>. Every Cash Advance, receipt and setting is replaced by the backup. Your current data is backed up first, into the data folder’s <span className="font-mono">backups</span>.</>}
+            footer={<>
+              <Button variant="ghost" onClick={() => setFile(null)} data-autofocus>Cancel</Button>
+              <Button variant="danger" busy={restore.isPending} onClick={() => file && restore.mutate(file)}>Replace and restore</Button>
+            </>}>
+            {restore.isError && <Notice tone="bad">{errorMessage(restore.error)}</Notice>}
+          </Dialog>
           {restore.isSuccess && (
             <Notice tone="ok">Restored the backup from {restore.data.created_at.replace("T", " ")}.</Notice>
           )}
