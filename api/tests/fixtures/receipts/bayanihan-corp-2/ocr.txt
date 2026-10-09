@@ -1,0 +1,40 @@
+*46
+*** DEMO ONLY ***
+JUANA'S OFFICE SUPPLIES INC.
+45 Mabini St,  Munt inlupa  City
+VAT REG TIN: 987-654-321-00000
+SALES INVOICE
+Invoice No.  SI-000124
+2026-10-09
+Date
+Bond Paper A4 (ream)  570.00
+2 x 285.00
+Ballpen Black box)  96.00
+1 x 96.00
+TOTAL  PHP 666.00
+VATable Sales  594.64
+VAT (12%)  71.36
+Sold to: BAYANIHAN DEMO CORP
+TIN:  123-456-789-00000
+Address: 123 Rizal St,
+Quezon City
+*** DEMO ONLY ***
+*** DEMO ONLY ***
+JUANA'S OFFICE SUPPLIES INC.
+VAI REG TIN: 981-654-321-00000  45 Mabını st, Muntın upa City
+SALES INVOICE
+Invoice No.  SI-000125
+Date
+2026-10-09
+Bond Paper A4 (ream)
+2 x 285  .00
+Ballpen Black (box)  570.00
+1 x 96,00
+TOTAL  96.00
+VAT (12%)  VATable Sales  PHP 668.00
+594  .64
+11.36
+Sold to: BAYANIHAN DEMO CORP  TIN:
+Address: 123 Rizal St,  123-456-789-00000
+Quezon City
+*** DEMO ONLY  ***

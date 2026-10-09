@@ -28,4 +28,7 @@ EXPECTED = {
     "goldilocks-seller-tin-covered": r("INVOICE", None, None, True, "02-00032921", "2026-08-14", 885.71, 106.29, 0, 992.00),
     "mercury-drug-226-faded": r("INVOICE", "000388474", "00409", True, SKIP, "2026-09-25", 202.23, 24.27, 0, 226.50),
     "mercury-drug-458": r("INVOICE", "000388474", "00409", True, "102895595543", "2026-09-11", 408.93, 49.07, 0, 458.00),
+    # Printed demo receipts: Bayanihan Demo Corp is the buyer. corp-2's photo holds two receipts; the first is read.
+    "bayanihan-corp-1": r("INVOICE", "987654321", "00000", True, "SI-000123", "2026-10-09", 594.64, 71.36, 0, 666.00),
+    "bayanihan-corp-2": r("INVOICE", "987654321", "00000", True, "SI-000124", "2026-10-09", 594.64, 71.36, 0, 666.00),
 }

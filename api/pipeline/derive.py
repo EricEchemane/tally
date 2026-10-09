@@ -98,9 +98,10 @@ def parse_invoice_number(raw: str | None) -> str | None:
     return cleaned or None
 
 
+_INVOICE_NO = r"((?:[A-Z]{1,4}-?)?[0-9][0-9-]{3,})"   # "175026", "059-00-000125989", "SI-000123"
 _INVOICE_LABEL = re.compile(
-    r"(?:SALES\s+INVOICE|SERVICE\s+INVOICE|INVOICE|\b[S58]\.?\s?I\.?|\bOR)\s*(?:NO\.?|NUMBER|#)\s*[:.]?\s*([0-9][0-9-]{3,})"
-    r"|\bINVOICE\s*#?\s*:?\s*([0-9][0-9-]{5,})",
+    r"(?:SALES\s+INVOICE|SERVICE\s+INVOICE|INVOICE|\b[S58]\.?\s?I\.?|\bOR)\s*(?:NO\.?|NUMBER|#)\s*[:.]?\s*" + _INVOICE_NO
+    + r"|\bINVOICE\s*#?\s*:?\s*([0-9][0-9-]{5,})",
     re.I)
 
 
@@ -112,7 +113,7 @@ def invoice_number_from_ocr(ocr: str) -> str | None:
             return (m.group(1) or m.group(2)).strip("-")
         # label alone on its row, number on the next ("SI No.:" / "1005702100043415")
         if re.search(r"(?:\bS\.?I\.?|INVOICE)\s*(?:NO\.?|#)\s*[:.]?\s*$", row, re.I) and i + 1 < len(rows):
-            nxt = re.match(r"\s*([0-9][0-9-]{3,})", rows[i + 1])
+            nxt = re.match(r"\s*" + _INVOICE_NO, rows[i + 1], re.I)
             if nxt:
                 return nxt.group(1)
     return None
@@ -121,8 +122,9 @@ def invoice_number_from_ocr(ocr: str) -> str | None:
 # ---------- document facts from the OCR text ----------
 
 def doc_type(ocr: str, currency: str) -> str | None:
-    up = ocr.upper()
-    if "OFFICIAL RECEIPT" in up:
+    up = re.sub(r"\s+", " ", ocr.upper())
+    # "THIS IS NOT AN OFFICIAL RECEIPT" (printed on invoices and slips) is not evidence of one.
+    if re.search(r"(?<!NOT AN )(?<!NOT A )OFFICIAL RECEIPT", up):
         return "OFFICIAL_RECEIPT"
     if currency != "PHP":
         return "OTHER"

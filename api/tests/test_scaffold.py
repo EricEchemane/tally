@@ -113,7 +113,9 @@ def test_return_and_reopen(client):
 def test_questions_are_async(client):
     with client.websocket_connect("/ws") as ws:
         qid = client.post("/api/questions", json={"text": "How much input VAT did we lose in April?"}).json()["question_id"]
-        assert ws.receive_json() == {"event": "question.answered", "question_id": qid}
+        while (e := ws.receive_json())["event"] != "question.answered":
+            assert e["event"] == "queue.updated"
+        assert e == {"event": "question.answered", "question_id": qid}
     q = client.get(f"/api/questions/{qid}").json()
     assert q["state"] == "done" and q["answer"]["kind"] == "unsupported" and len(q["answer"]["supported"]) == 7
     assert client.get("/api/questions").json()[0]["id"] == qid

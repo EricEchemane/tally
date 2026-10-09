@@ -1,7 +1,7 @@
 """Receipt runner (SPEC §4, §7): OCR queue -> LLM queue -> derive, with live stage events.
 
 OCR runs outside the LLM queue (Neural Engine), so receipt.ocr_done fires right after upload.
-The LLM queue is a priority queue: questions will use priority 0, receipts 1 (hours 7–12).
+The LLM queue is a priority queue: questions (priority 0) run before waiting receipts (1).
 After derive, the checks run on every OPEN Liquidation (duplicates span Liquidations).
 """
 import asyncio
@@ -14,9 +14,11 @@ import events
 from checks import service as checks
 from pipeline.backends import backend
 from pipeline.derive import derive
+from questions import service as questions
 
 log = logging.getLogger("tally.runner")
 
+QUESTION_PRIORITY = 0
 RECEIPT_PRIORITY = 1
 _ocr_queue: asyncio.Queue[int] | None = None
 _llm_queue: asyncio.PriorityQueue | None = None
@@ -39,6 +41,12 @@ def enqueue(receipt_id: int) -> int:
     _ocr_queue.put_nowait(receipt_id)
     _publish_queue()
     return queue_state()["length"]
+
+
+def enqueue_question(question_id: int) -> None:
+    """Questions jump the queue: the worst-case wait is the receipt currently being extracted."""
+    _llm_queue.put_nowait((QUESTION_PRIORITY, next(_seq), ("question", question_id)))
+    _publish_queue()
 
 
 def _set_stage(conn, receipt_id: int, stage: str, **fields) -> int:
@@ -94,8 +102,18 @@ async def _llm_worker() -> None:
         try:
             if kind == "receipt":
                 await _process_receipt(conn, be, item_id)
+            else:
+                await questions.answer(conn, item_id)
+                events.publish("question.answered", question_id=item_id)
         except Exception as e:  # noqa: BLE001
-            _fail(conn, item_id, f"extraction: {e}")
+            if kind == "receipt":
+                _fail(conn, item_id, f"extraction: {e}")
+            else:
+                log.exception("question %s failed", item_id)
+                conn.execute("UPDATE question SET state = 'done', answer = ? WHERE id = ?", (json.dumps(
+                    {"kind": "unsupported", "sentence": f"Sorry, I couldn't answer that ({e}).", "supported": []}), item_id))
+                conn.commit()
+                events.publish("question.answered", question_id=item_id)
         finally:
             conn.close()
             _current = None
@@ -127,6 +145,8 @@ def start() -> None:
                 _llm_queue.put_nowait((RECEIPT_PRIORITY, next(_seq), ("receipt", r["id"])))
             else:
                 _ocr_queue.put_nowait(r["id"])
+        for q in conn.execute("SELECT id FROM question WHERE state != 'done' ORDER BY id"):
+            _llm_queue.put_nowait((QUESTION_PRIORITY, next(_seq), ("question", q["id"])))
     finally:
         conn.close()
 
