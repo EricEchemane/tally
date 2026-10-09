@@ -33,7 +33,7 @@ def findings(conn: sqlite3.Connection, receipt_id: int) -> list[dict]:
     rows = conn.execute('SELECT * FROM finding WHERE receipt_id = ? ORDER BY id', (receipt_id,))
     return [
         {
-            "id": f["id"], "check": f["check"], "severity": f["severity"], "state": f["state"],
+            "id": f["id"], "check": f["check"], "condition": f["condition"], "severity": f["severity"], "state": f["state"],
             "message": f["message"], "amount_affected": to_pesos(f["amount_affected"]),
             "related": {"liquidation_id": f["related_liquidation_id"]} if f["related_liquidation_id"] else None,
             "dismissal_reason": f["dismissal_reason"],

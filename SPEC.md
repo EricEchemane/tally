@@ -128,7 +128,8 @@ No line items. The prompt rules, refined from the benchmark:
 - **Non-VAT seller** → VATable and VAT become null.
 - **VAT repair:** if the arithmetic fails, search the OCR numbers for a VATable / VAT / exempt / total set that satisfies it. Prefer the LLM's total, then exempt = 0. Set `amounts_repaired`.
 - `slsp_bucket`: MEALS, LODGING and TRANSPORT → services; fuel and SUPPLIES → other goods.
-- `duplicate_key` = seller TIN + invoice number + total.
+- `duplicate_key` = seller TIN + branch + invoice number. The total is left out: BIR invoice serials are unique per seller branch, and OCR misreads totals (the blurry 7-Eleven duplicate read ₱284 as ₱1,000).
+- `buyer_name` is kept only if it sits on a labelled buyer line (Sold to / Name / Cust Name / Registered Name) and isn't masked. Small models report loyalty names (`EC*****N`), cashier IDs, cardholder names and even name badges in the photo background as buyers.
 
 ### Corrections (Reviewer)
 
@@ -163,14 +164,32 @@ From [Checks and Disallowed Amount rules](.wayfinder/liquidation-review/issues/0
 | | | Something written but TIN unreadable or incomplete | NEEDS_REVIEW |
 | | | TIN matches, name differs | accepted (difference noted) |
 | 4 | VAT arithmetic (VAT-registered; ±₱0.05; after repair) | VATable × 12% ≠ VAT, or the parts ≠ total | NEEDS_REVIEW |
+| | | Total not found (any receipt) | NEEDS_REVIEW |
 | | | No VAT breakdown | NEEDS_REVIEW (Reviewer confirms as REJECT or NO_INPUT_VAT) |
 | | | Auto-repaired | accepted, with an "auto-corrected" note |
-| 5 | Duplicate | Same `duplicate_key` or `image_hash` in **any** Liquidation | REJECT on the later one, naming the earlier |
+| 5 | Duplicate | Same `duplicate_key` (seller TIN + branch + invoice number) or `image_hash` in **any** Liquidation | REJECT on the later one, naming the earlier |
 | 6 | Date | Outside the Spending Period (`released_on`..`spending_end_on`, inclusive) | REJECT |
 | | | Date missing | NEEDS_REVIEW |
 
-- The checks are `check(effective_receipt, company, cash_advance, other_receipts) -> findings`.
-- Dismissals are keyed by `(receipt, check, condition)` so they survive re-runs.
+- The checks are a pure function, `checks.engine.run_checks(effective_receipt, ...) -> findings` (amounts in centavos). `checks.service.recheck_open` persists them.
+- **When the checks run:** every processed receipt in every OPEN Liquidation is re-checked after:
+  - each extraction
+  - each Reviewer action
+  - a receipt deletion
+  - a Buyer Details Rule change
+  - startup
+
+  Duplicates span Liquidations, and the receipt counts are small. APPROVED and RETURNED Liquidations are never re-checked.
+- Findings are keyed by `(receipt, check, condition)`, so dismissals and confirmations survive re-runs. A Finding whose condition no longer holds is removed.
+- **Condition keys:**
+  - `DOC_TYPE`: `official_receipt`, `foreign`, `no_title`, `non_vat`, `not_valid_notice`
+  - `SELLER_TIN`: `missing`, `branch_missing`
+  - `BUYER_DETAILS`: `tin_mismatch`, `blank`, `unreadable`
+  - `VAT_ARITHMETIC`: `mismatch`, `no_breakdown`, `total_missing`
+  - `DUPLICATE`: `duplicate`
+  - `DATE`: `outside_period`, `missing`
+- A foreign receipt (non-PHP) is rejected by check 1 and skips checks 2–4, which would only add noise.
+- **Reviewer corrections are validated and normalized:** TINs to digits (a seller TIN typed with its branch is split), dates to ISO, amounts to centavos, enums checked. A bad value returns 422.
 
 **Reviewer actions:**
 - **Correct** a field (the checks re-run).

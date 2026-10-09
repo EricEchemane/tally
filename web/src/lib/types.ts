@@ -34,7 +34,7 @@ export interface Liquidation {
 }
 
 export interface Finding {
-  id: number; check: string; severity: Severity; state: "OPEN" | "DISMISSED" | "CONFIRMED";
+  id: number; check: string; condition: string; severity: Severity; state: "OPEN" | "DISMISSED" | "CONFIRMED";
   message: string; amount_affected: number | null;
   related: { liquidation_id: number } | null; dismissal_reason: string | null;
 }

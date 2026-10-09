@@ -2,7 +2,7 @@
 
 OCR runs outside the LLM queue (Neural Engine), so receipt.ocr_done fires right after upload.
 The LLM queue is a priority queue: questions will use priority 0, receipts 1 (hours 7–12).
-Checks are not wired yet (hours 4–7): processed receipts stay "checks pending" (checks_run = 0).
+After derive, the checks run on every OPEN Liquidation (duplicates span Liquidations).
 """
 import asyncio
 import itertools
@@ -11,7 +11,7 @@ import logging
 
 import db
 import events
-import serialize
+from checks import service as checks
 from pipeline.backends import backend
 from pipeline.derive import derive
 
@@ -111,10 +111,8 @@ async def _process_receipt(conn, be, receipt_id: int) -> None:
     conn.execute("UPDATE receipt SET extraction = ? WHERE id = ?", (json.dumps(extraction), receipt_id))
     _set_stage(conn, receipt_id, "checking")
     derived = derive(extraction, row["ocr_text"])
-    # TODO(Eric, hours 4–7): run the checks here, write Findings, set checks_run = 1.
-    lid = _set_stage(conn, receipt_id, "done", derived=json.dumps(derived), status=None)
-    events.publish("receipt.updated", receipt_id=receipt_id, liquidation_id=lid, status=None, open_findings=0)
-    events.publish("liquidation.updated", liquidation_id=lid, status="OPEN", totals=serialize.totals(conn, lid))
+    _set_stage(conn, receipt_id, "done", derived=json.dumps(derived), status=None)
+    checks.recheck_open(conn)  # publishes receipt.updated + liquidation.updated
 
 
 def start() -> None:

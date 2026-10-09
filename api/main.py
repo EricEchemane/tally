@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 import db
 import events
+from checks import service as checks
 from db.seed import seed
 from pipeline import runner
 from routes import company, exports, liquidations, ops, people, questions, receipts, ws
@@ -16,6 +17,7 @@ async def lifespan(app: FastAPI):
     conn = db.connect()
     db.init_db(conn)
     seed(conn)
+    checks.recheck_open(conn, publish=False)  # rule or code changes since the last run
     conn.close()
     events.bind_loop(asyncio.get_running_loop())
     runner.start()

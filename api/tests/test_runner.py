@@ -43,10 +43,12 @@ def test_known_sample_replays_its_real_fixture(client):
     assert next(e for e in seen if e["event"] == "receipt.ocr_done")["preview"].startswith("BF SINANGAG")
     assert r["derived"]["seller_tin"] == "240727673" and r["derived"]["total"] == 355.0
     assert r["effective"]["date"] == "2026-04-03" and r["ocr_text"] and r["extraction"]
-    # Checks land at hours 4–7: until then a processed receipt is "checks pending", never ACCEPTED.
-    assert r["status"] is None and r["checks_pending"] is True
+    # Checks run right after derive: the demo Company requires buyer details on every receipt.
+    assert r["status"] == "REJECT" and r["checks_pending"] is False
+    # The seeded placeholders already hold this exact photo, so it is also caught as a duplicate.
+    assert {(f["check"], f["severity"]) for f in r["findings"]} == {("BUYER_DETAILS", "REJECT"), ("DUPLICATE", "REJECT")}
     summary = next(x for x in client.get(f"/api/liquidations/{lid}").json()["receipts"] if x["id"] == rid)
-    assert summary["checks_pending"] and summary["seller_name"]
+    assert summary["status"] == "REJECT" and summary["seller_name"]
 
 
 def test_unknown_image_still_flows_through_a_fixture(client):

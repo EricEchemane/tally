@@ -187,6 +187,26 @@ def repair(d: dict, ocr: str) -> tuple[dict, bool]:
     return {**d, "vatable_sales": v, "vat_amount": a, "vat_exempt_sales": e, "zero_rated_sales": 0, "total": t}, True
 
 
+# ---------- buyer details ----------
+
+_BUYER_LABEL = re.compile(r"SOLD\s*TO|REGISTERED\s+NAME|CUST(OMER)?\.?\s*NAME|BUYER|^\s*NAME\s*[:.]", re.I)
+_NOT_BUYER = re.compile(r"CASHIER|STAFF|SUKI|LOYALTY|CARD|SERVER|WAITER|PREPARED", re.I)
+
+
+def credible_buyer_name(name: str | None, ocr: str) -> str | None:
+    """Keep the LLM's buyer name only if it is written on a labelled buyer line of the OCR text.
+    Drops masked loyalty names (EC*****N), cashier IDs, cardholder names and names seen in the
+    photo background, which small models report as buyers."""
+    name = (name or "").strip()
+    if not name or "*" in name:
+        return None
+    token = re.sub(r"\s+", " ", name.split()[0]).upper()
+    for row in ocr.splitlines():
+        if _BUYER_LABEL.search(row) and not _NOT_BUYER.search(row) and token in row.upper():
+            return name
+    return None
+
+
 # ---------- SLSP bucket ----------
 
 _FUEL = re.compile(r"\b(FUEL|GAS(OLINE)?|DIESEL|UNLEADED|PETRON|SHELL|CALTEX|SEAOIL|PHOENIX|\d+(\.\d+)?\s?L)\b", re.I)
@@ -218,9 +238,9 @@ def derive(extraction: dict, ocr: str) -> dict:
         invoice_number=(invoice_number_from_ocr(ocr) if cur == "PHP" else None)
         or parse_invoice_number(extraction.get("invoice_number_raw")),
         date=parse_date(extraction.get("date_raw")),
-        buyer_name=extraction.get("buyer_name"),
+        buyer_name=credible_buyer_name(extraction.get("buyer_name"), ocr),
         buyer_tin=buyer_tin,
-        buyer_tin_raw=extraction.get("buyer_tin_raw"),
+        buyer_tin_raw=extraction.get("buyer_tin_raw") if re.search(r"\d{3}", extraction.get("buyer_tin_raw") or "") else None,
         buyer_address=extraction.get("buyer_address"),
         particulars=extraction.get("particulars"),
         expense_category=extraction.get("expense_category"),
@@ -234,6 +254,14 @@ def derive(extraction: dict, ocr: str) -> dict:
         d["vatable_sales"], d["vat_amount"] = None, None
     d, d["amounts_repaired"] = repair(d, ocr)
     d["slsp_bucket"] = slsp_bucket(d["expense_category"], d["particulars"], d["seller_name"])
-    d["duplicate_key"] = (f"{seller_tin}|{d['invoice_number']}|{d['total']}"
-                          if seller_tin and d["invoice_number"] and d["total"] is not None else None)
+    d["duplicate_key"] = duplicate_key(d)
     return d
+
+
+def duplicate_key(d: dict) -> str | None:
+    """Seller TIN + branch + invoice number. BIR invoice serials are unique per seller branch; the total
+    is left out because OCR misreads it (the blurry 7-Eleven duplicate read ₱284 as ₱1,000)."""
+    tin, inv = d.get("seller_tin"), d.get("invoice_number")
+    if not tin or not inv:
+        return None
+    return f"{tin}|{d.get('seller_branch') or ''}|{re.sub(r'[^0-9A-Za-z]', '', inv)}"

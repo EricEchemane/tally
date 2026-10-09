@@ -11,7 +11,9 @@ import events
 import serialize
 from db import get_db
 from money import to_centavos
+from checks import service as checks
 from pipeline import runner
+from pipeline.derive import parse_date
 from pipeline.ingest import save_upload
 from routes.liquidations import load as load_liquidation
 
@@ -75,15 +77,16 @@ def delete(receipt_id: int, conn: sqlite3.Connection = Depends(get_db)):
     _require_open(conn, r["liquidation_id"])
     conn.execute("DELETE FROM receipt WHERE id = ?", (receipt_id,))
     conn.commit()
+    checks.recheck_open(conn)  # a duplicate of this receipt may now be the original
     events.publish("liquidation.updated", liquidation_id=r["liquidation_id"], status="OPEN",
                    totals=serialize.totals(conn, r["liquidation_id"]))
 
 
 def _after_change(conn, r) -> dict:
-    """Shared tail of every Reviewer action."""
-    # TODO(Eric, hours 4–7): re-run the checks on the effective values before recomputing status.
-    status = serialize.refresh_status(conn, r["id"])
+    """Shared tail of every Reviewer action: re-run the checks, then publish this receipt's state."""
     conn.commit()
+    checks.recheck_open(conn)
+    status = conn.execute("SELECT status FROM receipt WHERE id = ?", (r["id"],)).fetchone()[0]
     open_findings = conn.execute(
         "SELECT COUNT(*) FROM finding WHERE receipt_id = ? AND state = 'OPEN'", (r["id"],)).fetchone()[0]
     events.publish("receipt.updated", receipt_id=r["id"], liquidation_id=r["liquidation_id"],
@@ -106,13 +109,49 @@ def correct(receipt_id: int, body: CorrectionIn, conn: sqlite3.Connection = Depe
         raise HTTPException(422, f"field '{body.field}' is not editable")
     if r["derived"] is None:
         raise HTTPException(409, "receipt is still processing")
-    value = to_centavos(body.value) if body.field in serialize.AMOUNT_FIELDS else body.value
     current, _ = serialize.effective(conn, receipt_id, json.loads(r["derived"]))
-    conn.execute(
-        "INSERT INTO correction (receipt_id, field, value, previous) VALUES (?, ?, ?, ?) "
-        "ON CONFLICT (receipt_id, field) DO UPDATE SET value = excluded.value, at = datetime('now')",
-        (receipt_id, body.field, json.dumps(value), json.dumps(current.get(body.field))))
+    for field, value in _normalize(body.field, body.value).items():
+        conn.execute(
+            "INSERT INTO correction (receipt_id, field, value, previous) VALUES (?, ?, ?, ?) "
+            "ON CONFLICT (receipt_id, field) DO UPDATE SET value = excluded.value, at = datetime('now')",
+            (receipt_id, field, json.dumps(value), json.dumps(current.get(field))))
     return _after_change(conn, r)
+
+
+ENUMS = {"doc_type": {"INVOICE", "OFFICIAL_RECEIPT", "OTHER"},
+         "expense_category": {"MEALS", "TRANSPORT_FUEL", "LODGING", "SUPPLIES", "OTHER"}}
+
+
+def _normalize(field: str, value: Any) -> dict[str, Any]:
+    """Validate a Reviewer's value and store it in the derived layer's shape (centavos, digits, ISO)."""
+    def bad(why):
+        raise HTTPException(422, f"invalid {field}: {why}")
+
+    if value is None or value == "":
+        return {field: None}
+    if field in serialize.AMOUNT_FIELDS:
+        try:
+            return {field: to_centavos(value)}
+        except Exception:
+            bad("not an amount")
+    if field in ("seller_tin", "buyer_tin"):
+        digits = "".join(ch for ch in str(value) if ch.isdigit())
+        if len(digits) == 9:
+            return {field: digits}
+        if field == "seller_tin" and 12 <= len(digits) <= 14:   # typed with the branch code
+            return {"seller_tin": digits[:9], "seller_branch": digits[9:]}
+        bad("a TIN has 9 digits (plus a 3–5 digit branch for the seller)")
+    if field == "seller_branch":
+        digits = "".join(ch for ch in str(value) if ch.isdigit())
+        return {field: digits} if 3 <= len(digits) <= 5 else bad("a branch code has 3–5 digits")
+    if field == "date":
+        iso = parse_date(str(value))
+        return {field: iso} if iso else bad("not a date")
+    if field == "vat_registered":
+        return {field: bool(value)} if isinstance(value, bool) else bad("must be true or false")
+    if field in ENUMS:
+        return {field: value} if value in ENUMS[field] else bad(f"must be one of {sorted(ENUMS[field])}")
+    return {field: str(value).strip()}
 
 
 @router.delete("/receipts/{receipt_id}/corrections/{field}")
