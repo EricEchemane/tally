@@ -2,7 +2,7 @@
 // One hook per REST resource. Query keys match the invalidation table in live.tsx (SPEC §7).
 import { useQuery } from "@tanstack/react-query";
 import { api } from "./api";
-import type { CashAdvance, Company, Employee, Health, Liquidation, LiquidationStatus, Question, Receipt } from "./types";
+import type { CashAdvance, Company, Employee, Health, Liquidation, LiquidationStatus, Receipt } from "./types";
 
 export const useCompany = () => useQuery({ queryKey: ["company"], queryFn: () => api.get<Company>("/api/company") });
 
@@ -29,5 +29,3 @@ export const useCaptureLink = (id: number) =>
     queryFn: () => api.get<{ url: string; qr_svg: string }>(`/api/liquidations/${id}/capture-link`),
     staleTime: Infinity,
   });
-
-export const useQuestions = () => useQuery({ queryKey: ["questions"], queryFn: () => api.get<Question[]>("/api/questions") });
