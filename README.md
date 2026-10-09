@@ -28,11 +28,18 @@ cd web; npm install; npm run dev
 
 To run against Eric's Mac instead (same room), set `API_URL=http://<mac-ip>:8000` for `web` and start the Mac API with `--host 0.0.0.0` (development only).
 
+**Marketing site (`site/`, any OS):** the public Tally PH site. It needs no API or model.
+
+```sh
+cd site && npm install && npm run dev   # http://localhost:3001
+```
+
 ## Test
 
 ```sh
 cd api && uv run pytest
 cd web && npx tsc --noEmit && npm run lint
+cd site && npx tsc --noEmit && npm run lint
 node design/sync-tokens.mjs --check   # each app's tokens.css matches design/tokens.css
 ```
 
@@ -45,6 +52,6 @@ The calm-ledger colours, shadows and motion live in `design/tokens.css`, shared 
 | Path | Owner |
 |---|---|
 | `api/pipeline/`, `api/llm/`, `api/checks/`, `api/routes/`, `api/db/` (schema) | Eric |
-| `web/`, `api/exports/`, `api/questions/templates/` | Simon |
+| `web/`, `site/`, `design/`, `api/exports/`, `api/questions/templates/` | Simon |
 
 An empty database starts with the demo data (`api/db/demo.py`, SPEC §3): Bayanihan Demo Corp, three Cash Advances and 11 processed receipts. Before a demo or rehearsal, run `./demo.sh` with `./dev.sh` running: it resets the data, warms the model and prints the phone URL. Deleting `api/data/` also gives a fresh start.
