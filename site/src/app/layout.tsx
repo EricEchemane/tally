@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage" });
 
 export const metadata: Metadata = {
-  title: "Tally: every receipt checked against BIR rules, on your own laptop",
+  title: "Tally",
   description:
     "Tally reads each receipt in a Liquidation, checks it against the BIR rules and shows what needs your attention. It runs on your Mac or Windows computer; nothing goes to the cloud.",
 };
