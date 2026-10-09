@@ -33,7 +33,12 @@ To run against Eric's Mac instead (same room), set `API_URL=http://<mac-ip>:8000
 ```sh
 cd api && uv run pytest
 cd web && npx tsc --noEmit && npm run lint
+node design/sync-tokens.mjs --check   # each app's tokens.css matches design/tokens.css
 ```
+
+## Design tokens
+
+The calm-ledger colours, shadows and motion live in `design/tokens.css`, shared by the app (`web/`) and the marketing site (`site/`). Edit that file, then run `node design/sync-tokens.mjs` to copy it into each app's `src/app/tokens.css` (Turbopack won't import CSS from outside an app's folder). Fonts are set per app in its `globals.css`.
 
 ## Layout and ownership (SPEC §9)
 

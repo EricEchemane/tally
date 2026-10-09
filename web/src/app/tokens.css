@@ -1,0 +1,122 @@
+/* Generated from design/tokens.css by design/sync-tokens.mjs. Edit that file, then run
+   `node design/sync-tokens.mjs`. */
+/* Tally design tokens: a calm ledger. Paper surfaces, one deep green accent, status colours that
+   read on a projector. Every colour has a dark-mode pair. Shared by web/ (the app) and site/ (the
+   marketing site); fonts are set per app, since the app runs offline and loads no web fonts. */
+:root {
+  --paper: #f6f5f0;
+  --surface: #ffffff;
+  --sunken: #efede6;
+  --ink: #1b1f1c;
+  --muted: #5d655f;
+  --faint: #8a918b;
+  --line: #e2dfd6;
+  --line-strong: #cfcbc0;
+  --accent: #1d5c43;
+  --accent-hover: #164a36;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2eee7;
+
+  --ok: #1d6f47;
+  --ok-soft: #e1f1e7;
+  --warn: #8a5a00;
+  --warn-soft: #fbefd5;
+  --bad: #ab2a1f;
+  --bad-soft: #fbe5e2;
+  --info: #3a5680;
+  --info-soft: #e5ecf6;
+
+  --shadow: 0 1px 2px rgb(27 31 28 / 0.06), 0 1px 1px rgb(27 31 28 / 0.04);
+  --shadow-lg: 0 12px 32px rgb(27 31 28 / 0.16);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #111412;
+    --surface: #191d1a;
+    --sunken: #151816;
+    --ink: #e7eae6;
+    --muted: #a0a8a2;
+    --faint: #737b75;
+    --line: #2a302c;
+    --line-strong: #3a423d;
+    --accent: #6cc39a;
+    --accent-hover: #86d2ad;
+    --accent-ink: #0d1f17;
+    --accent-soft: #1b3127;
+
+    --ok: #73c99c;
+    --ok-soft: #173023;
+    --warn: #e6b65a;
+    --warn-soft: #33280f;
+    --bad: #f1897e;
+    --bad-soft: #3a1b18;
+    --info: #9fbae0;
+    --info-soft: #1a2535;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --shadow-card: var(--shadow);
+  --shadow-pop: var(--shadow-lg);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+/* Figures line up in columns, like a ledger. */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@keyframes tally-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+.pulse {
+  animation: tally-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes tally-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.enter {
+  animation: tally-in 0.25s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse, .enter { animation: none; }
+}
