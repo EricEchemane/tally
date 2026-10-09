@@ -1,0 +1,8 @@
+{
+  "image": "valid-llaollao-service-invoice.jpg",
+  "image_sha256": "ddab7e78e242d57faf1a9a7e86d1bdf7c3e9797ae72b2abb6932c0d356305e9e",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 0.76,
+  "llm_seconds": 14.0
+}

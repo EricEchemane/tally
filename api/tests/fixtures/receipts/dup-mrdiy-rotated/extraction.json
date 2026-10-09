@@ -1,0 +1,17 @@
+{
+  "seller_name": "MR DIY",
+  "seller_address": "BRICOLAGE PHILIPPINES INC. 2/F Festival Supermall Alabang City of M  FESTIVAL MALL",
+  "seller_tin_raw": "010-057-617-00144",
+  "invoice_number_raw": "0000-0000240076",
+  "date_raw": "04/12/2026",
+  "buyer_name": "CUST NAME:",
+  "buyer_tin_raw": "TIN:",
+  "buyer_address": "ADDRESS:",
+  "vatable_sales": 108.93,
+  "vat_amount": 13.07,
+  "vat_exempt_sales": 0.0,
+  "zero_rated_sales": 0.0,
+  "total": 122.0,
+  "particulars": "GLASS VASE 5.2*19*9CM_JC-1LL# D2-H04-H06 - 12/36  1 X  :59.00  59.00\nCOMB T857# G1-C01 - 12/1200  1 X 23.00  23.00\nRULER SET 15+20+30CM# L3H04 - 20/480  1 X 33.00  33.00\nEco Bag  ) 13.78W,\nWH KH - 500/1500  7.00 99003D  1 X  7.00",
+  "expense_category": "MEALS"
+}

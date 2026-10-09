@@ -1,0 +1,17 @@
+{
+  "seller_name": "GOLDILOCKS B",
+  "seller_address": "FESTIVAL MALL ALMor  FS BRANCH\nUNIT 1065. 1 GROUND FLOUR FESTIVAL MALL\nALABANG CITY OF MUNT INLUPA\nFOURTH DISIRICT",
+  "seller_tin_raw": "F  207-00471",
+  "invoice_number_raw": "SI#  02-00032921",
+  "date_raw": "08/14/2026",
+  "buyer_name": "20092728-IVAN F0",
+  "buyer_tin_raw": "",
+  "buyer_address": "",
+  "vatable_sales": 992.0,
+  "vat_amount": 0.0,
+  "vat_exempt_sales": 0.0,
+  "zero_rated_sales": 0.0,
+  "total": 952.0,
+  "particulars": "1 Luscious Caramel 9rd 0689  253.00V\n1 CLASSIC CHOCOLATE HALF ROLL E2:3  50.00V\ni Delivery Service Charge 250",
+  "expense_category": "MEALS"
+}

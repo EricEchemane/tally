@@ -1,0 +1,8 @@
+{
+  "image": "or-cebu-2022-multi-finding.jpg",
+  "image_sha256": "c408e1135a8913cb56777a5d22c4b18e01ab76421ba365c574ff8db21a8a5b54",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 0.68,
+  "llm_seconds": 14.6
+}

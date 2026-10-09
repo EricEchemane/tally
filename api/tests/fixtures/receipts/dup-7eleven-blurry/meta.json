@@ -1,0 +1,8 @@
+{
+  "image": "dup-7eleven-blurry.jpg",
+  "image_sha256": "71542ecfbe4c06f59e87fcdf1c548f1e41b2ded7c6a2bfc787fa915e68ba2f47",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 1.0,
+  "llm_seconds": 18.6
+}

@@ -1,0 +1,17 @@
+{
+  "seller_name": "MERCURY DRUG GLOBAL CITY PAN MET MET  Market Market Lot E. Bonifac 10",
+  "seller_address": "433 Lt.  Artiaga S  Brgy Corazon de san Juan,  Metro Manila",
+  "seller_tin_raw": "205-713-621-00000",
+  "invoice_number_raw": "INVOICE#102892612142",
+  "date_raw": "09-19-26 12:47P DAEZEL.",
+  "buyer_name": "EC*****N  C****",
+  "buyer_tin_raw": null,
+  "buyer_address": null,
+  "vatable_sales": 652.01,
+  "vat_amount": 78.24,
+  "vat_exempt_sales": 0.0,
+  "zero_rated_sales": 0.0,
+  "total": 730.25,
+  "particulars": "BEWELL -C PLUSCAP  115.00T\n480652089034\nCALVLT GOLD TAB  146.25T\n480651066118  15 ₫ 9. 75\nCEELIN DRP 30mL  *SP  147.00T\n480778802773\nMONDE BCB 90G\n480777010169  49.00T\nNES CLSSC 1.9g  2 @ 24.50\n480036133956  19.50T\n6 @ 3.25\nCENT TF H&S 155G\nD 50T\n748485100418\nNSCFE CLSC R20g  54.00T\n480036133918  2 @ 27.00\nNIV M RON CK50mL  159.00T\n400580830184",
+  "expense_category": "SUPPLIES"
+}

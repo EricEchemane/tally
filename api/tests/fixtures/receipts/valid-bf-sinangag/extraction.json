@@ -1,0 +1,17 @@
+{
+  "seller_name": "BF SINANGAG EXPRESS FOOD CORP",
+  "seller_address": "UNIT 106 AXC NORTHGATE CYBERZONE FCC  ALABANG CITY OF MUNTINLUPA NOR FOURTH OISTRICT PHILIPPINES 1780",
+  "seller_tin_raw": "240-727-673-00006",
+  "invoice_number_raw": "175026",
+  "date_raw": "7:27pm, Fri 3 Apr 2026",
+  "buyer_name": null,
+  "buyer_tin_raw": null,
+  "buyer_address": null,
+  "vatable_sales": 316.96,
+  "vat_amount": 38.04,
+  "vat_exempt_sales": 0.0,
+  "zero_rated_sales": 0.0,
+  "total": 355.0,
+  "particulars": "01 MEALS @170x1  170.00\n- TAPSILOG\n01 MEALS @135x1  185.00\n- LIEMPOSILOG",
+  "expense_category": "MEALS"
+}

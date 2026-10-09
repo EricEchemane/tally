@@ -1,0 +1,8 @@
+{
+  "image": "amber-handwritten-service-invoice.jpeg",
+  "image_sha256": "47352eed45ed7e342afaec6637e5e4115cbae443eb4bffcc9892f0dff8186de7",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 9.63,
+  "llm_seconds": 14.0
+}

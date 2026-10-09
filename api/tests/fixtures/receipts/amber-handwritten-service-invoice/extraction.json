@@ -1,0 +1,17 @@
+{
+  "seller_name": "AMBER GOLDEN SPOON RESTAURANT CORPORATION",
+  "seller_address": "Home of the Original Pancit Malabon and Pelicious Pichi-Pichi",
+  "seller_tin_raw": "212-305-757-00000",
+  "invoice_number_raw": "144254",
+  "date_raw": "8.14.24",
+  "buyer_name": null,
+  "buyer_tin_raw": null,
+  "buyer_address": null,
+  "vatable_sales": 147321,
+  "vat_amount": 4.79,
+  "vat_exempt_sales": 715,
+  "zero_rated_sales": null,
+  "total": 1845,
+  "particulars": null,
+  "expense_category": "MEALS"
+}

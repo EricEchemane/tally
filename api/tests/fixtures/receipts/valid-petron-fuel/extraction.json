@@ -1,0 +1,17 @@
+{
+  "seller_name": "PETRON Primera Clase Gas Station, Inc.",
+  "seller_address": "Pacific Rim Cor. Commerce Ave.",
+  "seller_tin_raw": "007-851-409-0000",
+  "invoice_number_raw": "8.I.# 0001362299",
+  "date_raw": "04/03/2026",
+  "buyer_name": "23",
+  "buyer_tin_raw": "",
+  "buyer_address": "",
+  "vatable_sales": 282.95,
+  "vat_amount": 252.63,
+  "vat_exempt_sales": 0.0,
+  "zero_rated_sales": 0.0,
+  "total": 282.95,
+  "particulars": "XCS (V) (P : 06)  2.92  Php96.90  Php282.95",
+  "expense_category": "MEALS"
+}

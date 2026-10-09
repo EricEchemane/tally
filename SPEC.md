@@ -96,11 +96,11 @@ Decisions from [Measure OCR and extraction on the 8GB M1](.wayfinder/liquidation
 |---|---|---|
 | 1. Ingest | Save the image; convert HEIC → JPEG; compute `image_hash` | — |
 | 2. OCR | `ocrmac` accurate mode. **Upright detection:** if the median box is tall and narrow, rotate ±90° and keep the better pass. **Row grouping:** join observations whose vertical centers overlap, left to right. Emit `receipt.ocr_done` with a short preview. | ~0.5 s (1.6 s if rotated) |
-| 3. Extraction | One qwen3:4b call over the grouped text, with the JSON Schema below. Goes through the **LLM queue** (questions have priority). | ~14 s warm, ~22 s cold |
+| 3. Extraction | One qwen3:4b call over the grouped text, with the JSON Schema below. Goes through the **LLM queue** (questions have priority). | **13–34 s** warm (long pharmacy tapes are slowest) |
 | 4. Derive | Code normalization and keyword rules (below), then VAT repair | ms |
 | 5. Checks | A pure function, re-run on every change | ms |
 
-**Measured on 13 real receipts:** 90% field accuracy. The VAT arithmetic check flagged every wrong amount, and the repair fixed 3 of 4.
+**Measured on 18 real receipts** (fixtures, hour 1–3): **91% field accuracy** after derive. Every wrong amount fails the VAT arithmetic check, so it becomes NEEDS_REVIEW. Every seller TIN is right or absent, except one known gap: a faded TIN misread into a wrong but well-formed one.
 
 ### Extraction (LLM output, immutable; all nullable; never invent values)
 
@@ -114,14 +114,17 @@ No line items. The prompt rules, refined from the benchmark:
 
 ### Derived (code)
 
-- `doc_type`: `OFFICIAL_RECEIPT` if "OFFICIAL RECEIPT" appears; `INVOICE` if "INVOICE" appears; `OTHER` if non-PHP or no seller TIN; otherwise none found (→ NEEDS_REVIEW).
+- `doc_type`: `OFFICIAL_RECEIPT` if "OFFICIAL RECEIPT" appears; `OTHER` if non-PHP; `INVOICE` if "INVOICE" or an "SI No./#" label appears; otherwise none found (→ NEEDS_REVIEW). A missing TIN never makes a receipt `OTHER`, because it rejects only on evidence.
 - `vat_registered`: "NON VAT" → false; "VAT REG" → true; otherwise the LLM's reading.
 - `not_valid_notice`: "NOT VALID FOR … INPUT TAX" appears.
 - `currency`: from "$", "USD" and similar.
 - `seller_tin` (9 digits) and `seller_branch` (3–5 digits):
   - reject MIN-like strings
-  - rejoin a TIN that wraps onto the next row
-- `buyer_tin`; `invoice_number` with prefixes like "SI #:" stripped; `date` parsed from many formats to ISO.
+  - rejoin a TIN that wraps onto the next row; keep the 9 digits when the branch is incomplete (→ NEEDS_REVIEW)
+  - **reject a POS-provider TIN**: one in the bottom 40% of rows next to Accred/PTU/Systems/"Date Issued" lines. This happens on faded tapes where only the footer is legible.
+- `buyer_tin`.
+- `invoice_number`: a **labelled OCR line wins** (`SI No.`, `SI Number`, `INVOICE#`, `OR No.`, including a label with the number on the next row), because the LLM confuses MINs and TXN numbers. Otherwise use the LLM's value with prefixes stripped.
+- `date`: find the date token inside the raw string (`09-19-26 12:47P DAEZEL`), then parse to ISO (month first, the PH convention).
 - **Non-VAT seller** → VATable and VAT become null.
 - **VAT repair:** if the arithmetic fails, search the OCR numbers for a VATable / VAT / exempt / total set that satisfies it. Prefer the LLM's total, then exempt = 0. Set `amounts_repaired`.
 - `slsp_bucket`: MEALS, LODGING and TRANSPORT → services; fuel and SUPPLIES → other goods.

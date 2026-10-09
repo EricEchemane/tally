@@ -1,0 +1,8 @@
+{
+  "image": "valid-bf-sinangag.jpg",
+  "image_sha256": "ee02481f816a1160c3d776eec317ca3bed68cef025e5edfd3552c50c9d0a5250",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 0.7,
+  "llm_seconds": 18.0
+}

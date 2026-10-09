@@ -1,0 +1,8 @@
+{
+  "image": "valid-petron-fuel.jpg",
+  "image_sha256": "2f9063b6bb795c16c8278b9d26b712d41b9007949059d751f31cb5c77ee24e25",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 0.83,
+  "llm_seconds": 14.8
+}

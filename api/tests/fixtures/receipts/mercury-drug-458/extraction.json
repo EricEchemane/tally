@@ -1,0 +1,17 @@
+{
+  "seller_name": "Market",
+  "seller_address": "433 It. Artiaga St. Brgy Corazon de JeSuS San Juan. Metro Manila",
+  "seller_tin_raw": "205-713-621-00000",
+  "invoice_number_raw": "INVOICE#102895595543",
+  "date_raw": "09-11-26 08:49A",
+  "buyer_name": "C****",
+  "buyer_tin_raw": "0017***706",
+  "buyer_address": "ADDRESS",
+  "vatable_sales": 408.93,
+  "vat_amount": 49.07,
+  "vat_exempt_sales": 0.0,
+  "zero_rated_sales": 0.0,
+  "total": 458.0,
+  "particulars": "ANGEN CBEEF  743485301803  100G\naFAR B FORT339  22.50T\n139035141081  20 11.25\nARAFT CW O SP24g  12.75T\nMES MEE GOLD 2g  8.50T\nCHARM PLdNSC20  29.00T\nCERELAC WB&M120g  72.00T\nNISSIN B COCO149  44.00T\nCELET FWSH 6UML  *SP  110.00T\nLEMSO CC ASTOXIO  88.25T",
+  "expense_category": "MEALS"
+}

@@ -1,0 +1,8 @@
+{
+  "image": "out-of-period-jollibee-2025.jpg",
+  "image_sha256": "e1fed832dea9896b1bcf353414a8d744ab390582e091664ec9cfdeea100b6511",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 0.67,
+  "llm_seconds": 15.5
+}

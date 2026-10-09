@@ -1,0 +1,17 @@
+{
+  "seller_name": "MERCURY DRUG",
+  "seller_address": "GLOBAL CITY TAGUIG MKT MKT Market Lot C Bonifacio",
+  "seller_tin_raw": "080-38-474-00409",
+  "invoice_number_raw": "987981",
+  "date_raw": "09:00A",
+  "buyer_name": "1 EC*****N C****",
+  "buyer_tin_raw": "",
+  "buyer_address": "",
+  "vatable_sales": 202.23,
+  "vat_amount": 24.27,
+  "vat_exempt_sales": 0.0,
+  "zero_rated_sales": 0.0,
+  "total": 226.5,
+  "particulars": "20 items",
+  "expense_category": "SUPPLIES"
+}

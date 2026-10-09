@@ -1,0 +1,17 @@
+{
+  "seller_name": "MOUTHFEEL COMPANY",
+  "seller_address": "ZAPOTE ROAD ALABANG 1781 CITY 0  GROUND FLOOR AVIDA TOWER ALABANG F MUNTINLUPU NOR  FOURTH DISTRICT PHILIPPINES",
+  "seller_tin_raw": "624-464-614-00",
+  "invoice_number_raw": "064950",
+  "date_raw": "3:14pm, Tue 31 Mar 2026",
+  "buyer_name": null,
+  "buyer_tin_raw": null,
+  "buyer_address": null,
+  "vatable_sales": 260.0,
+  "vat_amount": null,
+  "vat_exempt_sales": null,
+  "zero_rated_sales": null,
+  "total": 260.0,
+  "particulars": "ESPRESSO @140x1  140.00\n• Spanish Latte  16o2 Iced\nESPRESSO @120x1  120.00\n- Americano 16oz Iced",
+  "expense_category": "MEALS"
+}

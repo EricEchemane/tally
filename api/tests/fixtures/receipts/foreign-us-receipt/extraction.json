@@ -1,0 +1,17 @@
+{
+  "seller_name": "East Repair Inc.",
+  "seller_address": "1912 Harvest Lane\nNew York, NY 12210",
+  "seller_tin_raw": "VAT REG TIN",
+  "invoice_number_raw": "US-001",
+  "date_raw": "11/02/2019",
+  "buyer_name": "John Smith",
+  "buyer_tin_raw": "",
+  "buyer_address": "2 Court Square\nNew York, NY 12210",
+  "vatable_sales": 145.0,
+  "vat_amount": 9.06,
+  "vat_exempt_sales": null,
+  "zero_rated_sales": null,
+  "total": 154.06,
+  "particulars": "Front and rear brake cables\nNew set of pedal arms\nLabor 3hrs",
+  "expense_category": "MEALS"
+}

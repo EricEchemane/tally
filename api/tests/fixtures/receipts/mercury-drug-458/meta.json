@@ -1,0 +1,8 @@
+{
+  "image": "mercury-drug-458.jpeg",
+  "image_sha256": "fc0087a58a3d23f74e111d3670076456c3338e907a1dbcfb2ab16e81298485ca",
+  "rotation": 0,
+  "model": "qwen3:4b",
+  "ocr_seconds": 0.99,
+  "llm_seconds": 28.2
+}

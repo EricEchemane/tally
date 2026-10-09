@@ -1,0 +1,42 @@
+Landmark Supermarket
+Citysuper Alabang Inc.
+vic Drive, Filinvest, Alabang
+Muntinlupa City
+/AT REG TIN#: 009-149-884-000
+MIN: 20122611125132324
+S/N: 41-AEMWV
+059 02826 050126 1552 9000126683 REG
+ALMND BRZ VA 946ML 1  172.50
+KS SKN CLSC 3X 100G  152.50
+ASTRL HRV RLD 500G  1  87.25
+MR.HAT GLMN RED25G  2
+@ 16.50  33.00
+DIZON PPY SLO A[S]  37.40 *
+HEINZ TK 120G  22.00
+CENTRY BANGUS[S]  259.00
+Total  773,65
+CARD # 50-MCC CREDIT  773.65
+ACCT #  XXXxxxxxxxxX6528
+No. of Items: 8.00
+VATable  657.37
+VAT Exempt  37.40
+Zero Rated  0.00
+VAT - 12%  78.88
+Amount Due  773.65
+Sales Invoice  059-00-000125989
+Cashier Name: 12002826-T.REFIL
+Date: 05/01/26  Time: 3:52:55 PM
+NAME :
+ADDRESS
+TIN :
+Thank you for shopping at LANDMARK.
+Please come again.
+This serves as SALES INVOICE.
+POS Provider:
+APSOFT, INC.
+#441 Lt. Artiaga St., San Juan City
+TIN: 007-047-985-000
+ACCR#: 041-007047985-000483-60745
+Date Issued: 08/01/2020
+PTU No. : FP122020-53B-0277118-00000
+Date Issued: 12/29/2020

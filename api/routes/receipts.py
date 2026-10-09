@@ -1,7 +1,5 @@
-import hashlib
 import json
 import sqlite3
-import uuid
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -13,6 +11,7 @@ import events
 import serialize
 from db import get_db
 from money import to_centavos
+from pipeline.ingest import save_upload
 from routes.liquidations import load as load_liquidation
 
 router = APIRouter(prefix="/api")
@@ -41,18 +40,14 @@ async def upload(liquidation_id: int, images: list[UploadFile] = File(...),
     if t is not None and t != liq["capture_token"]:
         raise HTTPException(403, "invalid capture token")
     _require_open(conn, liquidation_id)
-    config.IMAGES_DIR.mkdir(parents=True, exist_ok=True)
     created = []
     for img in images:
         if img.content_type not in ALLOWED:
             raise HTTPException(415, f"unsupported file type {img.content_type}")
-        data = await img.read()
-        ext = {"image/png": ".png", "image/jpeg": ".jpg"}.get(img.content_type, ".heic")
-        path = config.IMAGES_DIR / f"{uuid.uuid4().hex}{ext}"
-        path.write_bytes(data)
+        path, digest = save_upload(await img.read(), img.content_type, config.IMAGES_DIR)
         rid = conn.execute(
             "INSERT INTO receipt (liquidation_id, image_path, image_hash) VALUES (?, ?, ?)",
-            (liquidation_id, str(path), hashlib.sha256(data).hexdigest())).lastrowid
+            (liquidation_id, str(path), digest)).lastrowid
         created.append(rid)
     conn.commit()
     # TODO(Eric, hours 1–4): enqueue each receipt into the pipeline (real or fake).
