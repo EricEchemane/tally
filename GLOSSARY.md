@@ -84,6 +84,10 @@ _Avoid_: Scan result, parse, OCR (as a name for the values)
 A Reviewer's replacement for one value of an extraction; where it exists, it is the value checks and exports use.
 _Avoid_: Edit, override, fix
 
+**Assistant**:
+The part of the app the Reviewer talks to in plain words, offline on their own computer; it answers from the Company's own records and shows how each answer was worked out. It reads and explains; it never changes a record.
+_Avoid_: Chatbot, AI assistant, bot
+
 **Check**:
 One rule applied to a receipt or a liquidation, such as "buyer TIN matches the company".
 _Avoid_: Validation, rule, test

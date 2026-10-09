@@ -2,16 +2,173 @@
 /* Calm-ledger tokens, shared with the app: a copy of design/tokens.css. */
 @import "./tokens.css";
 
+/* Marketing-only accents, from the reference kit (Optibiz, Creatix, Upmind): a deep green-teal "night"
+   for hero blocks and a lime highlight. The site keeps them here so the app's shared tokens stay unchanged.
+   Night blocks stay dark in both colour schemes; lime is only ever a fill or text on night. */
+:root {
+  --night: #0f2b26;
+  --night-2: #17392f;
+  --lime: #c5f06a;
+  --lime-hover: #d3f68b;
+  --lime-ink: #0f2b26;
+  /* Calm light surfaces (white + soft green), after the Upmind reference. --forest is fixed for the light hero. */
+  --mint: #edf6e8;
+  --mint-strong: #dcedd3;
+  --forest: #1d5c43;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mint: #15241d;
+    --mint-strong: #1d3228;
+  }
+}
+/* Everything below the hero, and the footer, always wears the dark ledger palette (near-black base, deep-green
+   panels, lime accents), whatever the visitor's system theme. Values mirror the dark block in tokens.css. */
+.section-dark,
+.theme-dark {
+  --paper: #111412;
+  --surface: #191d1a;
+  --sunken: #151816;
+  --ink: #e7eae6;
+  --muted: #a0a8a2;
+  --faint: #737b75;
+  --line: #2a302c;
+  --line-strong: #3a423d;
+  --accent: #6cc39a;
+  --accent-hover: #86d2ad;
+  --accent-ink: #0d1f17;
+  --accent-soft: #1b3127;
+  --ok: #73c99c;
+  --ok-soft: #173023;
+  --warn: #e6b65a;
+  --warn-soft: #33280f;
+  --bad: #f1897e;
+  --bad-soft: #3a1b18;
+  --info: #9fbae0;
+  --info-soft: #1a2535;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 12px 32px rgb(0 0 0 / 0.5);
+  --mint: #15241d;
+  --mint-strong: #1d3228;
+  color-scheme: dark;
+}
+.section-dark {
+  background: var(--paper);
+  color: var(--ink);
+}
 @theme inline {
-  /* System fonts until the display font is picked (ticket: Display font and marketing type scale). */
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --color-night: var(--night);
+  --color-night-2: var(--night-2);
+  --color-lime: var(--lime);
+  --color-lime-hover: var(--lime-hover);
+  --color-lime-ink: var(--lime-ink);
+  --color-mint: var(--mint);
+  --color-mint-strong: var(--mint-strong);
+  --color-forest: var(--forest);
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-bricolage), var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html {
   scroll-behavior: smooth;
+  scroll-padding-top: 6rem;
 }
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--ink);
+}
+
+a {
+  text-underline-offset: 0.2em;
+}
+
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+/* Headings speak in the display face; body copy stays in Hanken Grotesk. */
+h1, h2 {
+  font-family: var(--font-display);
+}
+
+/* Lazy rendering: sections below the hero skip layout and paint until they near the viewport. The intrinsic size
+   keeps the scrollbar steady before they render; "auto" remembers each section's real size once seen. */
+.lazy-section {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}
+
+/* Panels that swap in place (How it works) materialise rather than cut. */
+@keyframes panel-in {
+  from { opacity: 0; filter: blur(4px); transform: translateY(6px); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+.panel-in {
+  animation: panel-in 320ms var(--ease-out-expo);
+}
+
+/* FAQ: the marker turns; the answer fades in under it. */
+details > summary { list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+details[open] .faq-chevron { transform: rotate(180deg); }
+details[open] .faq-answer { animation: panel-in 260ms var(--ease-out-expo); }
+
+/* Hero. The photo settles in once; Tally's result chips arrive one by one around her, then drift a few pixels,
+   slowly and out of step with each other. */
+@keyframes photo-settle {
+  from { transform: scale(1.08); }
+  to { transform: none; }
+}
+@keyframes pop-in {
+  from { opacity: 0; filter: blur(6px); transform: translateY(14px) scale(0.96); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+@keyframes chip-drift {
+  from { transform: translateY(0); }
+  to { transform: translateY(-6px); }
+}
+.hero-photo { animation: photo-settle 2.2s var(--ease-out-expo) both; }
+/* The cutout ends at her waist; fade that cut edge out so she rises from the ground instead of stopping on a line. */
+.hero-model {
+  -webkit-mask-image: linear-gradient(to bottom, #000 62%, transparent 96%);
+  mask-image: linear-gradient(to bottom, #000 62%, transparent 96%);
+}
+.hero-chip {
+  animation:
+    pop-in 650ms var(--ease-out-expo) var(--at) both,
+    chip-drift 5.5s ease-in-out calc(var(--at) + 800ms) infinite alternate;
+}
+.hero-chip:nth-of-type(even) { animation-duration: 650ms, 7s; }
+
+/* Download chooser: grows from its button, quickly. Closing is instant (subtler than the entrance), and a
+   keyboard-opened chooser never animates (the component leaves this class off). */
+@keyframes chooser-in {
+  from { opacity: 0; filter: blur(2px); transform: translateY(-4px) scale(0.96); }
+  to { opacity: 1; filter: blur(0); transform: none; }
+}
+.chooser-in {
+  transform-origin: top center;
+  animation: chooser-in 180ms var(--ease-out-expo);
+}
+
+/* Assistant demo: once it scrolls into view, each message arrives in turn. Shown as-is until then (and always,
+   without JavaScript or under reduced motion). */
+.chat-armed .chat-step { opacity: 0; }
+.chat-play .chat-step { animation: pop-in 520ms var(--ease-out-expo) var(--d) both; }
+
+/* The checks band: one slow marquee, paused on hover, still under reduced motion. */
+@keyframes marquee {
+  to { transform: translateX(-50%); }
+}
+.marquee {
+  animation: marquee 48s linear infinite;
+}
+.marquee:hover { animation-play-state: paused; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .panel-in, details[open] .faq-answer, .marquee, .hero-photo, .hero-chip, .chooser-in, .chat-play .chat-step { animation: none; }
 }

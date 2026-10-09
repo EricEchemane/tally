@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 .DS_Store
 .claude/worktrees/
+
+# Local design-review captures (impeccable, Playwright MCP)
+.impeccable/
+.playwright-mcp/
