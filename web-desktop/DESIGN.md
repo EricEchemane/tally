@@ -56,7 +56,8 @@ The decisions behind the desktop dashboard's look, and the reasons. Values (colo
 
 ## Exports
 
-- **Preview before download:** the Liquidation's **Summary** button opens a preview of the Excel summary (header block, one row per receipt, totals), with Copy table and Download .xlsx. The preview and the file render the same backend data (`summary_data` in `api/exports`), so they can't disagree.
+- **Preview before download:** the Liquidation's **Summary** button opens a preview of the Excel summary, with Copy table and Download .xlsx. The preview and the file render the same backend data (`summary_data` in `api/exports`), so they can't disagree.
+- **A document, not a spreadsheet dump.** Totals come first, then a table that fits without sideways scrolling: Date, Seller (TIN beneath), Particulars, the amounts, and Status with its deciding reason. Addresses and full Findings live in the file, in Copy table and on hover. One scroll area, with a sticky header. The first version mirrored all 11 file columns in a nested scroller and read as "off".
 
 ## Words
 

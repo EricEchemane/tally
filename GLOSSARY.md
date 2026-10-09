@@ -123,3 +123,9 @@ _Avoid_: Refund, change, balance
 **Excess Spend**:
 Valid spend beyond the cash advance, which the employee may claim back subject to approval.
 _Avoid_: Overspend, reimbursement, negative balance
+
+## Asking
+
+**Ask Tally**:
+Asking a plain-language question (English or Taglish) about the Company's own liquidations and getting an answer drawn only from that data, with a note of how it was found.
+_Avoid_: Tally AI, chatbot, chat

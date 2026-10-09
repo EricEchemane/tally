@@ -30,7 +30,8 @@ export function Dialog({ open, onClose, title, description, children, footer, to
           <h2 className={cx("text-lg font-semibold tracking-tight", tone === "danger" && "text-bad")}>{title}</h2>
           {description && <div className="text-sm text-muted">{description}</div>}
         </div>
-        {children && <div className={cx("px-6 pt-4", size === "sheet" && "min-h-0 flex-1 overflow-auto")}>{children}</div>}
+        {/* A sheet scrolls its body only; its top gap is a margin so rows never show above a sticky table header. */}
+        {children && <div className={cx("px-6", size === "sheet" ? "mt-4 min-h-0 flex-1 overflow-auto" : "pt-4")}>{children}</div>}
         <div className="flex justify-end gap-2 px-6 pb-6 pt-6">{footer}</div>
       </div>
     </div>,

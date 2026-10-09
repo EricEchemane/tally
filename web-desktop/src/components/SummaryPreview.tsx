@@ -19,9 +19,12 @@ interface Summary {
 
 const STATUS_BY_LABEL = Object.fromEntries(Object.entries(RECEIPT_STATUS).map(([k, v]) => [v, k])) as Record<string, ReceiptStatus>;
 const TONE: Record<ReceiptStatus, "ok" | "info" | "warn" | "bad"> = { ACCEPTED: "ok", NO_INPUT_VAT: "info", NEEDS_REVIEW: "warn", REJECT: "bad" };
-const DATE_COLUMN = 1, STATUS_COLUMN = 9;
-// Column widths, in SUMMARY_COLUMNS order: wide enough to read without the rows growing tall.
-const WIDTH = ["w-44", "w-28", "w-48", "w-72", "w-36", "w-28", "w-32", "w-24", "w-28", "w-36", "w-80"];
+
+// Column positions in the file's SUMMARY_COLUMNS (api/exports).
+const C = { tin: 0, date: 1, seller: 2, address: 3, particulars: 4, amount: 5, withholding: 6, vat: 7, exempt: 8, status: 9, findings: 10 };
+
+const headerValue = (s: Summary, label: string) => s.header.find(([l]) => l === label)?.[1] ?? "";
+const total = (s: Summary, label: string) => s.totals.find(([l]) => l === label)?.[1] ?? 0;
 
 export function SummaryPreview({ liquidationId }: { liquidationId: number }) {
   const [open, setOpen] = useState(false);
@@ -36,81 +39,116 @@ export function SummaryPreview({ liquidationId }: { liquidationId: number }) {
   return (
     <>
       <Button onClick={() => setOpen(true)}>Summary</Button>
-      <Dialog open={open} onClose={() => setOpen(false)} size="sheet" title={s?.title ?? "Liquidation summary"}
-        description="What the Excel file contains."
+      <Dialog open={open} onClose={() => setOpen(false)} size="sheet"
+        title={s ? <span className="flex flex-wrap items-center gap-3">Liquidation summary<Pill tone="neutral">{headerValue(s, "Status")}</Pill></span> : "Liquidation summary"}
+        description={s && <Subtitle s={s} />}
         footer={<>
           <Button variant="ghost" disabled={!s} onClick={() => s && copy(s)}>Copy table</Button>
           <DownloadButton href={href}>Download .xlsx</DownloadButton>
           <Button variant="primary" onClick={() => setOpen(false)}>Done</Button>
         </>}>
         {summary.isError ? <Notice tone="bad">{errorMessage(summary.error)}</Notice> : !s ? (
-          <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-64" /></div>
-        ) : (
-          <div className="space-y-6">
-            <dl className="grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-[auto_1fr]">
-              {s.header.map(([label, value]) => (
-                <div key={label} className="contents">
-                  <dt className="text-muted">{label}</dt>
-                  <dd className="font-medium">{value}</dd>
-                </div>
-              ))}
-            </dl>
-
-            <div className="max-h-[55vh] overflow-auto rounded-2xl border border-line">
-              <table className="w-max min-w-full table-fixed text-sm">
-                <thead className="sticky top-0 z-10 bg-sunken text-left text-xs uppercase tracking-wide text-muted">
-                  <tr>
-                    {s.columns.map((c, i) => (
-                      <th key={c} className={cx("whitespace-nowrap px-3 py-2.5 font-medium", WIDTH[i], s.money_columns.includes(i) && "text-right")}>{c}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="stagger divide-y divide-line">
-                  {s.rows.length === 0 && (
-                    <tr><td colSpan={s.columns.length} className="px-3 py-8 text-center text-muted">No receipts yet.</td></tr>
-                  )}
-                  {s.rows.map((row, r) => (
-                    <tr key={r} className="align-top">
-                      {row.map((cell, i) => (
-                        <td key={i} className={cx("px-3 py-2.5",
-                          s.money_columns.includes(i) && "num whitespace-nowrap text-right",
-                          i === DATE_COLUMN && "whitespace-nowrap",
-                          i === 0 && "num whitespace-nowrap",
-                          i === s.columns.length - 1 && "whitespace-pre-line text-xs text-muted")}>
-                          {render(cell, i, s)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <dl className="ml-auto grid w-full max-w-sm gap-y-1.5 text-sm">
-              {s.totals.map(([label, value]) => (
-                <div key={label} className="flex justify-between gap-6 border-b border-line/60 pb-1.5 last:border-0">
-                  <dt className="text-muted">{label}</dt>
-                  <dd className="num font-medium">{peso(value)}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-        )}
+          <div className="space-y-3 pb-2"><Skeleton className="h-16" /><Skeleton className="h-72" /></div>
+        ) : <Sheet s={s} />}
       </Dialog>
     </>
   );
 }
 
-function render(cell: Cell, col: number, s: Summary) {
-  if (cell == null || cell === "") return <span className="text-faint">—</span>;
-  if (s.money_columns.includes(col)) return peso(Number(cell));
-  if (col === DATE_COLUMN && /^\d{4}-\d{2}-\d{2}$/.test(String(cell))) return formatDate(String(cell));
-  if (col === 3) return <span className="line-clamp-2" title={String(cell)}>{String(cell)}</span>; // seller address
-  if (col === STATUS_COLUMN) {
-    const status = STATUS_BY_LABEL[String(cell)];
-    return status ? <Pill tone={TONE[status]}><StatusIcon status={status} />{String(cell)}</Pill> : <Pill>{String(cell)}</Pill>;
-  }
-  return String(cell);
+function Subtitle({ s }: { s: Summary }) {
+  const [from, to] = headerValue(s, "Spending Period").split(" to ");
+  const note = headerValue(s, "Return note");
+  return (
+    <span className="block space-y-0.5">
+      <span className="block text-ink">
+        {headerValue(s, "Employee")} · {headerValue(s, "Purpose")} · {formatDate(from)} – {formatDate(to)}
+      </span>
+      <span className="block">{headerValue(s, "Company")}</span>
+      {note && <span className="block">Returned with the note: “{note}”</span>}
+    </span>
+  );
+}
+
+function Sheet({ s }: { s: Summary }) {
+  const withholding = s.rows.some((r) => r[C.withholding] != null && Number(r[C.withholding]) !== 0);
+  const excess = total(s, "Excess Spend") > 0;
+  const figures: [string, number, string?][] = [
+    ["Cash Advance", total(s, "Cash Advance")],
+    ["Valid Spend", total(s, "Valid Spend")],
+    ["Disallowed Amount", total(s, "Disallowed Amount"), total(s, "Disallowed Amount") > 0 ? "text-bad" : undefined],
+    excess ? ["Excess Spend", total(s, "Excess Spend")] : ["Amount to Return", total(s, "Amount to Return"), total(s, "Amount to Return") > 0 ? "text-warn" : undefined],
+    ["Claimable input VAT", total(s, "Claimable input VAT")],
+  ];
+  const money = "num whitespace-nowrap px-3 py-3 text-right";
+  return (
+    <div className="space-y-6 pb-2">
+      <dl className="grid grid-cols-2 gap-x-6 gap-y-3 rounded-2xl border border-line px-5 py-4 sm:grid-cols-5">
+        {figures.map(([label, value, tone]) => (
+          <div key={label}>
+            <dt className="text-xs text-muted">{label}</dt>
+            <dd className={cx("num mt-0.5 text-lg font-semibold tracking-tight", tone)}>{peso(value)}</dd>
+          </div>
+        ))}
+      </dl>
+
+      <table className="w-full text-sm">
+        <thead className="sticky top-0 z-10 bg-surface text-left text-xs uppercase tracking-wide text-muted shadow-[0_1px_0_var(--line)]">
+          <tr>
+            <th className="w-28 px-3 py-2.5 font-medium">Date</th>
+            <th className="px-3 py-2.5 font-medium">Seller</th>
+            <th className="w-40 px-3 py-2.5 font-medium">Particulars</th>
+            <th className="w-28 px-3 py-2.5 text-right font-medium">Amount</th>
+            {withholding && <th className="w-28 px-3 py-2.5 text-right font-medium">Withholding</th>}
+            <th className="w-24 px-3 py-2.5 text-right font-medium">VAT</th>
+            <th className="w-28 px-3 py-2.5 text-right font-medium">VAT-exempt</th>
+            <th className="w-64 px-3 py-2.5 font-medium">Status</th>
+          </tr>
+        </thead>
+        <tbody className="stagger divide-y divide-line">
+          {s.rows.length === 0 && (
+            <tr><td colSpan={8} className="px-3 py-10 text-center text-muted">No receipts yet.</td></tr>
+          )}
+          {s.rows.map((row, i) => (
+            <tr key={i} className="align-top">
+              <td className="whitespace-nowrap px-3 py-3 text-muted">{dateText(row[C.date])}</td>
+              <td className="px-3 py-3" title={row[C.address] ? String(row[C.address]) : undefined}>
+                <span className="block font-medium">{text(row[C.seller])}</span>
+                <span className="num block text-xs text-muted">{row[C.tin] ? `TIN ${row[C.tin]}` : "No TIN"}</span>
+              </td>
+              <td className="px-3 py-3 text-muted">{text(row[C.particulars])}</td>
+              <td className={cx(money, "font-medium")}>{amount(row[C.amount])}</td>
+              {withholding && <td className={money}>{amount(row[C.withholding])}</td>}
+              <td className={money}>{amount(row[C.vat])}</td>
+              <td className={money}>{amount(row[C.exempt])}</td>
+              <td className="px-3 py-3"><StatusCell status={row[C.status]} findings={row[C.findings]} /></td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-xs text-faint">Seller addresses and every Finding in full are in the Excel file and in Copy table. Hover a seller for its address.</p>
+    </div>
+  );
+}
+
+const text = (v: Cell) => (v == null || v === "" ? <span className="text-faint">—</span> : String(v));
+const amount = (v: Cell) => (v == null ? <span className="text-faint">—</span> : peso(Number(v)));
+const dateText = (v: Cell) => (v == null || v === "" ? <span className="text-faint">—</span> : /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? formatDate(String(v)) : String(v));
+
+/** The verdict, with its deciding reason underneath (the rest on hover). */
+function StatusCell({ status, findings }: { status: Cell; findings: Cell }) {
+  const label = String(status ?? "");
+  const code = STATUS_BY_LABEL[label];
+  const reasons = String(findings ?? "").split("\n").map((l) => l.replace(/^[^:]+:\s*/, "").trim()).filter(Boolean);
+  return (
+    <span className="block space-y-1" title={reasons.length > 1 ? reasons.join("\n") : undefined}>
+      {code ? <Pill tone={TONE[code]}><StatusIcon status={code} />{label}</Pill> : <Pill>{label}</Pill>}
+      {reasons[0] && (
+        <span className="block text-xs text-muted">
+          {reasons[0]}{reasons.length > 1 && <span className="text-faint"> · +{reasons.length - 1} more</span>}
+        </span>
+      )}
+    </span>
+  );
 }
 
 /** Tab-separated plain text (for Excel and Sheets) plus an HTML table (for email and docs). */
