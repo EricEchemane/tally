@@ -1,8 +1,9 @@
 import json
+import logging
 import sqlite3
 from typing import Any, Literal
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -14,10 +15,12 @@ from money import to_centavos
 from checks import service as checks
 from pipeline import runner
 from pipeline.derive import parse_date
+from pipeline.crop import parse_corners_list, save_cropped
 from pipeline.ingest import save_upload
 from routes.liquidations import load as load_liquidation
 
 router = APIRouter(prefix="/api")
+log = logging.getLogger(__name__)
 
 ALLOWED = {"image/jpeg", "image/png", "image/heic", "image/heif"}
 
@@ -35,22 +38,29 @@ def _require_open(conn, liquidation_id):
 
 
 @router.post("/liquidations/{liquidation_id}/receipts", status_code=202)
-async def upload(liquidation_id: int, images: list[UploadFile] = File(...),
+async def upload(liquidation_id: int, images: list[UploadFile] = File(...), corners: str | None = Form(None),
                  t: str | None = Query(None), conn: sqlite3.Connection = Depends(get_db)):
     # The phone capture page sends ?t=<capture_token>; the dashboard omits it (per the contract).
     # Demo-grade: the dashboard itself is unauthenticated on the office LAN.
+    # `corners`: JSON, one entry per image, null or the 4 receipt corners the phone confirmed.
     liq = load_liquidation(conn, liquidation_id)
     if t is not None and t != liq["capture_token"]:
         raise HTTPException(403, "invalid capture token")
     _require_open(conn, liquidation_id)
-    created = []
+    try:
+        crops = parse_corners_list(corners, len(images))
+    except ValueError as e:
+        raise HTTPException(422, f"invalid corners: {e}")
     for img in images:
         if img.content_type not in ALLOWED:
             raise HTTPException(415, f"unsupported file type {img.content_type}")
+    created = []
+    for img, crop in zip(images, crops):
         path, digest = save_upload(await img.read(), img.content_type, config.IMAGES_DIR)
+        cropped = _crop(path, crop) if crop else None
         rid = conn.execute(
-            "INSERT INTO receipt (liquidation_id, image_path, image_hash) VALUES (?, ?, ?)",
-            (liquidation_id, str(path), digest)).lastrowid
+            "INSERT INTO receipt (liquidation_id, image_path, image_hash, cropped_path, crop_corners) VALUES (?, ?, ?, ?, ?)",
+            (liquidation_id, str(path), digest, cropped and str(cropped), cropped and json.dumps(crop))).lastrowid
         created.append(rid)
     conn.commit()
     out = []
@@ -59,6 +69,15 @@ async def upload(liquidation_id: int, images: list[UploadFile] = File(...),
         events.publish("receipt.stage", receipt_id=rid, liquidation_id=liquidation_id, stage="queued", queue_position=pos)
         out.append({"id": rid, "stage": "queued", "queue_position": pos})
     return out
+
+
+def _crop(path, corners):
+    """The Cropped Photo, or None if it can't be made: a crop never blocks an upload."""
+    try:
+        return save_cropped(path, corners, config.IMAGES_DIR)
+    except Exception:  # noqa: BLE001
+        log.exception("couldn't crop %s", path)
+        return None
 
 
 @router.get("/receipts/{receipt_id}")
@@ -71,6 +90,14 @@ def image(receipt_id: int, conn: sqlite3.Connection = Depends(get_db)):
     return FileResponse(load(conn, receipt_id)["image_path"])
 
 
+@router.get("/receipts/{receipt_id}/cropped-image")
+def cropped_image(receipt_id: int, conn: sqlite3.Connection = Depends(get_db)):
+    path = load(conn, receipt_id)["cropped_path"]
+    if not path:
+        raise HTTPException(404, "this receipt has no cropped photo")
+    return FileResponse(path)
+
+
 @router.delete("/receipts/{receipt_id}", status_code=204)
 def delete(receipt_id: int, conn: sqlite3.Connection = Depends(get_db)):
     r = load(conn, receipt_id)
@@ -80,6 +107,48 @@ def delete(receipt_id: int, conn: sqlite3.Connection = Depends(get_db)):
     checks.recheck_open(conn)  # a duplicate of this receipt may now be the original
     events.publish("liquidation.updated", liquidation_id=r["liquidation_id"], status="OPEN",
                    totals=serialize.totals(conn, r["liquidation_id"]))
+
+
+@router.post("/receipts/{receipt_id}/retry", status_code=202)
+def retry(receipt_id: int, conn: sqlite3.Connection = Depends(get_db)):
+    """Read a photo again after it failed (the model was off, a hiccup): same photo, from the start."""
+    r = load(conn, receipt_id)
+    _require_open(conn, r["liquidation_id"])
+    if r["stage"] != "failed":
+        raise HTTPException(409, "only a receipt that couldn't be read can be retried")
+    conn.execute("DELETE FROM finding WHERE receipt_id = ?", (receipt_id,))
+    conn.execute("UPDATE receipt SET stage = 'queued', error = NULL, ocr_text = NULL, extraction = NULL, derived = NULL, "
+                 "status = NULL, checks_run = 0 WHERE id = ?", (receipt_id,))
+    conn.commit()
+    pos = runner.enqueue(receipt_id)
+    events.publish("receipt.stage", receipt_id=receipt_id, liquidation_id=r["liquidation_id"], stage="queued", queue_position=pos)
+    return {"id": receipt_id, "stage": "queued", "queue_position": pos}
+
+
+class MoveIn(BaseModel):
+    liquidation_id: int
+
+
+@router.post("/receipts/{receipt_id}/move")
+def move(receipt_id: int, body: MoveIn, conn: sqlite3.Connection = Depends(get_db)):
+    """Scanned into the wrong Liquidation: move it to another OPEN one of the same Employee."""
+    r = load(conn, receipt_id)
+    source, target = r["liquidation_id"], body.liquidation_id
+    if target == source:
+        raise HTTPException(422, "the receipt is already in that Liquidation")
+    _require_open(conn, source)
+    _require_open(conn, target)
+    owners = {row[0] for row in conn.execute(
+        "SELECT ca.employee_id FROM liquidation l JOIN cash_advance ca ON ca.id = l.cash_advance_id WHERE l.id IN (?, ?)",
+        (source, target))}
+    if len(owners) != 1:
+        raise HTTPException(409, "a receipt can only move between the same Employee's Liquidations")
+    conn.execute("UPDATE receipt SET liquidation_id = ? WHERE id = ?", (target, receipt_id))
+    conn.commit()
+    checks.recheck_open(conn)  # the Spending Period changed, so the date check may change
+    for lid in (source, target):
+        events.publish("liquidation.updated", liquidation_id=lid, status="OPEN", totals=serialize.totals(conn, lid))
+    return serialize.receipt_detail(conn, load(conn, receipt_id))
 
 
 def _after_change(conn, r) -> dict:

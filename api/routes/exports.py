@@ -1,3 +1,4 @@
+import datetime as dt
 import re
 import sqlite3
 
@@ -20,6 +21,16 @@ def summary(liquidation_id: int, conn: sqlite3.Connection = Depends(get_db)):
         raise HTTPException(501, str(e))
     return Response(data, media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     headers={"Content-Disposition": f'attachment; filename="liquidation-{liquidation_id}.xlsx"'})
+
+
+@router.get("/liquidations/{liquidation_id}/summary")
+def summary_preview(liquidation_id: int, conn: sqlite3.Connection = Depends(get_db)):
+    """The same content as summary.xlsx, as JSON for the in-app preview (dates ISO, money in pesos)."""
+    load_liquidation(conn, liquidation_id)
+    data = exports.summary_data(conn, liquidation_id)
+    rows = [[v.isoformat() if isinstance(v, dt.date) else v for v in row] for row in data["rows"]]
+    return {**data, "rows": rows, "money_columns": sorted(exports.SUMMARY_MONEY_COLUMNS),
+            "header": [list(h) for h in data["header"]], "totals": [list(t) for t in data["totals"]]}
 
 
 @router.get("/exports/slsp.csv")

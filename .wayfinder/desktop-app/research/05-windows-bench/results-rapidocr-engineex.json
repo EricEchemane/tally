@@ -1,0 +1,701 @@
+{
+  "machine": {
+    "host": "engineex",
+    "os": "macOS-26.6.2-arm64-arm-64bit",
+    "cpu": "arm",
+    "python": "3.12.15",
+    "model": "qwen3:4b",
+    "ollama": "0.40.2"
+  },
+  "summary": {
+    "ocr_median_s": 1.43,
+    "accuracy": "203/231 = 88%",
+    "llm_median_s": 14.2,
+    "gpu": {
+      "size": 2895118335,
+      "size_vram": 2895118335
+    }
+  },
+  "results": [
+    {
+      "sample": "amber-handwritten-service-invoice",
+      "ocr_s": 2.55,
+      "rotation": 0,
+      "ocr_text": "Home of the Original Pancit Malabon and Delicious Pichi-Pichi  AMBER GOLDEN SPOON RESTAURANT CORPORATION\nAMBER  Between 26&27 South National Highway Putatan 1770  VAT Registered TIN: 212-305-757-00000\nCity of Muntinlupa NCR, Fourth District Philippines  Order via: 0908-8848888·www.amber.com.ph· AmberFood App\nSERVICE  144254\nINVÓICE  INVOICE No.:\nCASH SALES  CHARGE SALES  Date  211.8\nSOLD TO:  camen nveva\nRegistered Name:\nTIN\nBusiness Address :\nItem Description / Nature of Service  Quantity  Unit Price/Cost  Amount\nmHon  一  120\nMaL  一  170\nPC  40  340\nDc  215\nTotal Sales  1450\nVATABLE Sales  (VAT Inclusive)\nVAT  Less: VAT\nZero-Rated Sales  Amount: Net of VAT  1473.21\nVAT-Exempt Sales  015  Less: Discount (SC/PWD\n/NAAC/MOV/SP)\nReceived the amount of:  Add: VAT  A4.99\nLess: Withholding Tax\nPARTIAL  FULL  TOTAL AMOUNT DUE  1805\nOrder / Delivery Slip No.  SlyEL  Prepared by:\nBiR Authority to Print No.: 53BAU20260000000870  SC/PWD/NAAC/MOV/\nDate Issued: 09-Feb-2026  Solo Parent ID No:\nApproved Series: 125001-155000 600 Bklts (3X)  SC/PWD/NAAC/MOV/\nSolo Parent Signature:",
+      "llm": {
+        "load_s": 0.12,
+        "prompt_tokens": 821,
+        "prompt_s": 2.38,
+        "gen_tokens": 214,
+        "gen_s": 10.82,
+        "total_s": 13.38
+      },
+      "extraction": {
+        "seller_name": "Home of the Original Pancit Malabon and Delicious Pichi-Pichi",
+        "seller_address": "Between 26&27 South National Highway Putatan 177: City of Muntinlupa NCR, Fourth District Philippines",
+        "seller_tin_raw": "212-305-757-00000",
+        "invoice_number_raw": "INVÓICE",
+        "date_raw": "09-Feb-2026",
+        "buyer_name": "camen nveva",
+        "buyer_tin_raw": "",
+        "buyer_address": "",
+        "vatable_sales": 1450,
+        "vat_amount": 4.99,
+        "vat_exempt_sales": 0,
+        "zero_rated_sales": 0,
+        "total": 1805,
+        "particulars": "Pancit meals",
+        "expense_category": "MEALS"
+      },
+      "wrong": [
+        "date",
+        "invoice_number",
+        "total",
+        "vat_amount",
+        "vat_exempt_sales",
+        "vatable_sales"
+      ]
+    },
+    {
+      "sample": "bayanihan-corp-1",
+      "ocr_s": 0.96,
+      "rotation": 0,
+      "ocr_text": "*** DEMO ONLY ***\nJUANA'S OFFICE SUPPLIES INC.\nVAT REG TIN: 987-654-321-00000  45 Mabini St, Muntinlupa City\nSALES INVOICE\nInvoice No.  SI-000123\nDate  2026-10-09\nBond Paper A4 (ream)\n2 x 285.00  570.00\nBallpen Black (box)\n1 × 96.00  96.00\nTOTAL  PHP 666.00\nVAT (12%)  VATable Sales  594.64\n71.36\nSold to: BAYANIHAN DEMO CORP  :NII\nAddress: 123 Rizal St,  123-456-789-00000\nQuezon City\n*** DEMO ONLY ***",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 595,
+        "prompt_s": 1.13,
+        "gen_tokens": 238,
+        "gen_s": 12.35,
+        "total_s": 14.34
+      },
+      "extraction": {
+        "seller_name": "JUANA'S OFFICE SUPPLIES INC.",
+        "seller_address": "45 Mabini St, Muntinlupa City",
+        "seller_tin_raw": "987-654-3:321-00000",
+        "invoice_number_raw": "SI-000123",
+        "date_raw": "2026-10-09",
+        "buyer_name": "BAYANIHAN DEMO CORP",
+        "buyer_tin_raw": "123-456-789-00000",
+        "buyer_address": "123 Rizal St, Quezon City",
+        "vatable_sales": 594.64,
+        "vat_amount": 71.36,
+        "vat_exempt_sales": null,
+        "zero_rated_sales": null,
+        "total": 666.0,
+        "particulars": "Office supplies",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": [
+        "seller_branch",
+        "seller_tin"
+      ]
+    },
+    {
+      "sample": "bayanihan-corp-2",
+      "ocr_s": 1.51,
+      "rotation": 0,
+      "ocr_text": "*** DEMO ONLY ***\n45 Mabini St, Muntinlupa City  JUANA'S OFFICE SUPPLIES INC.\nVAT REG TIN: 987-654-321-00000\nSALES INVOICE  SI-000124\nInvoice No.  2026-10-09\nDate\nBond Paper A4 (ream)  570.00\n2 × 285.00\nBallpen Black (box)  96.00\n160\nTOTAL  PHP 666.00\nVATable Sales  594.64\nVAT(12%)  71.36\nSold to: BAYANIHAN DEMO CORP\n:NII  123-456-789-00000\nAddress: 123 Riza1 St,\nQuezon City\n*** DEMO ONLY ***\n*** DNO O ***\n45 Mabini St, Muntinlupa City  JUAS SUPIES SUPIS S.INC.\nVAT REG TIN:987-654-321-00000\nInvoice No.  SALES INVOICE\nDate  SI-000125\n2026-10-09\nBond Paper A4 (ream)  2 × 285.00\nBallpen Black (box)  160  570.00\nTOTAL  96.00\nVAT (12%)  VATable Sales  PHP 666.00\n594.64\nSold to: BAYANIHAN DEMO CORP  TIN:  71.36\nAddress: 123 Rizal St,  123-456-789-00000\nQuezon City\n*** DEMO ONLY ***",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 816,
+        "prompt_s": 2.52,
+        "gen_tokens": 236,
+        "gen_s": 12.94,
+        "total_s": 15.54
+      },
+      "extraction": {
+        "seller_name": "JUANA'S OFFICE SUPPLIES INC.",
+        "seller_address": "45 Mabini St, Muntinlupa City",
+        "seller_tin_raw": "987-654-321-00000",
+        "invoice_number_raw": "SI-000124",
+        "date_raw": "2026-10-09",
+        "buyer_name": "BAYANIHAN DEMO CORP",
+        "buyer_tin_raw": "123-456-789-00000",
+        "buyer_address": "123 Riza1 St, Quezon City",
+        "vatable_sales": 594.64,
+        "vat_amount": 71.36,
+        "vat_exempt_sales": null,
+        "zero_rated_sales": null,
+        "total": 666.0,
+        "particulars": "Office supplies",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": [
+        "invoice_number"
+      ]
+    },
+    {
+      "sample": "dup-7eleven-blurry",
+      "ocr_s": 1.35,
+      "rotation": 0,
+      "ocr_text": "7-ELEVEN.\nOwned & Operated by: Per  PerPet Pilipinas Corp.\nVATREGTIN #008-578-970-030  Petroleum Corporation\nLot 2 Blk 4 Madrigal Business  Park, Ayala Alabang,\nMuntinlupa, Philippines  Tel #: NULL\nINVOICE #100237423 RESET_CNT#000  04/21/2026(Tue) 10:13:57\nSTORE#3082  SN#:8300002RA\nMIN #：24060314423344420\nSTAFF:MJ Torio  79.00V\n7FreshChsyTkyk  CityCafeFrnchVanSm  37.00V\nYakult  12.00V\nAbsolute 1L  32.00V\nKYMobLegBangCrd1Pc  59.00V\nNewShawarmaFriedRi  65.00V\nTotal Amount Due (6)  284.00\nCASH  1000.00  716.00\nCHANGE\nVatable  30\nVAT_Amt  0  00\nVAT Exempt Sales  Zero_Rated Sales  00\nLoyalty No:\nName:\nAddress:\nTIN:  Philippine Seven Corporation\n7th Floor The Columbla Tower  Ortigas Avenue, Mandaluyong\nTIN:000-390-189-000  City\nBIR ACCE #  1160003901892019081144\nDate Issued: 08/01/2020\nPTU#：  FP062024-53B-0449853-00030\nSAAN MAN PATUNGO KASAHA MO ANG  BUY P200 HORTH OF ITEMS GET A  IVONG PABORITONG KAPITBAHAY\nTRAVEL RENAROS PEr DTT FATR  CHANCE TO WIN KAPITBTYAHE  TRADE Perwit Number:251660\nSeries of\n2026.facebook.com/711philippine\nS.\n- THIS IS AN INVDICE -",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 932,
+        "prompt_s": 3.03,
+        "gen_tokens": 198,
+        "gen_s": 10.94,
+        "total_s": 14.06
+      },
+      "extraction": {
+        "seller_name": "7-ELEVEN",
+        "seller_address": "Lot 2 Blk 4 Madrigal Business Park, Ayala Alabang, Muntinlupa, Philippines",
+        "seller_tin_raw": "008-578-970-030",
+        "invoice_number_raw": "100237423",
+        "date_raw": "04/21/2026",
+        "buyer_name": null,
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 30,
+        "vat_amount": 0,
+        "vat_exempt_sales": 0,
+        "zero_rated_sales": 0,
+        "total": 284.0,
+        "particulars": "Groceries",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": [
+        "vat_amount",
+        "vatable_sales"
+      ]
+    },
+    {
+      "sample": "dup-mrdiy-rotated",
+      "ocr_s": 3.72,
+      "rotation": -90,
+      "ocr_text": "MR DIY\nBRICOLAGE PHILIPPINES INC.  FESTIVAL MALL\nVAT REG:010-057-617-00144  MIN:21062814112359745\nS/N:YL012YDJ\n**SALES INVOICE**\nINVOICE#:0000-0000240076\nGLASS VASE 5.2*19*9CM_JC-1LL#\nD2-H04-H06 - 12/36  1 X 59.00  59.00\n8803861\nG1-C01 - 12/1200  COMB T857#\n1 X 23.00  23.00\n9057107  RULER SET 15+20+30CM#\nL3H04 - 20/480  1 X 33.00  33.00\n8952410  Eco Bag 13.78W, 27.56H, 6.30D 500s\nWH KH- 500/1500  1 X 7.00  7.00\n99003D\nItem(s) : 4  Qty(s) : 4\nSUBTOTAL  122.00\nVATABLE SALES  108.93\nVAT AMT  13.07\nVAT EXEMPT SALES  0.00\nZERO RATED SALES  0.00\nTotal  PHP  122.00\nMAYA - CARD  122.00\nCUST NAME:\nTIN:\nADDRESS:\nBUSINESS STYLE:\nSIGN:\n米\n04/12/2026 18:29 SH01 SS012 T03\nCASHIER NAME: FTVLC - NORALYN HINANAY\nABZTRAK INC.\n2F 670 Sgt. Bumatay St. Brgy. Plain\nView Mandaluyong City\nAccred. No. 0410081844162022041529\nDate Issued: 11/22/2022\nPTU# FP062021-53B-0294402-00144  Valid Until:11/22/2027\nEffectivity Date: 07/01/2021  Date Issued: 07/01/2021",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 1003,
+        "prompt_s": 3.33,
+        "gen_tokens": 204,
+        "gen_s": 10.55,
+        "total_s": 13.98
+      },
+      "extraction": {
+        "seller_name": "MR DIY",
+        "seller_address": "BRICOLAGE PHILIPPINES INC.  FESTIVAL MALL",
+        "seller_tin_raw": "010-057-617-00144",
+        "invoice_number_raw": "0000-0000240076",
+        "date_raw": "04/12/2026",
+        "buyer_name": null,
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 108.93,
+        "vat_amount": 13.07,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 122.0,
+        "particulars": "Hardware supplies",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": []
+    },
+    {
+      "sample": "foreign-us-receipt",
+      "ocr_s": 0.77,
+      "rotation": 0,
+      "ocr_text": "East Repair Inc.  RECEIPT\n1912 Harvest Lane\nNew York, NY 12210\nBill To  Ship To  Receipt #  US-001\nJohn Smith  John Smith  Receipt Date  11/02/2019\n2 Court Square  3787 Pineview Drive\nNew York, NY 12210  Cambridge, MA 12210  P.O.#  2312/2019\nDue Date  26/02/2019\nQTY  DESCRIPTION  UNIT PRICE  AMOUNT\n1  Front and rear brake cables  100.00  100.00\n2  New set of pedal arms  15.00  30.00\n3  Labor 3hrs  5.00  15.00\nSubtotal  145.00\nSales Tax 6.25%  9.06\nTOTAL  $154.06\nghnSwith\nTerms & Conditions\nPayment is due within 15 days\nPlease make checks payable to: East Repair Inc.",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 635,
+        "prompt_s": 1.47,
+        "gen_tokens": 182,
+        "gen_s": 10.02,
+        "total_s": 11.58
+      },
+      "extraction": {
+        "seller_name": "East Repair Inc.",
+        "seller_address": "1912 Harvest Lane, New York, NY 12210",
+        "seller_tin_raw": null,
+        "invoice_number_raw": "US-001",
+        "date_raw": "11/02/2019",
+        "buyer_name": "John Smith",
+        "buyer_tin_raw": null,
+        "buyer_address": "2 Court Square, New York, NY 12210",
+        "vatable_sales": null,
+        "vat_amount": null,
+        "vat_exempt_sales": null,
+        "zero_rated_sales": null,
+        "total": 154.06,
+        "particulars": "Auto repairs",
+        "expense_category": "OTHER"
+      },
+      "wrong": [
+        "date"
+      ]
+    },
+    {
+      "sample": "goldilocks-seller-tin-covered",
+      "ocr_s": 1.92,
+      "rotation": 0,
+      "ocr_text": "INC.\nGOLDILOCKS B  INC.\nVAT REG TIN:  207-00471\nFESTIVAL MALL ALM  FSA NCH\nUNIT 1OES. 1 GROUND FLOGR FESTIVAL MALL  ALABANG CITY OF MLUNTINLUPA\nPOS02 SN:HWB0EN12EG3K2506241510  NOR, FOURTH DISIRICT\nSales INVOICE  MIN#25112717542069120\nCUSTOMER COPY\n012021 #021\nTrans# 1425 0200033122\nCashier: 20092728-IVAN P0\n08/14/2026 12:27  #02\n-GDS ON-LINE  689.00V\n1 CLASSIC CHOCOLATE HALF ROLL 6253  1 Luscious Caramel 9rd 0689  253.00V\n1 Delivery Service Charge 50  50.00V\nPHP 992.00\n3 Item(s)\nTOTAL DUE  PHP 952.00\nCASH  PHP 0.1\nCHANGE\nORDER ID# 200119\nVATable Sales  885.71\n106 29\nVAT Amount  0.00\nZero-Rated Sales  0.00\nVAT-Exempt Sales\nCust Name:\nAddress:\nTIN:\nBus Style:\nTHANK YGU, COME AGAIN.\nWWW.GOLDILOCKS.COM.PH\nThic sarves as your oALES INVOICE,\nANSI Information Systems Inc.\nTytana Plaza Binonde Manila\nVAT Reg TIN.000-330-515-00000\nACCRE01TATION NO.0300003305152023101874\nDate Issued: 11/29/2023\nVaiid Until: 11/28/2028\nPTU# FP112025-116-0569276-00471\nDate Issued: 12/r*/2025",
+      "llm": {
+        "load_s": 0.05,
+        "prompt_tokens": 922,
+        "prompt_s": 2.9,
+        "gen_tokens": 229,
+        "gen_s": 12.11,
+        "total_s": 15.16
+      },
+      "extraction": {
+        "seller_name": "GOLDILOCKS B INC.",
+        "seller_address": "FESTIVAL MALL ALM FSA NCH UNIT 1OES. 1 GROUND FLOGR FESTIVAL MALL ALABANG CITY OF MLUNTINLUPA",
+        "seller_tin_raw": "207-00471",
+        "invoice_number_raw": "MIN#25112717542069120",
+        "date_raw": "08/14/2026",
+        "buyer_name": null,
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 885.71,
+        "vat_amount": 0.0,
+        "vat_exempt_sales": null,
+        "zero_rated_sales": 0.0,
+        "total": 952.0,
+        "particulars": "Delivery Service",
+        "expense_category": "TRANSPORT_FUEL"
+      },
+      "wrong": [
+        "invoice_number",
+        "total",
+        "vat_amount"
+      ]
+    },
+    {
+      "sample": "mercury-drug-226-faded",
+      "ocr_s": 1.68,
+      "rotation": 0,
+      "ocr_text": "MERCURY, DRUG - RLOBAL CITY TAGUIG MKT MKT  Market Market Lot C Bonifacio\nGlobal City, Taguig, Metro Manila  VAT REG TIN:000-388-474-00409\nMOBILE/VIBER NO: (0998) 846-8646  TEL NO: (02) 8886-6660\nMIN:21060210143655971 [1.5.30] 33  TOSHIBA 4900 41DKA64 R001 00289\nPA # 99 S/S  49.00T\nMONDE BCB 90G  2 @24.50\n480777010169  90.00T\nBEAR B FORT33g  480036141081  8%11.25\nEM E E C C30G  87.50T\n480901062601  10 @8.75\nTOTAL  226.50\nAMOUNT TENDERED\nCREN CRD  226.50\nTOTAL PAYMENT  226.50\n20 item(s)  **\nCREDIT CARD UETAILS\n0107**  #AYva  095770\nAmount  226.50\n00 070S\nADDRESS\nTIN\nVATable  (T)  202.23\nVAT-Exempt Sale  (X)  0.00\nVAT Zero-Rated Sale(Z)  0.00\nVAT - 12%  24.27\nAmount Due  226.50\nSUKI #:0017***706\nNAME: EC*****NC****  N\nSUKI POINTS PREVIOUS\nSUKI POINTS REDEEMED  1202014\nSUKI POINTS TARNED\nSUKT EXTEARNED\nSURI POTNTS DALANCE\nRecelved Merchandise in Good Condition\nCa Mercury Drug Nakasisiguro Gamot\nay Laging Bagu!!\nMaraming Salamat Po.\n433 Lt artiaga St. Brgy Corazon de  Thillogix Systems, Inc.\nJesus San Juar,  Metro nan la\nVAT EG TINT 205-713-621-00000  0422057136212018060962\nPTU NO.  FP062021-116-0291967-00409\nTXN#987981  6 09:00A DAEZFI\nTOUR INVOICE -",
+      "llm": {
+        "load_s": 0.14,
+        "prompt_tokens": 1070,
+        "prompt_s": 3.77,
+        "gen_tokens": 233,
+        "gen_s": 12.16,
+        "total_s": 16.21
+      },
+      "extraction": {
+        "seller_name": "MERCURY, DRUG",
+        "seller_address": "Global City, Taguig, Metro Manila",
+        "seller_tin_raw": "000-388-474-00409",
+        "invoice_number_raw": "TXN#987981",
+        "date_raw": "09:00A DAEZFI",
+        "buyer_name": "EC*****NC****",
+        "buyer_tin_raw": "",
+        "buyer_address": "433 Lt artiaga St. Brgy Corazon de Thillogix Systems, Inc. Jesus San Juar,  Metro nan la",
+        "vatable_sales": 24.27,
+        "vat_amount": 24.27,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 226.5,
+        "particulars": "Pharmacy items",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": [
+        "date"
+      ]
+    },
+    {
+      "sample": "mercury-drug-458",
+      "ocr_s": 1.72,
+      "rotation": 0,
+      "ocr_text": "Market Market Lot  CBonifacio  Metro Manila\nGlobal City, Taguig,\nMIN:21050210143655970 [1-5.30] 33\nPA # 99 S/S  40.501\nENCTE H&S 155G\n743485100418  30.50T\nGEN CBEEF 100G  743485801803\nFR B FORT33g  22.50T\n430036141081  2 0 11.25\nAGAFT CW O SP24g  12.75T\n752221089509\nVrS AFE GOLD 29  8.50T\n380C72357\nCHARM PLNINSC20  430048310006  29.00T\nCERELAC WB&M120g  955600113249  72.00T\nNISSIN B COC0149  44.00T\n43077701052\nCELET FWSH 60ML  *SP  110.00T\n4300135006\nLEMSQ CC ASTDX10  88.25T\n430661340098\nTOTAL  458.00\nAMOUNT TENDERED  458.00\nCRED CRD\nTOTAL PAYMENT  458.00\n* 11 item(s)\nCREDIT CARD DETAILS  PAYMAYAApproval#: 069439\nCard # *******2618  458.00\nAmount\nSOLD TO\nADDRESS\nTIN\nVATable  (T)  408.93\nVAT-Exempt Sale  (X)  0.00\nVAT Zero-Rated Sale(Z)  0.00\nVAT - 12%  49.07\nAmount Due  458.00\nSUKI #：0017***706\nNAME: EC*****N C****  N\nSUKI POINTS PREVIOUS\nSUKI POINTS  REDEEMED  60309\nSUKI EXTRA PTS EARNED  SUKI POINTS EARNED\nSUKI POINTS BALANCE\n*SP-SUKI PANALO PARTICIPATING PRODUCT  Received Merchandise in Good Condition\nSa Mercury Drug Nakasisiguro Gamot  ay Laging Bago!!\nMaraming Salamat Po...\nPhillogix Systems, Inc.  433 t. Artiaga St. Brgy Corazon de\nJesus, San Juan, Metro Manila  VAT REG TIN : 205-713-621-00000\nPTU No.:FP062021-116-0291966-00409  Accred No.:0422057136212018060962\nTXN#522525 09-11-26 08:49A DAEZEL\nINVOICE#102895595543\nTHIS IS YOUR INVOICE",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 1197,
+        "prompt_s": 4.36,
+        "gen_tokens": 207,
+        "gen_s": 10.58,
+        "total_s": 15.02
+      },
+      "extraction": {
+        "seller_name": "Market Market Lot CBonifacio",
+        "seller_address": "Global City, Taguig, Metro Manila",
+        "seller_tin_raw": "205-713-621-00000",
+        "invoice_number_raw": "102895595543",
+        "date_raw": "09-11-26",
+        "buyer_name": "EC*****N C****",
+        "buyer_tin_raw": "",
+        "buyer_address": "",
+        "vatable_sales": 408.93,
+        "vat_amount": 49.07,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 458.0,
+        "particulars": "Pharmacy items",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": [
+        "seller_branch",
+        "seller_tin"
+      ]
+    },
+    {
+      "sample": "mercury-drug-730",
+      "ocr_s": 1.9,
+      "rotation": 0,
+      "ocr_text": "MERCURY DRUGGLOBAL  TAGUIG MKT MKT\nGlobal City  Market Markel Lot  C11Y\nTEL NO:(02)  388  474-00409\nMOBILE/VTBER NO:  TOSHIBA 4900 41DK  846-8646\nMIN:21050210100955  R002 00289  [1.5.30]33\nBEWELL-C PLUSCAP  ...DA #  RHINA  115.00T\nCALVIT GOLD TAB  480652089034\n146.25T\n480651066118  15 α 9.75\nCEELIN DRP 30mL  *SP  147.00T\n480778802773\nMONDE BCB 90G  49.00T\n480777010169  2 @ 24.50\nNES CLSSC 1.9g  480036133956  19.50T\nCENT TF H&S 155G  6 @ 3.25\n748485100418  40.50T\nNSCFE CLSC R20g  54.00T\n480036133918  2 8 27.00\nNIV M RON CK50mL  159.00T\n400580830184\nTOTAL  730.25\nAMOUNT TENDERED  730.25\nCRED CRD\nTOTAL PAYMENT  730.25\n**  29 item(s)  **\nCREDIT CARD DETAILS  PAYMAYA Approval# : 057964\nCard # ************2618\nAmount  730.25\nORDER #00340 & 00343\nSOLD TO  ADDRESS\nTIN\nVATable  (T)  652.01\nVAT-Exempt Sale  (X)  0.00\nVAT Zero-Rated Sale(Z)  0.00\nVAT - 12%  78.24\nAmount Due  730.25\nSUKI #:001714+706\nNAME: EC*****N C****  N\nSUKI POINTS PREVIOUS\nSUKI POINTS REDEEMED  SUKI POINTS EARNED\nSUKT EXTRA PTS EARNED  903012\nSUKI POINTS BALANCE\n*SP-SUKI PANALO PARTICIPATING PRODUCT\nReceived Merchandise in Good Condition\nSa Mercury Drug Nakasisiguro Gamot\nay Laging Bago!!\nMaraming Salamat Po...\nPhillogix Systems, Inc.  433 Lt. Artiaga St. Brgy Corazon de\nVAT REG TIN: 205-713-621-00000  Jesus, San Juan, Metro Manila\nPTU No.:FP062021-116-0291958-00409  Accred No.: 0422057136212018060962\nTXN#658707 09-19-26 12:47P DAEZEL\nINVOICE#102892612142  - THIS IS YOUR INVOICE",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 1261,
+        "prompt_s": 4.59,
+        "gen_tokens": 208,
+        "gen_s": 10.83,
+        "total_s": 15.55
+      },
+      "extraction": {
+        "seller_name": "MERCURY DRUGGLOBAL",
+        "seller_address": "Global City Market Markel Lot C11Y",
+        "seller_tin_raw": "205-713-621-00000",
+        "invoice_number_raw": "102892612142",
+        "date_raw": "09-19-26",
+        "buyer_name": "EC*****N C**** N",
+        "buyer_tin_raw": "",
+        "buyer_address": "",
+        "vatable_sales": 652.01,
+        "vat_amount": 78.24,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 730.25,
+        "particulars": "Pharmacy items",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": [
+        "seller_branch",
+        "seller_tin"
+      ]
+    },
+    {
+      "sample": "nonvat-mouthfeel",
+      "ocr_s": 1.11,
+      "rotation": 0,
+      "ocr_text": "Owned and Operated By  MOUTHFEEL COMPANY\nMOUTHFEEL COMPANY\nGROUND FLOOR AVIDA TOWER ALABANG  -ZAPOTE ROAD ALABANG 1781 CITY O\nF MUNTINLUPA NCR  FOURTH DISTRICT PHILIPPINES\nNON VAT REG TIN: 624-464-614-00\n0\nMIN:23121913550297470\nS/N: HVA4TLBW (22)\nSALES INVOICE\n3:14pm, Tue 31 Mar 2026\nCashier: JAY\nSales Invoice No.: 064950\nUtak# 1774941295\nESPRESSO @140x1  140.00\nSpanish Latte 16oz Iced\nESPRESSO @120x1  120.00\nAmericano 16oz Iced\nSubtotal  260.00\nTOTAL  260.00\nCash  1,000\nChange  740\nPayment Type  Cash\nTotal Qty  2\nTHIS DOCUMENT IS NOT VALID FOR\nCLAIM OF INPUT TAX\nTHIS SERVES AS\nYOUR SALES INVOICE\nKRES POS vv2.01\nKintoz IT Solutions\n40 M.Leyva St Mandaluyong City\nVAT REG TIN 279-438-142-000",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 717,
+        "prompt_s": 1.85,
+        "gen_tokens": 220,
+        "gen_s": 12.04,
+        "total_s": 14.02
+      },
+      "extraction": {
+        "seller_name": "MOUTHFEEL COMPANY",
+        "seller_address": "GROUND FLOOR AVIDA TOWER ALABANG  -ZAPOTE ROAD ALABANG 1781 CITY O\nF MUNTINLUPA NCR  FOURTH DISTRICT PHILIPPINES",
+        "seller_tin_raw": "624-464-614-00",
+        "invoice_number_raw": "064950",
+        "date_raw": "3:14pm, Tue 31 Mar 2026",
+        "buyer_name": null,
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 260.0,
+        "vat_amount": null,
+        "vat_exempt_sales": null,
+        "zero_rated_sales": null,
+        "total": 260.0,
+        "particulars": "Coffee drinks",
+        "expense_category": "MEALS"
+      },
+      "wrong": []
+    },
+    {
+      "sample": "or-cebu-2022-multi-finding",
+      "ocr_s": 1.06,
+      "rotation": 0,
+      "ocr_text": "S ROAD\nCEU CEBITY\n075 MIN:16062010380269830\nTHIS SERVES AS YOUR OFFICIAL RECEIPT\nMar 10, 2022.(Thu)  OR No.00038111\nTN: TBL40\n# of customer(s): 2  111 min(s)\nVISIT TIME:  6:08 PH- 7:59 PM\nSalmon\n1 ORDER X 0590.00  590.00V\nJamon and Cheese Croquettes\n1 PCS X 0320.00  320.00V\nSeabass\n1 0RDER X 8880.00  A00°088\nSingapore Sling\n2 6LASS-X-0420.00  840°0V\nSeaweed Crackers\n1 PCS X B200.00\n2,830.00\nSUBTOTAL  283.00\nSERVICE CHARGE  10%\n3,113.00\nTOTAL  3,113-00\nCREBIT\nTYPE:  BDO Visa\nCARDH:  XXXXXXXXXXXX2375\nNANE:  CARREON/KEVIN  eine\nFYPTRY  09/9027\nAPPROVAL:246746",
+      "llm": {
+        "load_s": 0.04,
+        "prompt_tokens": 708,
+        "prompt_s": 1.9,
+        "gen_tokens": 176,
+        "gen_s": 10.14,
+        "total_s": 12.16
+      },
+      "extraction": {
+        "seller_name": "S ROAD",
+        "seller_address": "CEU CEBITY",
+        "seller_tin_raw": "075",
+        "invoice_number_raw": "00038111",
+        "date_raw": "Mar 10, 2022",
+        "buyer_name": "CARREON/KEVIN",
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 2830.0,
+        "vat_amount": 283.0,
+        "vat_exempt_sales": null,
+        "zero_rated_sales": null,
+        "total": 3113.0,
+        "particulars": "Seafood",
+        "expense_category": "MEALS"
+      },
+      "wrong": []
+    },
+    {
+      "sample": "out-of-period-jollibee-2025",
+      "ocr_s": 1.33,
+      "rotation": 0,
+      "ocr_text": "SOUTH FOODCHAIN GROUP INC\nJollibee Comaerce\nST0RE #1004\n3/F Joval BIdg 52 Nat. Rd Putatan, Muriti\nVAT Reg TIN:753-390-697-000\nMIN:19102412231263994\n1004 6 95 588456\nDrive Thru\nDT CjBStk  @  138.00  138.00\nDT Pocket Fmp  42.00  42.00\nTotal  Due  P180.00\nCASH  P200.00\nChange  P20.00\nQTY:2\nVatable Sales  P160.71\nVAT-Exempt Sales  PO.00\nUAT Zero-Rated Sates  PO.00\nUAT Amount(12%)  P19.29\nSI Number:0600713088\nCashier: Jensen Layina DTTRXN#: 588456\nDate:2025-09-04  Time: 9:32 PM\nThis serves as your Sales Invoice.\nWE LOVE TO HEAR YOU!\nShare your feedback at\njollibee-ph.welovetohearyou.com\nNeed assistance or have a question?\nVisit jollibee.com.ph/contact-us\nTHANK YOU. PLEASE COME AGAIN.\nCust Name:\nAddress:\n:#NI1\nBus Style:\nSweda Systems Philippines, Inc.\nACCR#:0470035103442017100823  Uat Reg TIN: 003-510-344-000\nLate/  12017  Permit #\nSerial #  X1J51-4691F102019-53B-0235084-00000",
+      "llm": {
+        "load_s": 0.04,
+        "prompt_tokens": 839,
+        "prompt_s": 2.55,
+        "gen_tokens": 200,
+        "gen_s": 10.81,
+        "total_s": 13.49
+      },
+      "extraction": {
+        "seller_name": "SOUTH FOODCHAIN GROUP INC",
+        "seller_address": "3/F Joval BIdg 52 Nat. Rd Putatan, Muriti",
+        "seller_tin_raw": "753-390-697-0 00",
+        "invoice_number_raw": "588456",
+        "date_raw": "2025-09-04",
+        "buyer_name": null,
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 160.71,
+        "vat_amount": 19.29,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 180.0,
+        "particulars": "Fast food",
+        "expense_category": "MEALS"
+      },
+      "wrong": []
+    },
+    {
+      "sample": "valid-7eleven",
+      "ocr_s": 1.6,
+      "rotation": 0,
+      "ocr_text": "ELEV\nOwned & Operated by: Per  PerPet Pilipinas Corp.\nPetroleum Corporation\nLot 2 B1k 4 Madrigal Business  VATREGTIN #008-578-970-030\nMuntinlupa, Philippines  Park, Ayala Alabang,\nTel #:NULL\n04/21/2026(Tue) 10:13:57\nSELECTA  INVOICE #100237423 RESET_CNT#000\nSTORE#3082  SN#:8300002RA\nMIN #:24060314423344420\nSTAFF:MJ Torio\nUu  7FreshChsyTkyk  79.00V\nCityCafeFrnchVanSm  37.00V\nYakult  12.00V\nAbsolute 1L  32.00V\nKYMobLegBangCrd1Pc  59.00V\nNewShawarmaFriedRi  65.00V\nTotal Amount Due (6)  284.00\nCASH  1000.00\nCHANGE  716.00\nVatable  253.57\nVAT_Amt  30.43\nVAT Exempt Sales  0.00\nZero_Rated Sales  0.00\nLoyalty No:\nName:\nAddress:\nTIN:\nPhilippine Seven Corporation\n7th Floor The Columbia Tower\nVANILLA  Ortigas Avenue, Mandaluyong\nCity\nTIN: 000-390-189-000\nBIR Accr #\n1160003901892019081144\nDate Issued: 08/01/2020\nPTU #:  OKIES\nFP062024-53B-0449853-00030\nSAAN MAN PATUNGO KASAMA MO ANG\nIYONG PABORITONG KAPITBAHAY\nBUY P200 WORTH OF ITEMS GET A\nCHANCE TO WIN KAPITBIYAHE\nTRAVEL REWARDS Per DTI FAIR\nTRADE Permit Number:251660\nSeries of\nfacebook.com/711philinnine",
+      "llm": {
+        "load_s": 0.03,
+        "prompt_tokens": 936,
+        "prompt_s": 2.99,
+        "gen_tokens": 197,
+        "gen_s": 11.16,
+        "total_s": 14.26
+      },
+      "extraction": {
+        "seller_name": "Petroleum Corporation",
+        "seller_address": "Park, Ayala Alabang, Muntinlupa, Philippines",
+        "seller_tin_raw": "#008-578-970-030",
+        "invoice_number_raw": "100237423",
+        "date_raw": "04/21/2026",
+        "buyer_name": null,
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 253.57,
+        "vat_amount": 30.43,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 284.0,
+        "particulars": "Fuel",
+        "expense_category": "TRANSPORT_FUEL"
+      },
+      "wrong": []
+    },
+    {
+      "sample": "valid-bf-sinangag",
+      "ocr_s": 1.3,
+      "rotation": 0,
+      "ocr_text": "BF SINANGAG EXPRESS FOOD CORP\nOwned and Operated By\nBF SINANGAG EXPRESS FOOD CORPORATION\nUNIT 106 A&C NORTHGATE CYBERZONE FCC  ALABANG CITY OF MUNTINLUPA NCR\nFOURTH OISTRICT PHILIPPINES 1780\nVAT REG TIN: 240-727-673-00006  MIN:23032709402371263\nS/N:HA1RB99D\nSALES INVOICE\n7:27pm, Fri 3 Apr 2026\nCashier: Judy Ann Francisco\nSales Invoice No.: 175026\nUtak# 1775215621\n01 MEALS @170x1  170.00\n- TAPSILOG\n01 MEALS @135x1  185.00\n- LIEMPOSILOG\nSubtotal  355.00\nVATABLE SALES  316.96\nVAT EXEMPT SALES  0.00\nZERO RATED SALES  0.00\nVAT AMDUNT  38.04\nTOTAL  355.00\nPayment Type  Cash\nTotal Qty  2\nTHIS SERVES AS\nYOUR SALES INVOICE\nKRES POS VV2.01\n440 M.Leyva St Mandaluyong City  Kintoz IT Solutions\nAccred No. 0412794381422014080097  VA--  0 100\nDate IstLed: 08/10/2015",
+      "llm": {
+        "load_s": 0.07,
+        "prompt_tokens": 773,
+        "prompt_s": 2.21,
+        "gen_tokens": 233,
+        "gen_s": 12.23,
+        "total_s": 14.59
+      },
+      "extraction": {
+        "seller_name": "BF SINANGAG EXPRESS FOOD CORP",
+        "seller_address": "UNIT 106 A&C NORTHGATE CYBERZONE FCC  ALABANG CITY OF MUNTINLUPA NCR\nFOURTH OISTRICT PHILIPPINES 1780",
+        "seller_tin_raw": "240-727-673-00006",
+        "invoice_number_raw": "175026",
+        "date_raw": "7:27pm, Fri 3 Apr 2026",
+        "buyer_name": null,
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 316.96,
+        "vat_amount": 38.04,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 355.0,
+        "particulars": "MEALS",
+        "expense_category": "MEALS"
+      },
+      "wrong": []
+    },
+    {
+      "sample": "valid-landmark-vat-exempt-mix",
+      "ocr_s": 1.39,
+      "rotation": 0,
+      "ocr_text": "Landmark Supermarket\nCitysuper Alabang Inc.\nvic Drive, Filinvest, Alabang\nMuntinlupa City\n/AT REG TIN#: 009-149-884-000\nMIN：20122611125132324\nS/N: 41-AEMWV\n059 02826 050126 1552 9000126683 REG\nALMND BRZ VA 946ML  172.50\nKS SKN CLSC 3X100G  152.50\nASTRL HRV RLD 500G  87.25\nMR.HAT GLMN RED25G  2\n@ 16.50  33.00\nDIZON PPY SLO A[S]  37.40*\nHEINZ TK 120G  22.00\nCENTRY BANGUS[S]  269.00\nTotal  773.65\nCARD # 50-MCC CREDIT  773.65\nACCT # XXXXXXXXXXXX6528\nNo. of Items: 8.00\nVATable  657.37\nVAT Exempt  37.40\nZero Rated  0.00\nVAT - 12%  78.88\nAmount Due  773.65\nSales Invoice  059-00-000125989\nCashier Name:  12002826-T.REFIL\nDate : 05/01/26  5 Time : 3:52:55 PM\nNAME :\nADDRESS :\n:NII\nThank you for shopping at LANDMARK.\nPlease come again.\nThis serves as SALES INVOICE.\nPOS Provider:\nAPSOFT, INC.\n#441 Lt. Artiaga St., San Juan City\nTIN:007-047-985-000\nACCR#:041-007047985-000483-60745\nDate Issued: 08/01/2020\nPTU No.: FP122020-53B-0277118-00000\nDate Issued: 12/29/2020",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 959,
+        "prompt_s": 3.06,
+        "gen_tokens": 210,
+        "gen_s": 11.39,
+        "total_s": 14.52
+      },
+      "extraction": {
+        "seller_name": "Landmark Supermarket",
+        "seller_address": "vic Drive, Filinvest, Alabang\nMuntinlupa City",
+        "seller_tin_raw": "009-149-884-000",
+        "invoice_number_raw": "059-00-000125989",
+        "date_raw": "05/01/26",
+        "buyer_name": null,
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 657.37,
+        "vat_amount": 78.88,
+        "vat_exempt_sales": 37.4,
+        "zero_rated_sales": 0.0,
+        "total": 773.65,
+        "particulars": "Groceries",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": []
+    },
+    {
+      "sample": "valid-lawson-torn",
+      "ocr_s": 1.52,
+      "rotation": 0,
+      "ocr_text": "LAWSON\nJUIANN\nIN'S CONVENIENCE STORE\nUNIT 1 & 4 G/F MSA PRIME CENTER  IFC - MSA Prime Center\nALABANG1799 NCR, FOURTH DISTRICT,  MADRIGAL BUSINESS PARK AYALA\nUAT Reg TIN: 121-553-541-00002  Muntinlupa, PHL\nMIN.  25082009085019724\nSN.  075031800088\nContact....:  Phone\nVisit lawson-philippines.com\nSALES INUOICE\nRetail Customer\n(Custoner copy)\nSI No.:  1005702100043415\nCashier: Joseph Nasan - 100570  Trans..:100570-100570-2-1775460092854\nDate...: 4/6/2026  03:22 PM\nDescription  Anount\nCic  g e ku  105.00 V\n1 P  105.00\nSales  105.00\nPrice excl. of VAT  93.75\nTotal Disc  00.0\nNET Sales  93.75\nPlus VAT Anount  11.25\n105.00\nTotal PHP  GCash Online463324:76  105.00\n1\nHumber of Itens:  VAT Adjustments:  0.00\nAnount\n93.75\nVATable Sales  11.25\nVAT Amount  00.0\nVAT Exempt Sales  00.0\nZero-Rated Sales\nID..\nName..\nAddress.  TIN.\nBus. Style:  Signature.:  RETAIL SOFTUARE ASSOCIATES  S CORP\nOrtigas Jr. Ave.  San Antonio Pasig City",
+      "llm": {
+        "load_s": 0.07,
+        "prompt_tokens": 854,
+        "prompt_s": 2.71,
+        "gen_tokens": 240,
+        "gen_s": 13.13,
+        "total_s": 16.15
+      },
+      "extraction": {
+        "seller_name": "LAWSON",
+        "seller_address": "UNIT 1 & 4 G/F MSA PRIME CENTER IFC - MSA Prime Center\nALABANG1799 NCR, FOURTH DISTRICT,  MADRIGAL BUSINESS PARK AYALA",
+        "seller_tin_raw": "121-553-541-00002",
+        "invoice_number_raw": "1005702100043415",
+        "date_raw": "4/6/2026  03:22 PM",
+        "buyer_name": "JUIANN",
+        "buyer_tin_raw": null,
+        "buyer_address": null,
+        "vatable_sales": 93.75,
+        "vat_amount": 0.0,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": null,
+        "total": 105.0,
+        "particulars": "Groceries",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": [
+        "vat_amount",
+        "vat_registered"
+      ]
+    },
+    {
+      "sample": "valid-llaollao-service-invoice",
+      "ocr_s": 1.33,
+      "rotation": 0,
+      "ocr_text": "00:\nllaollao.\nMIN:26032512384505783  S/N:OP-9800250831530\nApr 12,  2026 05:12 PM\nSERVICE  INVOICE\nSI #：  00002431\nTAKEOUT\nRegister No: 1\nCashier Name:  chona\nName:.\nAddress:\nTIN:\n01Y  Item Description\n1  Tub Smal]  Amount\n*1  cookie Sauce  139.00\n20.00\nal Amount  em(s)\n159.00\ntal  Due  159.00\nPaymaya\nReference-#.  159.00\nchange  1532179\n0.00\nVATEXIPT  VATABLE SALES  141.96\nZero Rated  0.00\nVAT Amount  0.00\n17.04\notal Guest count\n1\nserves as an Service Invoice.\nyou and please come again.\nPOs Vendor Details\none Integrated Tech., Inc.\n40g prestige Tower",
+      "llm": {
+        "load_s": 0.04,
+        "prompt_tokens": 648,
+        "prompt_s": 1.51,
+        "gen_tokens": 181,
+        "gen_s": 9.84,
+        "total_s": 11.47
+      },
+      "extraction": {
+        "seller_name": "one Integrated Tech., Inc.",
+        "seller_address": "40g prestige Tower",
+        "seller_tin_raw": "01Y",
+        "invoice_number_raw": "SI #：  00002431",
+        "date_raw": "Apr 12,  2026 05:12 PM",
+        "buyer_name": "",
+        "buyer_tin_raw": "",
+        "buyer_address": "",
+        "vatable_sales": 141.96,
+        "vat_amount": 0.0,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 159.0,
+        "particulars": "Service Invoice",
+        "expense_category": "OTHER"
+      },
+      "wrong": [
+        "invoice_number",
+        "seller_branch",
+        "seller_tin",
+        "vat_amount",
+        "vat_registered"
+      ]
+    },
+    {
+      "sample": "valid-mrdiy-date-cropped",
+      "ocr_s": 1.24,
+      "rotation": 0,
+      "ocr_text": "MR  DIY\nBRICOLAGE PHILIPPINES INC.\nFESTIVAL MALL\nVAT REG:010-057-617-00144\nMIN:21062814112359745\nS/N:YL012YDJ\n**SALES INVOICE**\nINV0ICE#:0000-0000240076\nGLASS VASE 5.2*19*9CM_JC-1LL#\nD2-H04-H06 - 12/36  59.00\n8803861  1 X 59.00\nCOMB T857#\nG1-C01 - 12/1200\n9057107  1 X 23.00  23.00\nRULER SET 15+20+30CM#\nL3H04 - 20/480  33.00\n8952410  1 X 33.00\nEco Bag 13.78W, 27.56H, 6.30D 500s\nWH KH- 500/1500  1 X 7.00  7.00\n99003D\nItem(s) : 4  Qty(s) : 4\nSUBTOTAL  122.00\nVATABLE SALES  108.93\nVAT AMT  13.07\nVAT EXEMPT SALES  0.00\nZERO RATED SALES  0.00\nTotal  PHP  122.00\nMAYA - CARD  122.00\nCUST NAME:\nTIN:\nADDRESS:  BUSINESS STYLE\nSIGN:",
+      "llm": {
+        "load_s": 0.01,
+        "prompt_tokens": 810,
+        "prompt_s": 2.51,
+        "gen_tokens": 198,
+        "gen_s": 10.07,
+        "total_s": 12.63
+      },
+      "extraction": {
+        "seller_name": "MR DIY",
+        "seller_address": "BRICOLAGE PHILIPPINES INC.",
+        "seller_tin_raw": "010-057-617-00144",
+        "invoice_number_raw": "0000-0000240076",
+        "date_raw": null,
+        "buyer_name": "CUST NAME:",
+        "buyer_tin_raw": "TIN:",
+        "buyer_address": "ADDRESS:  BUSINESS STYLE",
+        "vatable_sales": 108.93,
+        "vat_amount": 13.07,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 122.0,
+        "particulars": "Hardware supplies",
+        "expense_category": "SUPPLIES"
+      },
+      "wrong": []
+    },
+    {
+      "sample": "valid-petron-fuel",
+      "ocr_s": 1.47,
+      "rotation": 0,
+      "ocr_text": "PRON  Primera Clase Gas Station, Inc.\nDealer: Primera Clase Gas Station. Inc.  Pacific Rim Cor. Commerce Ave.\nVAT REG TIN: 007-851-409-0000  Filinvest, Alabang Munt City\nPOSS/N:GLMXBD2/MIN:17051615583319316  SALES INVOICE\nTime: 15:07:49\nDate: 04/03/2026\nS.I.# 0001362299\nName: 23\nTIN:\nAddress:\nBusiness Style:\nDescription  Qty.  Price  Amount\n*XCS  M)\n(P :06)  2.92  Php96.90  Php282.95\nTotal (incl. VAT)  Php282.95\nZero Rated Sale  Php0.00\nVAT Exempt Sale  Php0.00\nVATable Sales  Php252.63\nVAT Amount  Php30.32\nPayment:  Cash Tendered\nPhp300.00\nChange  Php17.05\nCashier: Ma. Lyn E. Evan\nUnit 202-205 2F CAEG Bldg. Dela Rosa St.  WI & -INC.\nBrgy. Pio Del Pilar, Makati City  VAT REG TIN: 007-068-922-0000\nAcored.No.:048-007068922-000444-32640  P.T.U. No.: FP052017-53B-0123901-00000  Date Insued: 04/06/2010\nDato\nIssued:05/17/2017",
+      "llm": {
+        "load_s": 0.03,
+        "prompt_tokens": 819,
+        "prompt_s": 2.36,
+        "gen_tokens": 200,
+        "gen_s": 10.45,
+        "total_s": 12.91
+      },
+      "extraction": {
+        "seller_name": "Primera Clase Gas Station, Inc.",
+        "seller_address": "Pacific Rim Cor. Commerce Ave.",
+        "seller_tin_raw": "007-851-409-0000",
+        "invoice_number_raw": "S.I.# 0001362299",
+        "date_raw": "04/03/2026",
+        "buyer_name": "23",
+        "buyer_tin_raw": "",
+        "buyer_address": "",
+        "vatable_sales": 252.63,
+        "vat_amount": 30.32,
+        "vat_exempt_sales": 0.0,
+        "zero_rated_sales": 0.0,
+        "total": 282.95,
+        "particulars": "Fuel",
+        "expense_category": "TRANSPORT_FUEL"
+      },
+      "wrong": [
+        "doc_type"
+      ]
+    }
+  ]
+}

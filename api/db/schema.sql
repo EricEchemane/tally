@@ -10,8 +10,9 @@ CREATE TABLE IF NOT EXISTS company (
 );
 
 CREATE TABLE IF NOT EXISTS employee (
-    id   INTEGER PRIMARY KEY,
-    name TEXT NOT NULL
+    id     INTEGER PRIMARY KEY,
+    name   TEXT NOT NULL,
+    active INTEGER NOT NULL DEFAULT 1              -- 0 = Inactive Employee: no new Cash Advances
 );
 
 CREATE TABLE IF NOT EXISTS cash_advance (
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS cash_advance (
     released_on     TEXT NOT NULL,                 -- ISO date
     spending_end_on TEXT NOT NULL,                 -- ISO date, inclusive
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    archived_at     TEXT,                          -- set = Archived Cash Advance (Approved/Returned only)
     CHECK (spending_end_on >= released_on)
 );
 
@@ -43,6 +45,8 @@ CREATE TABLE IF NOT EXISTS receipt (
     error          TEXT,
     image_path     TEXT NOT NULL,
     image_hash     TEXT NOT NULL,
+    cropped_path   TEXT,                           -- Cropped Photo, when the phone sent corners
+    crop_corners   TEXT,                           -- JSON [[x, y] x4], fractions of the upright photo
     rotation       INTEGER NOT NULL DEFAULT 0,
     ocr_text       TEXT,
     extraction     TEXT,                           -- JSON, immutable once written
