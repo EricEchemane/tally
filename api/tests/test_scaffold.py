@@ -119,6 +119,8 @@ def test_questions_are_async(client):
     assert client.get("/api/questions").json()[0]["id"] == qid
 
 
-def test_exports_are_simons_todo(client):
-    assert client.get(f"/api/liquidations/{_liquidation(client)}/summary.xlsx").status_code == 501
-    assert client.get("/api/exports/slsp.csv?month=2026-04").status_code == 501
+def test_export_routes(client):
+    xlsx = client.get(f"/api/liquidations/{_liquidation(client)}/summary.xlsx")
+    assert xlsx.status_code == 200 and xlsx.content[:2] == b"PK"  # a zip, i.e. an .xlsx
+    csv = client.get("/api/exports/slsp.csv?month=2026-04")
+    assert csv.status_code == 200 and csv.text.startswith("month_end,seller_tin,")
