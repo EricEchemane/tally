@@ -111,6 +111,7 @@ def main() -> None:
     from main import app
 
     app.include_router(desktop_setup.router)
+    threading.Thread(target=desktop_setup.ensure_ollama_running, daemon=True).start()
     if "TALLY_WEB_URL_FIXED" not in os.environ:
         follow_network(config, port)
 

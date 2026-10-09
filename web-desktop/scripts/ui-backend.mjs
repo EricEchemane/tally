@@ -11,12 +11,14 @@ import { fileURLToPath } from "node:url";
 
 const API = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "api");
 
-export function startBackend() {
+/** `extraEnv` adjusts the backend, e.g. { OLLAMA_URL: "http://127.0.0.1:9", TALLY_OLLAMA_SEARCH: "" } for a
+ *  machine with no receipt reader installed. */
+export function startBackend(extraEnv = {}) {
   const dataDir = mkdtempSync(join(tmpdir(), "tally-ui-"));
   writeFileSync(join(dataDir, "setup.json"), JSON.stringify({ complete: true }));
   const child = spawn("uv", ["run", "python", "desktop.py", "--data-dir", dataDir, "--port", "0"], {
     cwd: API,
-    env: { ...process.env, TALLY_SEED: "demo", TALLY_FAKE_PIPELINE: "1", TALLY_FAKE_DELAY: "0.2" },
+    env: { ...process.env, TALLY_SEED: "demo", TALLY_FAKE_PIPELINE: "1", TALLY_FAKE_DELAY: "0.2", ...extraEnv },
     stdio: ["pipe", "pipe", "pipe"],
   });
   // Quiet unless it fails to start: request logs would bury the caller's own output.

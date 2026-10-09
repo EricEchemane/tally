@@ -28,6 +28,6 @@ export const useSetupStatus = (fast = false) =>
     }),
     refetchInterval: (q) => {
       const d = q.state.data;
-      return fast || d?.install.state === "running" || d?.pull.state === "running" ? 1000 : 5000;
+      return fast || d?.install.state === "running" || d?.pull.state === "running" ? 2000 : 5000; // the bar eases between checks
     },
   });
