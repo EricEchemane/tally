@@ -1,0 +1,43 @@
+# Tally
+
+> Every receipt checked against BIR rules, on your own laptop.
+
+Local-first liquidation review for Philippine companies: phone photos of receipts are read with Apple Vision OCR and a local LLM (qwen3:4b via Ollama), checked by code against BIR rules, and reviewed on a dashboard, with no cloud.
+
+**Build spec:** [SPEC.md](SPEC.md) · **Vocabulary:** [GLOSSARY.md](GLOSSARY.md)
+
+## Run it
+
+**macOS (full pipeline):**
+
+```sh
+./setup.sh        # once: uv, node, ollama, qwen3:4b, deps
+./dev.sh          # API :8000 (localhost only) + web :3000 (LAN)
+```
+
+Open http://localhost:3000. The phone opens the QR code on a Liquidation (same Wi-Fi or hotspot).
+
+**Windows (fake pipeline: no ocrmac or Ollama; see SPEC §2):**
+
+```powershell
+cd api; uv sync; $env:TALLY_FAKE_PIPELINE="1"; uv run uvicorn main:app --port 8000 --reload
+cd web; npm install; npm run dev
+```
+
+To run against Eric's Mac instead (same room), set `API_URL=http://<mac-ip>:8000` for `web` and start the Mac API with `--host 0.0.0.0` (development only).
+
+## Test
+
+```sh
+cd api && uv run pytest
+cd web && npx tsc --noEmit && npm run lint
+```
+
+## Layout and ownership (SPEC §9)
+
+| Path | Owner |
+|---|---|
+| `api/pipeline/`, `api/llm/`, `api/checks/`, `api/routes/`, `api/db/` (schema) | Eric |
+| `web/`, `api/exports/`, `api/questions/templates/` | Simon |
+
+The seed creates Bayanihan Demo Corp, two Employees, a ₱15,000 Cash Advance and 4 placeholder receipts (`api/db/placeholders.py`) until the pipeline lands. Reset by deleting `api/data/`.

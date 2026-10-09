@@ -1,0 +1,47 @@
+"""Seed the demo Company and a sample Cash Advance. Run: uv run python -m db.seed
+
+Includes 4 placeholder receipts (db/placeholders.py) until the pipeline lands. The full demo
+seed (2 Liquidations, ~8 processed receipts) comes at hours 12–14 (SPEC §9).
+"""
+import os
+import secrets
+
+import db
+from money import to_centavos
+
+DEMO_COMPANY = ("Bayanihan Demo Corp", "12345678900000")
+
+
+def seed(conn) -> None:
+    conn.execute(
+        "INSERT OR IGNORE INTO company (id, name, tin, buyer_details_rule) VALUES (1, ?, ?, 'ALL_RECEIPTS')",
+        DEMO_COMPANY,
+    )
+    if conn.execute("SELECT COUNT(*) FROM employee").fetchone()[0] == 0:
+        juan = conn.execute("INSERT INTO employee (name) VALUES ('Juan Dela Cruz')").lastrowid
+        conn.execute("INSERT INTO employee (name) VALUES ('Maria Santos')")
+        ca = create_cash_advance(conn, juan, to_centavos(15000), "Field sales trip, South Luzon", "2026-03-30", "2026-05-02")
+        if os.environ.get("TALLY_SEED_PLACEHOLDERS", "1") == "1":
+            from db import placeholders
+            liq = conn.execute("SELECT id FROM liquidation WHERE cash_advance_id = ?", (ca,)).fetchone()[0]
+            placeholders.insert(conn, liq)
+    conn.commit()
+
+
+def create_cash_advance(conn, employee_id, amount_centavos, purpose, released_on, spending_end_on) -> int:
+    """A Cash Advance always gets its Liquidation (1:1)."""
+    ca = conn.execute(
+        "INSERT INTO cash_advance (employee_id, amount, purpose, released_on, spending_end_on) VALUES (?, ?, ?, ?, ?)",
+        (employee_id, amount_centavos, purpose, released_on, spending_end_on),
+    ).lastrowid
+    conn.execute(
+        "INSERT INTO liquidation (cash_advance_id, capture_token) VALUES (?, ?)", (ca, secrets.token_urlsafe(12))
+    )
+    return ca
+
+
+if __name__ == "__main__":
+    conn = db.connect()
+    db.init_db(conn)
+    seed(conn)
+    print("seeded", conn.execute("SELECT COUNT(*) FROM cash_advance").fetchone()[0], "cash advance(s)")
