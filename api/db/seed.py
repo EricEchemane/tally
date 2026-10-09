@@ -1,7 +1,8 @@
-"""Seed the demo Company and a sample Cash Advance. Run: uv run python -m db.seed
+"""What an empty database starts with. TALLY_SEED picks it (SPEC §9):
 
-Includes 4 placeholder receipts (db/placeholders.py) until the pipeline lands. The full demo
-seed (2 Liquidations, ~8 processed receipts) comes at hours 12–14 (SPEC §9).
+    demo (default)   the demo data (db/demo.py)
+    placeholders     demo Company + one Cash Advance + 4 hand-written receipts (API tests)
+    minimal          demo Company + one Cash Advance, no receipts (pipeline tests)
 """
 import os
 import secrets
@@ -13,18 +14,21 @@ DEMO_COMPANY = ("Bayanihan Demo Corp", "12345678900000")
 
 
 def seed(conn) -> None:
-    conn.execute(
-        "INSERT OR IGNORE INTO company (id, name, tin, buyer_details_rule) VALUES (1, ?, ?, 'ALL_RECEIPTS')",
-        DEMO_COMPANY,
-    )
-    if conn.execute("SELECT COUNT(*) FROM employee").fetchone()[0] == 0:
-        juan = conn.execute("INSERT INTO employee (name) VALUES ('Juan Dela Cruz')").lastrowid
-        conn.execute("INSERT INTO employee (name) VALUES ('Maria Santos')")
-        ca = create_cash_advance(conn, juan, to_centavos(15000), "Field sales trip, South Luzon", "2026-03-30", "2026-05-02")
-        if os.environ.get("TALLY_SEED_PLACEHOLDERS", "1") == "1":
-            from db import placeholders
-            liq = conn.execute("SELECT id FROM liquidation WHERE cash_advance_id = ?", (ca,)).fetchone()[0]
-            placeholders.insert(conn, liq)
+    if conn.execute("SELECT COUNT(*) FROM company").fetchone()[0]:
+        return  # never touch an existing database
+    mode = os.environ.get("TALLY_SEED", "demo")
+    if mode == "demo":
+        from db import demo
+        demo.reset(conn)
+        return
+    conn.execute("INSERT INTO company (id, name, tin, buyer_details_rule) VALUES (1, ?, ?, 'ALL_RECEIPTS')", DEMO_COMPANY)
+    juan = conn.execute("INSERT INTO employee (name) VALUES ('Juan Dela Cruz')").lastrowid
+    conn.execute("INSERT INTO employee (name) VALUES ('Maria Santos')")
+    ca = create_cash_advance(conn, juan, to_centavos(15000), "Field sales trip, South Luzon", "2026-03-30", "2026-05-02")
+    if mode == "placeholders":
+        from db import placeholders
+        liq = conn.execute("SELECT id FROM liquidation WHERE cash_advance_id = ?", (ca,)).fetchone()[0]
+        placeholders.insert(conn, liq)
     conn.commit()
 
 

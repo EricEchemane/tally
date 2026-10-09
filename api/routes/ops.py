@@ -1,7 +1,12 @@
+import sqlite3
+
 import httpx
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 import config
+import events
+import serialize
+from db import demo, get_db
 from pipeline import runner
 
 router = APIRouter(prefix="/api")
@@ -33,3 +38,14 @@ def warmup():
     except httpx.HTTPError as e:
         return {"warmed": False, "reason": str(e)}
     return {"warmed": True}
+
+
+@router.post("/admin/demo-reset")
+def demo_reset(conn: sqlite3.Connection = Depends(get_db)):
+    """Reload the demo data (db/demo.py). Open dashboards refresh through live events."""
+    liquidation_ids = demo.reset(conn)
+    rule = conn.execute("SELECT buyer_details_rule FROM company WHERE id = 1").fetchone()[0]
+    events.publish("company.updated", buyer_details_rule=rule)
+    for lid in liquidation_ids:
+        events.publish("liquidation.updated", liquidation_id=lid, status="OPEN", totals=serialize.totals(conn, lid))
+    return {"liquidations": liquidation_ids}

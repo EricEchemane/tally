@@ -40,4 +40,4 @@ cd web && npx tsc --noEmit && npm run lint
 | `api/pipeline/`, `api/llm/`, `api/checks/`, `api/routes/`, `api/db/` (schema) | Eric |
 | `web/`, `api/exports/`, `api/questions/templates/` | Simon |
 
-The seed creates Bayanihan Demo Corp, two Employees, a ₱15,000 Cash Advance and 4 placeholder receipts (`api/db/placeholders.py`) until the pipeline lands. Reset by deleting `api/data/`.
+An empty database starts with the demo data (`api/db/demo.py`, SPEC §3): Bayanihan Demo Corp, three Cash Advances and 11 processed receipts. Before a demo or rehearsal, run `./demo.sh` with `./dev.sh` running: it resets the data, warms the model and prints the phone URL. Deleting `api/data/` also gives a fresh start.

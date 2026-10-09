@@ -50,7 +50,7 @@ export interface Receipt {
 export type Answer =
   | { kind: "answer"; sentence: string; table: { columns: string[]; rows: unknown[][] };
       links: { label: string; href: string }[];
-      how: { question_id: number; question: string; period: { from: string; to: string } | null } }
+      how: { question_id: number; question: string; period: { from: string; to: string } | null; slots?: Record<string, unknown> } }
   | { kind: "clarify"; sentence: string; choices: { label: string; text: string }[] }
   | { kind: "unsupported"; sentence: string; supported: string[] };
 

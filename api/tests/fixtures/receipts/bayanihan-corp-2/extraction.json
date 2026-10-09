@@ -1,0 +1,17 @@
+{
+  "seller_name": "JUANA'S OFFICE SUPPLIES INC.",
+  "seller_address": "45 Mabini St,  Munt inlupa  City",
+  "seller_tin_raw": "987-654-321-00000",
+  "invoice_number_raw": "SI-000124",
+  "date_raw": "2026-10-09",
+  "buyer_name": "BAYANIHAN DEMO CORP",
+  "buyer_tin_raw": "123-456-789-00000",
+  "buyer_address": "123 Rizal St, Quezon City",
+  "vatable_sales": 594.64,
+  "vat_amount": 71.36,
+  "vat_exempt_sales": null,
+  "zero_rated_sales": null,
+  "total": 666.0,
+  "particulars": "Office supplies",
+  "expense_category": "SUPPLIES"
+}

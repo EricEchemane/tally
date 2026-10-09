@@ -24,10 +24,12 @@ These are real Philippine receipts used for the M1 extraction measurement, for t
 | `goldilocks-seller-tin-covered.jpeg` | Goldilocks Bakeshop (Festival Mall) | Sales Invoice | VAT · TIN covered by tape | 2026-08-14 | 992.00 | 885.71 / 106.29 ✓ | **Seller TIN NEEDS_REVIEW**; total misread as 952 (→ VAT check flags) | Missing TIN; OCR digit misread |
 | `mercury-drug-226-faded.jpeg` | Mercury Drug (Market Market) | Invoice | VAT · 000-388-474-00409 | 2026-09-25 (faded) | 226.50 | 202.23 / 24.27 ✓ | Header TIN, date and invoice number faded → NEEDS_REVIEW (only the footer provider TIN is legible, and code rejects it) | Faded thermal footer |
 | `mercury-drug-458.jpeg` | Mercury Drug (Market Market) | Invoice | VAT · 000-388-474-00409 | 2026-09-11 | 458.00 | 408.93 / 49.07 ✓ | Header TIN not read → seller TIN NEEDS_REVIEW | Crumpled tape |
+| `bayanihan-corp-1.jpg` | Juana's Office Supplies Inc. (fictional, printed for the demo) | Sales Invoice | VAT · 987-654-321-00000 | 2026-10-09 | 666.00 | 594.64 / 71.36 ✓ | **Accepted ✅** when the Cash Advance covers 2026-10-09: buyer is Bayanihan Demo Corp, TIN 123-456-789-00000 | The demo ✅; printed buyer details. Tilted photo: OCR merges the seller-name and address lines (display only) |
+| `bayanihan-corp-2.jpg` | same, SI-000124 **and** SI-000125 in one photo | Sales Invoice | same | 2026-10-09 | 666.00 | same | **Retake as one receipt per photo**: the pipeline reads the first (SI-000124) only | One receipt per photo |
 
 ## Gaps
 
-- **No receipt of ₱1,000 or more with buyer name/TIN filled in** (check 3, positive case). Only the Official Receipt is ₱1,000 or more. Skipped for now (no physical receipts on hand); add one later, real or synthetic, with Bayanihan Demo Corp's TIN.
+- **No receipt of ₱1,000 or more with the Company's buyer details.** The printed demo receipts (₱666) cover the passing case of check 3 under `ALL_RECEIPTS`, but not the ₱1,000 threshold.
 - No "Official Receipt" that carries the stamp. The stamp appears on the Non-VAT invoice, where it is expected.
 - No Grab/taxi receipt (Petron fuel covers transport).
 
