@@ -65,9 +65,9 @@ def reset(conn) -> list[int]:
 def insert_processed(conn, liquidation_id: int, sample: str) -> int:
     """A receipt exactly as the real pipeline left it (fixture OCR + extraction), checks not yet run."""
     fixture = FIXTURES / sample
-    meta = json.loads((fixture / "meta.json").read_text())
-    ocr = (fixture / "ocr.txt").read_text()
-    extraction = json.loads((fixture / "extraction.json").read_text())
+    meta = json.loads((fixture / "meta.json").read_text(encoding="utf-8"))
+    ocr = (fixture / "ocr.txt").read_text(encoding="utf-8")
+    extraction = json.loads((fixture / "extraction.json").read_text(encoding="utf-8"))
     return conn.execute(
         "INSERT INTO receipt (liquidation_id, stage, image_path, image_hash, rotation, ocr_text, extraction, derived) "
         "VALUES (?, 'done', ?, ?, ?, ?, ?, ?)",

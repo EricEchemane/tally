@@ -83,7 +83,7 @@ def test_restart_resumes_unfinished_receipts(client, stage):
     lid = _liquidation(client)
     image = SAMPLES / "nonvat-mouthfeel.jpg"
     conn = db.connect()
-    ocr = (Path(backends.FIXTURES) / "nonvat-mouthfeel" / "ocr.txt").read_text() if stage == "extracting" else None
+    ocr = (Path(backends.FIXTURES) / "nonvat-mouthfeel" / "ocr.txt").read_text(encoding="utf-8") if stage == "extracting" else None
     rid = conn.execute("INSERT INTO receipt (liquidation_id, stage, image_path, image_hash, ocr_text) VALUES (?, ?, ?, 'x', ?)",
                        (lid, stage, str(image), ocr)).lastrowid
     conn.commit()

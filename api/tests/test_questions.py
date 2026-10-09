@@ -79,12 +79,12 @@ def test_employee_is_resolved_or_clarified(clean_client, recorded):
     assert recorded[-1][1]["employee_id"] is None
 
 
-def test_unsupported_and_placeholder_until_templates_exist(clean_client):
+def test_unsupported_and_real_templates(clean_client):
     c = clean_client
     a = _ask(c, "What's the weather tomorrow?")
     assert a["kind"] == "unsupported" and len(a["supported"]) == 7
-    a = _ask(c, "Ano pa ang kailangan kong i-review?")      # templates not written yet (Simon)
-    assert a["kind"] == "answer" and a["how"]["question_id"] == 7 and "Simon" in a["sentence"]
+    a = _ask(c, "Ano pa ang kailangan kong i-review?")      # the real template (test_question_templates.py)
+    assert a["kind"] == "answer" and a["how"]["question_id"] == 7 and a["sentence"] == "Nothing needs your review."
 
 
 # Phrasings outside the prompt's examples; only the real model is expected to get these.
