@@ -26,5 +26,18 @@ export const api = {
   },
 };
 
+/** Formats a peso amount the server computed. Display only: the UI never does money arithmetic. */
 export const peso = (n: number | null | undefined) =>
   n == null ? "—" : n.toLocaleString("en-PH", { style: "currency", currency: "PHP" });
+
+/** A readable message from a FastAPI error ({detail}) or any thrown value. */
+export function errorMessage(e: unknown): string {
+  if (e instanceof ApiError) {
+    const body = e.body as { detail?: unknown; error?: string } | null;
+    if (typeof body?.detail === "string") return body.detail;
+    if (Array.isArray(body?.detail)) return body.detail.map((d: { msg?: string }) => d.msg).filter(Boolean).join("; ");
+    if (body?.error) return body.error.replaceAll("_", " ");
+    return `Request failed (${e.status})`;
+  }
+  return e instanceof Error ? e.message : "Something went wrong";
+}
