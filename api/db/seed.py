@@ -3,6 +3,7 @@
     demo (default)   the demo data (db/demo.py)
     placeholders     demo Company + one Cash Advance + 4 hand-written receipts (API tests)
     minimal          demo Company + one Cash Advance, no receipts (pipeline tests)
+    empty            a blank Company and nothing else (the desktop app: its first-run setup fills it in)
 """
 import os
 import secrets
@@ -17,6 +18,10 @@ def seed(conn) -> None:
     if conn.execute("SELECT COUNT(*) FROM company").fetchone()[0]:
         return  # never touch an existing database
     mode = os.environ.get("TALLY_SEED", "demo")
+    if mode == "empty":
+        conn.execute("INSERT INTO company (id, name, tin, buyer_details_rule) VALUES (1, '', '', 'ALL_RECEIPTS')")
+        conn.commit()
+        return
     if mode == "demo":
         from db import demo
         demo.reset(conn)

@@ -8,6 +8,8 @@ from dataclasses import dataclass
 
 from PIL import Image
 
+from pipeline.crop import upright
+
 # Vision returns (text, confidence, (x, y, w, h)) with normalized coords, y from the bottom.
 Observation = tuple[str, float, tuple[float, float, float, float]]
 
@@ -45,7 +47,7 @@ OCR_MAX_SIDE = 2048  # full-resolution phone photos (4032 px) OCR 2–2.5x slowe
 
 
 def ocr_image(path: str) -> OcrResult:
-    img = Image.open(path).convert("RGB")
+    img = upright(path)  # the EXIF orientation, so `rotation` is relative to the photo as browsers show it
     img.thumbnail((OCR_MAX_SIDE, OCR_MAX_SIDE))  # only shrinks; the stored photo stays full size
     obs, rotation = _recognize(img), 0
     if is_sideways(obs):

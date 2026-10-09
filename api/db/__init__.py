@@ -17,7 +17,11 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
 
 
 # Columns added after the first schema; CREATE TABLE IF NOT EXISTS won't add them to an existing DB.
-_ADDED_COLUMNS = [("receipt", "checks_run", "INTEGER NOT NULL DEFAULT 0")]
+_ADDED_COLUMNS = [("receipt", "checks_run", "INTEGER NOT NULL DEFAULT 0"),
+                  ("employee", "active", "INTEGER NOT NULL DEFAULT 1"),
+                  ("cash_advance", "archived_at", "TEXT"),
+                  ("receipt", "cropped_path", "TEXT"),
+                  ("receipt", "crop_corners", "TEXT")]
 
 
 def init_db(conn: sqlite3.Connection) -> None:

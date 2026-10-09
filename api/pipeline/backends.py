@@ -14,10 +14,10 @@ FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "receipt
 class RealBackend:
     """Apple Vision OCR + qwen3:4b. macOS only."""
 
-    async def ocr(self, image_path: str) -> OcrResult:
+    async def ocr(self, image_path: str, cropped_path: str | None = None) -> OcrResult:
         from pipeline.ocr import ocr_image
 
-        return await asyncio.to_thread(ocr_image, image_path)
+        return await asyncio.to_thread(ocr_image, cropped_path or image_path)
 
     async def extract(self, ocr_text: str, image_path: str) -> dict:
         from llm.extraction import extract
@@ -29,7 +29,8 @@ class FakeBackend:
     """Replays committed fixtures. A known sample image gets its real OCR text and extraction;
     anything else gets a fixture picked by its hash, so the stages still play out (SPEC §2)."""
 
-    async def ocr(self, image_path: str) -> OcrResult:
+    async def ocr(self, image_path: str, cropped_path: str | None = None) -> OcrResult:
+        # Fixtures are keyed by the Receipt Photo, so a cropped upload still replays its own fixture.
         await asyncio.sleep(0.5 * config.FAKE_DELAY)
         fixture = _fixture_for(image_path)
         meta = json.loads((fixture / "meta.json").read_text(encoding="utf-8"))

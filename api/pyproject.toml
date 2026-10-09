@@ -18,6 +18,7 @@ dependencies = [
 
 [dependency-groups]
 dev = ["pytest>=8"]
+desktop = ["pyinstaller>=6.10"]  # the desktop sidecar build (tally-api.spec)
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

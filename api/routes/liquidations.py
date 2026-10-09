@@ -69,6 +69,9 @@ def return_(liquidation_id: int, body: ReturnIn | None = None, conn: sqlite3.Con
 def reopen(liquidation_id: int, conn: sqlite3.Connection = Depends(get_db)):
     if load(conn, liquidation_id)["status"] != "RETURNED":
         raise HTTPException(409, "only a RETURNED liquidation can be reopened")
+    # Work on it again means it is no longer set aside.
+    conn.execute("UPDATE cash_advance SET archived_at = NULL WHERE id = (SELECT cash_advance_id FROM liquidation WHERE id = ?)",
+                 (liquidation_id,))
     return _set_status(conn, liquidation_id, "OPEN")
 
 

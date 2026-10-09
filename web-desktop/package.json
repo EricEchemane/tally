@@ -1,0 +1,32 @@
+{
+  "name": "web-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "predev": "node scripts/copy-vendor.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/copy-vendor.mjs",
+    "build": "next build",
+    "lint": "eslint",
+    "check:layout": "next build && node scripts/layout-check.mjs",
+    "ui:backend": "node scripts/ui-backend.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.104.1",
+    "@techstark/opencv-js": "4.10.0-release.1",
+    "next": "16.4.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.0",
+    "playwright-core": "^1.56.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

@@ -55,6 +55,28 @@ def test_cash_advance_creates_liquidation(client):
     assert bad.status_code == 422
 
 
+def test_edit_cash_advance_rechecks_and_recomputes(client):
+    ca = client.get("/api/cash-advances").json()[0]
+    lid, before = ca["liquidation"]["id"], ca["liquidation"]["totals"]["amount_to_return"]
+    with client.websocket_connect("/ws") as ws:
+        r = client.patch(f"/api/cash-advances/{ca['id']}", json={"amount": ca["amount"] - 5000, "purpose": " New purpose "})
+        assert r.status_code == 200 and r.json()["purpose"] == "New purpose"
+        assert r.json()["liquidation"]["totals"]["amount_to_return"] == before - 5000
+        assert ws.receive_json()["event"] == "liquidation.updated"   # the dashboard refreshes the totals
+    # Moving the Spending Period past a receipt's date fails it on the date check.
+    assert client.get(f"/api/liquidations/{lid}").json()["receipts"][3]["status"] == "ACCEPTED"
+    client.patch(f"/api/cash-advances/{ca['id']}", json={"released_on": "2026-04-13"})
+    llaollao = client.get(f"/api/liquidations/{lid}").json()["receipts"][3]
+    assert llaollao["status"] == "REJECT"
+    assert any(f["check"] == "DATE" for f in client.get(f"/api/receipts/{llaollao['id']}").json()["findings"])
+    # Guards: a period that ends before it starts, an unknown Employee, a Liquidation that is not OPEN.
+    assert client.patch(f"/api/cash-advances/{ca['id']}", json={"spending_end_on": "2026-01-01"}).status_code == 422
+    assert client.patch(f"/api/cash-advances/{ca['id']}", json={"employee_id": 999}).status_code == 404
+    client.post(f"/api/liquidations/{lid}/return", json={"note": "x"})
+    assert client.patch(f"/api/cash-advances/{ca['id']}", json={"purpose": "x"}).status_code == 409
+    assert client.patch("/api/cash-advances/999", json={"purpose": "x"}).status_code == 404
+
+
 def test_placeholder_liquidation_shape(client):
     liq = client.get(f"/api/liquidations/{_liquidation(client)}").json()
     assert set(liq) >= {"id", "status", "cash_advance", "totals", "open_needs_review", "receipts"}
