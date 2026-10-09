@@ -1,5 +1,5 @@
 import { FileCsvIcon, FileXlsIcon } from "@phosphor-icons/react/dist/ssr";
-import { Label } from "@/components/marketing";
+import { SectionHeader, SectionShell } from "@/components/marketing";
 import { DEMO, Money, SampleNote } from "@/components/product";
 
 function Spreadsheet() {
@@ -44,54 +44,87 @@ function Spreadsheet() {
         </tbody>
       </table>
       <p className="border-t border-line-strong bg-sunken/60 px-3 py-2">
-        Cash Advance <Money value={DEMO.cashAdvance} /> minus Valid Spend <Money value={DEMO.validSpend} />:{" "}
-        <span className="font-semibold">Amount to Return <Money value={DEMO.amountToReturn} /></span>
+        Cash advance <Money value={DEMO.cashAdvance} /> minus what was spent <Money value={DEMO.validSpend} /> ={" "}
+        <span className="font-semibold"><Money value={DEMO.amountToReturn} /> to return</span>
       </p>
     </div>
   );
 }
 
-const CSV = `month_end,seller_tin,seller_branch_code,registered_name,…,taxable_net_of_vat,input_tax,gross_purchases
-2026-04-30,240727673,00006,"BF Sinangag Express Food Corp",…,316.96,38.04,355.00
-2026-04-30,987654321,00000,"Juana's Office Supplies Inc.",…,594.64,71.36,666.00`;
+/** A friendly preview of the purchases file: who you bought from, their TIN, what you paid and the VAT you can claim. */
+const PURCHASES = [
+  { supplier: "Juana's Office Supplies", tin: "987-654-321", amount: 666, vat: 71.36 },
+  { supplier: "BF Sinangag Express", tin: "240-727-673", amount: 355, vat: 38.04 },
+  { supplier: "Primera Clase Gas Station", tin: "007-851-409", amount: 282.95, vat: 30.32 },
+];
+
+function PurchasesFile() {
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-card">
+      <p className="flex items-center gap-2 border-b border-line bg-sunken px-4 py-2.5 text-xs text-muted">
+        <FileCsvIcon aria-hidden className="size-4 text-accent" />
+        purchases-april-2026.csv
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[22rem] text-left text-[0.8125rem]">
+          <thead className="text-xs text-muted">
+            <tr>
+              <th scope="col" className="px-4 pt-3 pb-2 font-medium">Supplier</th>
+              <th scope="col" className="px-2 pt-3 pb-2 font-medium">TIN</th>
+              <th scope="col" className="px-2 pt-3 pb-2 text-right font-medium">Paid</th>
+              <th scope="col" className="px-4 pt-3 pb-2 text-right font-medium">Input VAT</th>
+            </tr>
+          </thead>
+          <tbody>
+            {PURCHASES.map((p) => (
+              <tr key={p.supplier} className="border-t border-line">
+                <td className="max-w-[10rem] truncate px-4 py-2.5">{p.supplier}</td>
+                <td className="px-2 py-2.5 font-mono text-xs text-muted">{p.tin}</td>
+                <td className="px-2 py-2.5 text-right"><Money value={p.amount} /></td>
+                <td className="px-4 py-2.5 text-right"><Money value={p.vat} /></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
 
 export function Exports() {
   return (
-    <section aria-labelledby="exports-title">
-      <div className="mx-auto max-w-6xl px-5 py-24 lg:py-32">
-        <Label>Exports</Label>
-        <h2 id="exports-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem] sm:leading-[1.08]">
-          Ready for your files and the BIR.
-        </h2>
-        <div className="mt-14 grid lg:mt-16 grid-cols-1 gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-12">
-          <div>
+    <SectionShell tone="plain" labelledBy="exports-title">
+      <SectionHeader id="exports-title" label="Exports" title="Done checking? Export your files." />
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+          <div className="rounded-3xl bg-surface p-6 shadow-card ring-1 ring-line sm:p-8">
             <h3 className="flex items-center gap-2.5 text-lg font-semibold">
               <FileXlsIcon aria-hidden className="size-6 text-ok" />
-              The Liquidation summary (Excel)
+              Liquidation summary (Excel)
             </h3>
             <p className="mt-2 max-w-prose text-muted">
-              Valid Spend, Disallowed Amount and the Amount to Return, receipt by receipt.
+              Every receipt in one sheet: what counts, what doesn&apos;t, and how much the employee needs to return.
             </p>
             <div className="mt-6">
               <Spreadsheet />
             </div>
           </div>
-          <div>
+          <div className="rounded-3xl bg-surface p-6 shadow-card ring-1 ring-line sm:p-8">
             <h3 className="flex items-center gap-2.5 text-lg font-semibold">
               <FileCsvIcon aria-hidden className="size-6 text-accent" />
-              The SLSP-ready purchases CSV
+              Purchases list for the BIR
             </h3>
-            <p className="mt-2 max-w-prose text-muted">The purchases, ready for your SLSP.</p>
-            <pre className="mt-6 overflow-x-auto rounded-lg border border-line bg-sunken p-4 font-mono text-xs leading-relaxed text-ink">
-              <code>{CSV}</code>
-            </pre>
-            <p className="mt-2 text-xs text-muted">Some columns hidden here for width.</p>
+            <p className="mt-2 max-w-prose text-muted">
+              Your purchases, already laid out for the SLSP: the purchases report you file with the BIR every
+              quarter. No retyping.
+            </p>
+            <div className="mt-6">
+              <PurchasesFile />
+            </div>
           </div>
         </div>
-        <div className="mt-8">
+        <div className="mt-10">
           <SampleNote />
         </div>
-      </div>
-    </section>
+    </SectionShell>
   );
 }

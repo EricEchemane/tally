@@ -9,16 +9,16 @@ import {
   StorefrontIcon,
 } from "@phosphor-icons/react/dist/ssr";
 import { Fragment } from "react";
-import { Label } from "@/components/marketing";
+import { SectionHeader, SectionShell } from "@/components/marketing";
 import { Peso } from "@/components/product";
 
 const CHECKS = [
-  { Icon: ReceiptIcon, name: "Invoice or Official Receipt", line: "Flags Official Receipts and receipts marked “not valid for claim of input tax”." },
-  { Icon: IdentificationCardIcon, name: "Buyer name and TIN", line: <>The buyer&apos;s TIN must match your Company&apos;s, on every receipt or from <Peso />1,000 up, as you choose.</> },
-  { Icon: StorefrontIcon, name: "Seller TIN", line: "It must be there and in the right format, branch code included." },
-  { Icon: CalculatorIcon, name: "VAT arithmetic", line: "VATable × 12% must equal the VAT, and the parts must add up to the total. If they don't, the receipt is flagged." },
-  { Icon: CopyIcon, name: "Duplicates", line: "The same receipt submitted twice, even in a different Liquidation." },
-  { Icon: CalendarXIcon, name: "Spending Period", line: "Receipts dated outside the Cash Advance's Spending Period." },
+  { Icon: ReceiptIcon, name: "Right kind of receipt", line: "Spots Official Receipts and receipts that can't be used to claim input VAT." },
+  { Icon: IdentificationCardIcon, name: "Your company's name and TIN", line: <>Makes sure the receipt is under your company: on every receipt, or only from <Peso />1,000 up.</> },
+  { Icon: StorefrontIcon, name: "Seller's TIN", line: "Checks that the seller's TIN is printed and written correctly." },
+  { Icon: CalculatorIcon, name: "VAT that adds up", line: "Checks the VAT is exactly 12% and the totals match. If they don't, the receipt is flagged." },
+  { Icon: CopyIcon, name: "No duplicates", line: "Catches the same receipt submitted twice, even in another liquidation." },
+  { Icon: CalendarXIcon, name: "Within the dates", line: "Flags receipts dated outside the cash advance period." },
 ];
 
 /** The reference kit's kinetic word band, carrying the six checks. Decorative: the grid below says the same. */
@@ -45,36 +45,34 @@ export function ChecksBand() {
 
 export function Checks() {
   return (
-    <section aria-labelledby="checks-title">
-      <div className="mx-auto max-w-6xl px-5 py-24 lg:py-32">
-        <Label>What it checks</Label>
-        <h2 id="checks-title" className="mt-4 text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem] sm:leading-[1.08]">
-          The checks you&apos;d do, on every receipt.
-        </h2>
-        <p className="mt-5 max-w-2xl text-lg leading-relaxed text-muted">
-          Under the EOPT Act, Official Receipts no longer support input VAT claims. Tally knows.
-        </p>
-
-        <ul className="mt-14 grid lg:mt-16 grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <SectionShell tone="panel" labelledBy="checks-title">
+      <SectionHeader
+        id="checks-title"
+        label="What it checks"
+        title="The checks you'd do, on every receipt."
+        intro="Tally knows the latest BIR rules, including the EOPT change: Official Receipts no longer count for input VAT."
+      />
+        {/* Equal cards: same padding, same icon-to-title and title-to-text rhythm, and every card in a row as tall
+            as the tallest. No hover lift: these are information, not links. */}
+        <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {CHECKS.map(({ Icon, name, line }) => (
-            <li key={name} className="rounded-3xl bg-surface p-7 shadow-card ring-1 ring-line transition-transform duration-200 ease-out hover:-translate-y-1">
-              <span className="grid size-12 place-items-center rounded-full bg-mint text-accent">
+            <li key={name} className="flex flex-col rounded-3xl bg-surface p-8 shadow-card ring-1 ring-line">
+              <span className="grid size-12 place-items-center rounded-full bg-lime text-lime-ink">
                 <Icon aria-hidden className="size-6" />
               </span>
-              <h3 className="mt-6 text-lg font-semibold">{name}</h3>
-              <p className="mt-2 leading-relaxed text-muted">{line}</p>
+              <h3 className="mt-7 text-lg font-semibold">{name}</h3>
+              <p className="mt-3 leading-relaxed text-muted">{line}</p>
             </li>
           ))}
         </ul>
 
-        <p className="mt-8 flex max-w-3xl gap-3 rounded-2xl bg-lime/40 px-5 py-3 sm:rounded-full text-lime-ink dark:bg-lime/15 dark:text-ink">
-          <InfoIcon aria-hidden weight="fill" className="mt-0.5 size-5 shrink-0" />
+        <p className="mt-10 flex max-w-3xl items-center gap-3 rounded-2xl bg-lime/15 px-5 py-3.5 text-ink sm:rounded-full">
+          <InfoIcon aria-hidden weight="fill" className="size-5 shrink-0" />
           <span>
-            Tally only rejects a receipt on what&apos;s printed on it. Anything it can&apos;t read clearly goes to you for
-            review.
+            Tally only rejects a receipt for what&apos;s printed on it. If it can&apos;t read something clearly, it asks
+            you.
           </span>
         </p>
-      </div>
-    </section>
+    </SectionShell>
   );
 }

@@ -109,11 +109,16 @@ The reference for building the marketing site. It sets the order of the sections
 **Purpose:** answer "will the AI decide for me?" It doesn't.
 
 - **Headline** (draft): "The AI reads. Code checks. You decide."
-- **Three blocks:**
+- **Two blocks:**
   - **Correct a misread.** Change any value Tally read. The checks re-run straight away, and the original reading is kept.
   - **Dismiss a Finding, with a reason.** The Finding stays visible as dismissed, so there's always a record.
-  - **Ask in English or Taglish.** Ask about your Liquidations in plain words. Show two or three examples, at least one in Taglish, such as "How much input VAT did we lose in April?" and "Sino pa ang may ibabalik?". The answers come from your records, not from the AI's guesses, and show how they were worked out.
-- **Visual:** a receipt with a Correction next to the photo, and the question box with an answer and its table.
+- **Visual:** a receipt with a Correction next to the photo.
+
+### Assistant (its own section, after "You stay in control")
+
+- **Headline:** "Don't dig through files. Ask."
+- **Message:** Tally's second AI feature. Besides reading receipts, the Assistant talks with you offline. Ask about your Liquidations in plain words (English only on the page). Answers come from your records, not guesses, and show how they were worked out. It reads and explains; it never changes a record.
+- **Visual:** an app window with a short conversation that plays once on scroll: a question, the answer with its table, then "How I got this".
 
 ### 8. Exports
 

@@ -1,7 +1,7 @@
 "use client";
 import { AppleLogoIcon, CaretDownIcon, DownloadSimpleIcon, PlayIcon, WindowsLogoIcon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
-import { DEMO_HREF, DOWNLOAD_LABEL, DOWNLOAD_MAC_HREF, WINDOWS_REQUEST_HREF } from "@/lib/links";
+import { DEMO_HREF, DOWNLOAD_LABEL, DOWNLOAD_MAC_HREF, DOWNLOAD_WINDOWS_HREF } from "@/lib/links";
 
 const base =
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold " +
@@ -13,9 +13,9 @@ const TONES = {
 };
 
 /**
- * The page's one action: "Download the desktop app" opens a small chooser of platforms. Mac downloads now; Windows
- * is planned, so its row says so and links to where people can ask for it. A disclosure (button + panel of links),
- * not an ARIA menu: Escape and a click outside close it, and focus returns to the button.
+ * The page's one action: "Download the desktop app" opens a small chooser of platforms, Mac or Windows. A
+ * disclosure (button + panel of links), not an ARIA menu: Escape and a click outside close it, and focus returns to
+ * the button.
  */
 export function DownloadButton({
   className = "",
@@ -104,23 +104,20 @@ export function DownloadButton({
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-semibold">Download for Mac</span>
-              <span className="block text-xs text-[#0f2b26]/60">Apple Silicon (M1 or later), 8 GB RAM</span>
+              <span className="block text-xs text-[#0f2b26]/60">macOS app</span>
             </span>
           </a>
           <a
-            href={WINDOWS_REQUEST_HREF}
+            href={DOWNLOAD_WINDOWS_HREF}
             onClick={() => setOpen(false)}
             className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-[#edf6e8] focus-visible:bg-[#edf6e8]"
           >
-            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#edf6e8] text-[#1d5c43]">
+            <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#0f2b26] text-white">
               <WindowsLogoIcon aria-hidden weight="fill" className="size-5" />
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="flex items-center gap-2 text-sm font-semibold">
-                Windows
-                <span className="rounded-full bg-[#fbe7b4] px-2 py-0.5 text-[0.6875rem] font-semibold text-[#7a5200]">Planned</span>
-              </span>
-              <span className="block text-xs text-[#0f2b26]/60">Tell us on GitHub if you need it</span>
+            <span className="min-w-0">
+              <span className="block text-sm font-semibold">Download for Windows</span>
+              <span className="block text-xs text-[#0f2b26]/60">Windows app</span>
             </span>
           </a>
         </div>
@@ -130,11 +127,19 @@ export function DownloadButton({
 }
 
 /** Secondary action: the dark pill beside the download button, as in the reference hero. */
-export function DemoButton({ className = "", compact = false }: { className?: string; compact?: boolean }) {
+export function DemoButton({
+  className = "",
+  compact = false,
+  tone = "night",
+}: {
+  className?: string;
+  compact?: boolean;
+  tone?: keyof typeof TONES;
+}) {
   return (
     <a
       href={DEMO_HREF}
-      className={`${base} ${TONES.night} ${compact ? "h-11 px-5 text-sm" : "h-12 px-6 text-[0.9375rem]"} ${className}`}
+      className={`${base} ${TONES[tone]} ${compact ? "h-11 px-5 text-sm" : "h-12 px-6 text-[0.9375rem]"} ${className}`}
     >
       <PlayIcon aria-hidden weight="fill" className="size-4" />
       Watch the demo

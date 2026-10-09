@@ -16,17 +16,62 @@ export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<string | null>(null);
 
-  // The link for the section in the middle of the viewport shows as current.
+  // A clicked link is "locked" as current while the page scrolls to it. Without the lock, the sections passed on the
+  // way (and the layout shifting as lazy sections render) cleared or changed the highlight mid-scroll, and it never
+  // came back: the second click only worked because the page was already in place.
+  const lock = useRef<string | null>(null);
+  const finish = useRef<() => void>(() => {});
+
+  const go = (href: string) => {
+    lock.current = href;
+    setActive(href);
+    // Browsers without "scrollend" (Safari) fall back to a timer.
+    window.setTimeout(() => finish.current(), 1500);
+  };
+
+  // The link for the section under the reading line (40% down the viewport) shows as current; none when the line
+  // is over the hero or a section with no link. Every page section is observed, so the answer is recomputed
+  // whenever any section enters or leaves the line, not only for one of them.
   useEffect(() => {
-    const sections = NAV.map((n) => document.querySelector(n.href)).filter((s): s is Element => !!s);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const e of entries) if (e.isIntersecting) setActive(`#${e.target.id}`);
-      },
-      { rootMargin: "-45% 0px -50% 0px" },
-    );
-    sections.forEach((s) => observer.observe(s));
-    return () => observer.disconnect();
+    const targets = NAV.map((n) => document.querySelector<HTMLElement>(n.href)).filter((s): s is HTMLElement => !!s);
+    const update = () => {
+      if (lock.current) return;
+      const line = window.innerHeight * 0.4;
+      const current = targets.find((t) => {
+        const r = t.getBoundingClientRect();
+        return r.top <= line && r.bottom > line;
+      });
+      setActive(current ? `#${current.id}` : null);
+    };
+    const observer = new IntersectionObserver(update, {
+      rootMargin: "-40% 0px -59% 0px",
+      threshold: [0, 1],
+    });
+    document.querySelectorAll("main section").forEach((s) => observer.observe(s));
+    // When the jump ends, lazy sections above the target may have changed height and left it off its mark. Snap it
+    // into place (instant, honouring the scroll padding), then hand control back to the reading line.
+    finish.current = () => {
+      const href = lock.current;
+      if (!href) return;
+      lock.current = null;
+      const target = document.querySelector<HTMLElement>(href);
+      if (target && Math.abs(target.getBoundingClientRect().top - 96) > 12) {
+        target.scrollIntoView({ behavior: "instant", block: "start" });
+      }
+      update();
+    };
+    const onScrollEnd = () => {
+      if (lock.current) finish.current();
+      else update();
+    };
+    window.addEventListener("scrollend", onScrollEnd);
+    window.addEventListener("resize", update);
+    update();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("scrollend", onScrollEnd);
+      window.removeEventListener("resize", update);
+    };
   }, []);
 
   useEffect(() => {
@@ -69,7 +114,8 @@ export function SiteHeader() {
                   key={item.href}
                   href={item.href}
                   aria-current={active === item.href ? "location" : undefined}
-                  className="rounded-full px-4 py-2 text-[0.9375rem] font-medium opacity-80 transition-[background-color,color,opacity] duration-200 ease-out hover:bg-black/5 hover:opacity-100 aria-[current]:bg-[#0f2b26] aria-[current]:text-white aria-[current]:opacity-100"
+                  onClick={() => go(item.href)}
+                  className="rounded-full px-4 py-2 text-[0.9375rem] font-medium opacity-80 transition-[background-color,color,opacity] duration-200 ease-out hover:opacity-100 aria-[current]:bg-[#0f2b26] aria-[current]:text-white aria-[current]:opacity-100"
                 >
                   {item.label}
                 </a>
@@ -99,7 +145,10 @@ export function SiteHeader() {
                 <a
                   key={item.href}
                   href={item.href}
-                  onClick={() => setOpen(false)}
+                  onClick={() => {
+                    go(item.href);
+                    setOpen(false);
+                  }}
                   className="rounded-2xl px-3 py-3 text-lg font-medium hover:bg-sunken"
                 >
                   {item.label}

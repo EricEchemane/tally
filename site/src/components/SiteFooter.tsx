@@ -3,7 +3,7 @@ import { Wordmark } from "./marketing";
 
 export function SiteFooter() {
   return (
-    <footer className="px-3 pt-3 pb-3">
+    <footer className="section-dark px-3 pb-3">
       <div className="rounded-[2rem] bg-mint text-muted">
         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-10 px-5 py-14 text-sm md:grid-cols-[1.4fr_1fr_1fr]">
           <div className="space-y-4 text-ink">

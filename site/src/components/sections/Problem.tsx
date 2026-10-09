@@ -2,9 +2,18 @@ import { CoinsIcon, EyeIcon, IdentificationCardIcon, LockSimpleIcon } from "@pho
 import { ImageSlot, Label } from "@/components/marketing";
 
 const POINTS = [
-  { Icon: EyeIcon, text: "Every receipt is eyeballed." },
-  { Icon: IdentificationCardIcon, text: "It must be BIR-compliant and show the Company's name and TIN." },
-  { Icon: CoinsIcon, text: "A rejected receipt means the Employee pays that amount back, so a mistake costs someone real money." },
+  { Icon: EyeIcon, text: "Every receipt is checked by hand, one by one." },
+  { Icon: IdentificationCardIcon, text: "Each one must follow BIR rules and show your company's name and TIN." },
+  { Icon: CoinsIcon, text: "A rejected receipt means the employee pays it back. Mistakes cost real money." },
+  {
+    Icon: LockSimpleIcon,
+    text: (
+      <>
+        <strong className="font-semibold">&ldquo;Privacy is the priority.&rdquo;</strong>{" "}
+        <span className="text-muted">Consolidated reports and the SLSP are always confidential.</span>
+      </>
+    ),
+  },
 ];
 
 export function Problem() {
@@ -24,26 +33,18 @@ export function Problem() {
           </h2>
           <p className="mt-5 text-muted">From an accountant who handles liquidations for Philippine companies.</p>
 
-          <ul className="mt-8 space-y-5">
-            {POINTS.map(({ Icon, text }) => (
-              <li key={text} className="flex gap-4">
+          {/* Equal rows: every point gets the tallest point's height, icon and text centred in it, so the spacing between
+              points is the same whatever their length. The privacy line is the fourth point, so all four share one icon column. */}
+          <ul className="mt-8 grid auto-rows-fr gap-4">
+            {POINTS.map(({ Icon, text }, i) => (
+              <li key={i} className="flex items-center gap-4">
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-lime text-lime-ink">
                   <Icon aria-hidden className="size-5" />
                 </span>
-                <span className="pt-2 leading-relaxed">{text}</span>
+                <span className="leading-relaxed">{text}</span>
               </li>
             ))}
           </ul>
-
-          <figure className="mt-10 flex items-center gap-4 rounded-[1.75rem] bg-mint py-2 pr-6 pl-2 sm:rounded-full">
-            <span className="grid size-11 shrink-0 place-items-center rounded-full bg-lime text-lime-ink">
-              <LockSimpleIcon aria-hidden weight="bold" className="size-5" />
-            </span>
-            <blockquote className="text-sm leading-snug">
-              <span className="font-semibold">&ldquo;Privacy is the priority.&rdquo;</span>{" "}
-              <span className="text-muted">Consolidated reports and the SLSP are always confidential.</span>
-            </blockquote>
-          </figure>
         </div>
       </div>
     </section>

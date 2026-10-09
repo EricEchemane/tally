@@ -1,6 +1,6 @@
 import { CheckIcon, QrCodeIcon } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
-import { Label } from "@/components/marketing";
+import { SectionHeader, SectionShell } from "@/components/marketing";
 import { AppWindow, DEMO, Money, SampleNote, SeverityPill, StatusPill, WorkingPill } from "@/components/product";
 import demoInvoice from "../../../public/receipts/demo-invoice.jpg";
 import { StepTabs, type Step } from "./StepTabs";
@@ -19,7 +19,7 @@ function ScanVisual() {
       </AppWindow>
       <div className="w-36 rounded-[1.75rem] bg-black p-1.5 shadow-pop ring-1 ring-white/15 sm:w-40">
         <div className="relative overflow-hidden rounded-[1.3rem]">
-          <Image src={demoInvoice} alt="" sizes="160px" className="aspect-[9/16] w-full object-cover" />
+          <Image src={demoInvoice} alt="" loading="lazy" placeholder="blur" sizes="160px" className="aspect-[9/16] w-full object-cover" />
           <span aria-hidden className="absolute bottom-3 left-1/2 size-10 -translate-x-1/2 rounded-full border-4 border-white/90 bg-white/30" />
         </div>
       </div>
@@ -55,15 +55,15 @@ function ReadVisual() {
         })}
       </ol>
       <p className="border-t border-line px-4 py-3 text-xs text-muted">
-        About 15 seconds per receipt, measured on an 8 GB M1 MacBook Pro.
+        About 15 seconds per receipt.
       </p>
     </AppWindow>
   );
 }
 
 const FINDINGS = [
-  { severity: "REJECT", text: "Dated Mar 10, 2022, outside the Spending Period" },
-  { severity: "NO_INPUT_VAT", text: "Official Receipt, not an Invoice: no input VAT" },
+  { severity: "REJECT", text: "Dated Mar 10, 2022, outside the cash advance dates" },
+  { severity: "NO_INPUT_VAT", text: "Official Receipt, so its VAT can't be claimed" },
   { severity: "NEEDS_REVIEW", text: "Seller TIN not printed on the receipt" },
 ] as const;
 function CheckVisual() {
@@ -123,41 +123,34 @@ function ApproveVisual() {
 const STEPS: Step[] = [
   {
     title: "Scan",
-    body: "Open the Cash Advance and scan its QR code with your phone, then photograph each receipt. Uploading files works too.",
+    body: "Scan the QR code on your laptop with your phone, then take a photo of each receipt. You can upload files too.",
     visual: <ScanVisual />,
   },
   {
     title: "Read",
-    body: "Your laptop reads each receipt in about 15 seconds. Receipts appear on the dashboard as they're done.",
+    body: "Your laptop reads each receipt in about 15 seconds. Each one shows up on your screen as soon as it's ready.",
     visual: <ReadVisual />,
   },
   {
     title: "Check",
-    body: "Each receipt is checked against the BIR rules and marked accepted, or shown with its Findings.",
+    body: "Tally checks every receipt against the BIR rules. Good ones are marked accepted; the rest show exactly what's wrong.",
     visual: <CheckVisual />,
   },
   {
     title: "Approve",
-    body: "Correct anything misread, resolve the Findings, approve or return the Liquidation, and export.",
+    body: "Fix anything it misread, clear what's flagged, then approve the liquidation and export your files.",
     visual: <ApproveVisual />,
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" aria-labelledby="how-title">
-      <div className="mx-auto max-w-6xl px-5 py-24 lg:py-32">
-        <Label>How it works</Label>
-        <h2 id="how-title" className="mt-4 max-w-[20ch] text-3xl font-semibold tracking-[-0.03em] sm:text-[2.6rem] sm:leading-[1.08]">
-          From a pile of receipts to an approved Liquidation.
-        </h2>
-        <div className="mt-14 lg:mt-16">
-          <StepTabs steps={STEPS} />
-        </div>
-        <div className="mt-10">
-          <SampleNote />
-        </div>
+    <SectionShell tone="plain" id="how-it-works" labelledBy="how-title">
+      <SectionHeader id="how-title" label="How it works" title="From a pile of receipts to an approved liquidation." />
+      <StepTabs steps={STEPS} />
+      <div className="mt-10">
+        <SampleNote />
       </div>
-    </section>
+    </SectionShell>
   );
 }
