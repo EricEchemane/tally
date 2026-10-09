@@ -10,7 +10,7 @@ import { BUYER_RULE } from "@/lib/labels";
 import { type SetupStatus, useSetupStatus } from "@/lib/setup";
 import type { BuyerDetailsRule } from "@/lib/types";
 
-const STEPS = ["This computer", "Your Company", "Local AI", "Done"] as const;
+const STEPS = ["This computer", "Your Company", "Receipt reader", "Done"] as const;
 
 function Setup() {
   const params = useSearchParams();
@@ -75,12 +75,12 @@ function Check({ ok, children, hint }: { ok: boolean; children: React.ReactNode;
   );
 }
 
-function Nav({ back, next, nextLabel = "Continue", busy, disabled }:
-  { back?: () => void; next: () => void; nextLabel?: string; busy?: boolean; disabled?: boolean }) {
+function Nav({ back, next, nextLabel = "Continue", busy, disabled, quiet }:
+  { back?: () => void; next: () => void; nextLabel?: string; busy?: boolean; disabled?: boolean; quiet?: boolean }) {
   return (
     <div className="mt-8 flex justify-between gap-3">
       {back ? <Button variant="ghost" onClick={back}>Back</Button> : <span />}
-      <Button variant="primary" onClick={next} busy={busy} disabled={disabled}>{nextLabel}</Button>
+      <Button variant={quiet ? "secondary" : "primary"} onClick={next} busy={busy} disabled={disabled}>{nextLabel}</Button>
     </div>
   );
 }
@@ -95,11 +95,11 @@ function MachineStep({ s, next }: { s: SetupStatus; next: () => void }) {
         <Check ok={m.ram_ok} hint={m.ram_ok ? undefined : "Tally needs 8 GB to read receipts. You can still review and export."}>
           {m.ram_gb} GB of memory
         </Check>
-        <Check ok={m.disk_ok} hint={m.disk_ok ? "The AI model takes about 2.5 GB." : "Free up space: the AI model needs about 4 GB to download."}>
+        <Check ok={m.disk_ok} hint={m.disk_ok ? "The receipt reader needs about 3 GB." : "Free up about 4 GB: the receipt reader is a one-time download."}>
           {m.free_gb} GB free on disk
         </Check>
         {m.macos !== null && (
-          <Check ok={m.macos_ok} hint={m.macos_ok ? undefined : "The local AI (Ollama) needs macOS 14 Sonoma or newer."}>
+          <Check ok={m.macos_ok} hint={m.macos_ok ? undefined : "The receipt reader needs macOS 14 Sonoma or newer."}>
             macOS {m.macos}
           </Check>
         )}
@@ -159,11 +159,21 @@ function Progress({ done, total }: { done?: number; total?: number }) {
   return (
     <div className="mt-3">
       <div className="h-2 overflow-hidden rounded-full bg-sunken">
-        <div className={cx("h-full rounded-full bg-accent transition-[width]", pct === null && "pulse w-1/3")} style={pct !== null ? { width: `${pct}%` } : undefined} />
+        <div className={cx("h-full rounded-full bg-accent transition-[width] duration-[1900ms] ease-linear", pct === null && "pulse w-1/3")} style={pct !== null ? { width: `${pct}%` } : undefined} />
       </div>
       {total ? <p className="num mt-1 text-xs text-muted">{gb(done ?? 0)} of {gb(total)} GB · {Math.floor(pct ?? 0)}%</p> : null}
     </div>
   );
+}
+
+/** Plain words for whatever went wrong; the technical message stays on hover. */
+function Problem({ raw, kind }: { raw?: string | null; kind: "install" | "download" }) {
+  const text = kind === "install"
+    ? /checksum|match/i.test(raw ?? "") ? "The download didn’t pass its safety check, so nothing was installed. Please try again."
+      : /writable|Applications/i.test(raw ?? "") ? "Tally couldn’t install into your Applications folder. Check that you can add apps, then try again."
+      : "The setup couldn’t finish. Check the internet connection and try again."
+    : "The download stopped. Check the internet connection and try again; it picks up where it left off.";
+  return <Notice tone="bad"><span title={raw ?? undefined}>{text}</span></Notice>;
 }
 
 function AiStep({ s, back, next }: { s: SetupStatus; back: () => void; next: () => void }) {
@@ -175,81 +185,62 @@ function AiStep({ s, back, next }: { s: SetupStatus; back: () => void; next: () 
   const pull = useMutation({ mutationFn: () => call("/api/setup/model/pull") });
   const cancel = useMutation({ mutationFn: () => call("/api/setup/model/cancel") });
   const o = s.ollama;
-  const installing = s.install.state === "running";
-  const pulling = s.pull.state === "running";
+  const ready = o.state === "running" && s.model.present;
+  const installing = s.install.state === "running" || install.isPending;
+  const downloading = s.pull.state === "running";
+  const paused = s.pull.state === "idle" && s.pull.status === "Paused";
 
-  // Once Ollama runs, start the model download on its own: it is the long part.
+  // Keep it moving without asking: start an installed engine, then fetch what it reads with.
   useEffect(() => {
-    if (o.state === "running" && !s.model.present && s.pull.state === "idle" && !pull.isPending && !pull.isSuccess) pull.mutate();
-  }, [o.state, s.model.present, s.pull.state, pull]);
+    if (o.state === "stopped" && !start.isPending && !start.isError) start.mutate();
+  }, [o.state, start]);
+  useEffect(() => {
+    if (o.state === "running" && !s.model.present && s.pull.state === "idle" && !paused && !pull.isPending && !pull.isSuccess) pull.mutate();
+  }, [o.state, s.model.present, s.pull.state, paused, pull]);
 
   return (
     <>
-      <h1 className="text-xl font-semibold">Local AI</h1>
+      <h1 className="text-xl font-semibold">Set up the receipt reader</h1>
       <p className="mt-1 text-muted">
-        Tally reads receipts with Ollama and the {s.model.name} model, both running on this computer.
-        This is the only step that needs the internet.
+        Tally reads receipts with an AI that runs on this computer, so your receipts never leave it. It’s a one-time
+        download of about 2.7 GB; after that, Tally works without the internet.
       </p>
 
-      <section className="mt-6 space-y-2">
-        <h2 className="text-sm font-medium">1. Ollama</h2>
-        {o.state === "running" && <Notice tone="ok">Ollama {o.version} is running.</Notice>}
-        {o.state === "outdated" && (
-          <Notice tone="warn">Ollama {o.version} is too old for Tally. Update it from the Ollama menu-bar icon, or reinstall below.</Notice>
-        )}
-        {o.state === "stopped" && (
-          <>
-            <Notice tone="warn">Ollama is installed but not running.</Notice>
-            <Button onClick={() => start.mutate()} busy={start.isPending}>Start Ollama</Button>
-            {start.isError && <Notice tone="bad">{errorMessage(start.error)}</Notice>}
-          </>
-        )}
-        {(o.state === "missing" || o.state === "outdated") && (
-          <>
-            {!installing && s.install.state !== "done" && (
-              <Button variant={o.state === "missing" ? "primary" : "secondary"} onClick={() => install.mutate()} busy={install.isPending}>
-                {o.state === "missing" ? "Install Ollama (about 200 MB)" : "Reinstall Ollama"}
-              </Button>
-            )}
-            {installing && (
-              <div className="text-sm">
-                {s.install.step}…
-                <Progress done={s.install.done} total={s.install.total} />
-              </div>
-            )}
-            {s.install.state === "failed" && <Notice tone="bad">{s.install.error}</Notice>}
-            {install.isError && <Notice tone="bad">{errorMessage(install.error)}</Notice>}
-            <p className="text-xs text-muted">Downloaded from the official Ollama release and checked against its published checksum.</p>
-          </>
-        )}
-      </section>
-
-      <section className="mt-6 space-y-2">
-        <h2 className="text-sm font-medium">2. The {s.model.name} model (about 2.5 GB)</h2>
-        {s.model.present ? (
-          <Notice tone="ok">The model is ready.</Notice>
-        ) : o.state !== "running" ? (
-          <p className="text-sm text-muted">Waiting for Ollama.</p>
-        ) : pulling ? (
+      <div className="mt-6 space-y-3">
+        {ready ? (
+          <Notice tone="ok">The receipt reader is ready.</Notice>
+        ) : installing ? (
           <div className="text-sm">
-            {s.pull.status ?? "Downloading"}…
+            Downloading, part 1 of 2…
+            <Progress done={s.install.done} total={s.install.total} />
+          </div>
+        ) : downloading ? (
+          <div className="text-sm">
+            Downloading, part 2 of 2…
             <Progress done={s.pull.done} total={s.pull.total} />
             <div className="mt-2 flex items-center gap-3">
               <Button size="sm" variant="ghost" onClick={() => cancel.mutate()}>Pause</Button>
               <span className="text-xs text-muted">You can continue while it downloads.</span>
             </div>
           </div>
-        ) : (
+        ) : o.state === "stopped" || start.isPending ? (
+          <p className="flex items-center gap-2 text-sm text-muted"><Spinner /> Starting the receipt reader…</p>
+        ) : o.state === "missing" || o.state === "outdated" ? (
           <>
-            {s.pull.state === "failed" && <Notice tone="bad">{s.pull.error}</Notice>}
-            <Button variant="primary" onClick={() => pull.mutate()} busy={pull.isPending}>
-              {s.pull.state === "idle" && s.pull.status !== "Paused" ? "Download the model" : "Resume download"}
-            </Button>
+            {o.state === "outdated" && <Notice tone="warn">An older version is installed. Tally needs to update it.</Notice>}
+            <Button variant="primary" onClick={() => install.mutate()}>{o.state === "missing" ? "Set it up" : "Update"}</Button>
           </>
+        ) : (
+          <Button variant="primary" onClick={() => pull.mutate()} busy={pull.isPending}>{paused ? "Resume download" : "Download"}</Button>
         )}
-      </section>
+        {s.install.state === "failed" && !installing && <Problem kind="install" raw={s.install.error} />}
+        {install.isError && <Problem kind="install" raw={errorMessage(install.error)} />}
+        {start.isError && <Notice tone="bad"><span title={errorMessage(start.error)}>The receipt reader didn’t start. Quit Tally and open it again.</span></Notice>}
+        {s.pull.state === "failed" && !downloading && <Problem kind="download" raw={s.pull.error} />}
+        <p className="text-xs text-muted">Downloaded from the official source and checked before it’s installed.</p>
+      </div>
 
-      <Nav back={back} next={next} nextLabel={s.model.present ? "Continue" : "Continue, finish later"} />
+      <Nav back={back} next={next} nextLabel={ready ? "Continue" : "Continue, finish later"} quiet={!ready} />
     </>
   );
 }

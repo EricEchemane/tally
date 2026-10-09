@@ -79,9 +79,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
       <SetupGate />
       {/* Page changes crossfade (the browser's View Transitions; navigations are React transitions, so
-          <ViewTransition> animates them). The top bar sits outside it and stays still. Where WebKit has
-          no View Transitions, each page fades in on its own instead. */}
-      <ViewTransition default="page-fade">
+          <ViewTransition> animates them). The top bar sits outside it and stays still. Entering or leaving the
+          dashboard (setup, the phone page) doesn't crossfade: snapshotting the whole window there stuttered in the
+          real app during a big download. Where WebKit has no View Transitions, each page fades in on its own. */}
+      <ViewTransition default="page-fade" enter="none" exit="none">
         <main key={vtSupported ? undefined : path} className={cx(CONTENT, "flex-1 py-8", !vtSupported && "page-enter")}>
           {children}
         </main>

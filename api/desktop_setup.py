@@ -121,7 +121,10 @@ def _version_tuple(v: str) -> tuple[int, ...]:
 
 
 def _ollama_installed_path() -> Path | None:
-    for p in MAC_APPS + BREW_OLLAMA:
+    # Tests and UI checks can pretend nothing is installed: TALLY_OLLAMA_SEARCH="" (empty) searches nowhere.
+    search = os.environ.get("TALLY_OLLAMA_SEARCH")
+    places = [Path(p) for p in search.split(":") if p] if search is not None else MAC_APPS + BREW_OLLAMA
+    for p in places:
         if p.exists():
             return p
     return None
@@ -146,22 +149,36 @@ def _model_present() -> bool:
     return any(m.get("name") in (config.MODEL, f"{config.MODEL}:latest") for m in tags)
 
 
+def _server_binary(path: Path) -> Path:
+    """The Ollama server program. Ollama.app carries it inside; Homebrew's is the path itself."""
+    return path / "Contents" / "Resources" / "ollama" if path.suffix == ".app" else path
+
+
 def _start_ollama() -> None:
+    """Start Ollama's server in the background, never its desktop app: the Reviewer only ever sees Tally.
+    It runs in its own session (it outlives Tally, like a service) and logs to the data folder."""
     path = _ollama_installed_path()
     if path is None:
-        raise RuntimeError("Ollama is not installed")
-    if path.suffix == ".app":
-        subprocess.run(["open", "-a", str(path), "--args", "hidden"], check=True)
-    else:  # Homebrew: run the server ourselves; it lives as long as the user session
-        subprocess.Popen([str(path), "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
-                         start_new_session=True)
+        raise RuntimeError("The AI engine isn't installed yet")
+    log = open(config.DATA_DIR / "ollama.log", "ab")
+    subprocess.Popen([str(_server_binary(path)), "serve"], stdin=subprocess.DEVNULL, stdout=log, stderr=log,
+                     start_new_session=True)
     for _ in range(60):
         try:
             httpx.get(f"{config.OLLAMA_URL}/api/version", timeout=1)
             return
         except httpx.HTTPError:
             time.sleep(0.5)
-    raise RuntimeError("Ollama did not start. Open the Ollama app once from Applications.")
+    raise RuntimeError("The AI engine didn't start. Quit Tally and open it again.")
+
+
+def ensure_ollama_running() -> None:
+    """At Tally's start: an installed but stopped Ollama is started in the background, so scanning just works."""
+    if not config.FAKE_PIPELINE and _ollama()["state"] == "stopped":
+        try:
+            _start_ollama()
+        except (RuntimeError, OSError):
+            pass  # setup shows the state and offers a retry
 
 
 def _install_mac() -> None:
