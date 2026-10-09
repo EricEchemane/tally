@@ -76,4 +76,5 @@ def reopen(liquidation_id: int, conn: sqlite3.Connection = Depends(get_db)):
 def capture_link(liquidation_id: int, conn: sqlite3.Connection = Depends(get_db)):
     liq = load(conn, liquidation_id)
     url = f"{config.WEB_URL}/capture/{liquidation_id}?t={liq['capture_token']}"
-    return {"url": url, "qr_svg": segno.make(url, error="m").svg_inline(scale=6)}
+    # viewBox instead of a fixed width/height, so the UI can size it (a fixed 246 px SVG got cropped)
+    return {"url": url, "qr_svg": segno.make(url, error="m").svg_inline(scale=6, omitsize=True, light="#fff")}

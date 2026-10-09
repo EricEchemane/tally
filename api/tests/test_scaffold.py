@@ -99,6 +99,7 @@ def test_upload_queues_receipts_and_checks_token(client):
     link = client.get(f"/api/liquidations/{lid}/capture-link").json()
     token = link["url"].split("t=")[1]
     assert f"/capture/{lid}?t=" in link["url"] and link["qr_svg"].startswith("<svg")
+    assert "viewBox" in link["qr_svg"] and 'width="' not in link["qr_svg"].split(">")[0]   # scalable, never cropped
     assert client.post(f"/api/liquidations/{lid}/receipts?t={token}", files=files[:1]).status_code == 202
     assert client.post(f"/api/liquidations/{lid}/receipts", files=[("images", ("x.txt", b"hi", "text/plain"))]).status_code == 415
 
