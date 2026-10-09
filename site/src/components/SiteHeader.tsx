@@ -145,11 +145,12 @@ export function SiteHeader() {
                 <a
                   key={item.href}
                   href={item.href}
+                  aria-current={active === item.href ? "location" : undefined}
                   onClick={() => {
                     go(item.href);
                     setOpen(false);
                   }}
-                  className="rounded-2xl px-3 py-3 text-lg font-medium hover:bg-sunken"
+                  className="rounded-2xl px-3 py-3 text-lg font-medium transition-colors duration-200 hover:bg-sunken aria-[current]:bg-[#0f2b26] aria-[current]:text-white"
                 >
                   {item.label}
                 </a>

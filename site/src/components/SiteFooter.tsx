@@ -1,4 +1,4 @@
-import { CONTACT_EMAIL, NAV, REPO_URL } from "@/lib/links";
+import { CONTACT_LINKS, NAV } from "@/lib/links";
 import { Wordmark } from "./marketing";
 
 export function SiteFooter() {
@@ -19,12 +19,11 @@ export function SiteFooter() {
             ))}          </nav>
           <div className="flex flex-col gap-2.5">
             <p className="mb-1 font-semibold text-ink">Contact</p>
-            {CONTACT_EMAIL ? (
-              <a href={`mailto:${CONTACT_EMAIL}`} className="w-fit hover:text-accent">{CONTACT_EMAIL}</a>
-            ) : (
-              <a href={`${REPO_URL}/issues`} className="w-fit hover:text-accent">Contact us on GitHub</a>
-            )}
-            <a href={REPO_URL} className="w-fit hover:text-accent">Source code</a>
+            {CONTACT_LINKS.map((item) => (
+              <a key={item.href} href={item.href} className="w-fit hover:text-accent">
+                {item.label}
+              </a>
+            ))}
           </div>
         </div>
         <p className="mx-auto max-w-6xl border-t border-line px-5 py-6 text-xs text-faint">Made in the Philippines</p>
