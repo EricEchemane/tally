@@ -27,7 +27,7 @@ Each beat should map to a judging criterion.
   2. Why local
   3. QR capture with 2 live receipts (the synthetic ✅ Petron and the 2022 Official Receipt)
   4. Live toggle of the Buyer Details Rule, plus the duplicate and a Reviewer correction
-  5. 3 questions, one in Taglish
+  5. 3 questions, two in Taglish (amount to return, duplicates, what still needs review)
   6. Approve blocked, then resolved and approved, then the Excel summary and SLSP exports
   7. The internet-off clip and the accuracy line
 - **No-cloud proof:** a recorded clip (phone hotspot with mobile data off, `ping` failing) plus a network monitor visible live.
@@ -37,5 +37,6 @@ Each beat should map to a judging criterion.
 
 ## Comments
 - From Checks and Disallowed Amount rules: demo beats include 1–2 synthetic receipts with Bayanihan Demo Corp's TIN handwritten on the buyer lines (accepted), the live Buyer Details Rule toggle that recomputes the Liquidation, a cross-Liquidation duplicate rejected, and a Reviewer correcting a misread amount.
-- From Question set and query approach: demo questions are #2 (input VAT lost and why), #4 (spend by category), #6 (duplicates) and one Taglish question; show the "how I got this" line.
+- From Question set and query approach: demo questions were #2 (input VAT lost and why), #4 (spend by category), #6 (duplicates) and one Taglish question; show the "how I got this" line.
+- From the first rehearsal (2026-10-09): #2 gives weak numbers on the demo data (₱30.43 for April, none this quarter), so the demo asks #3 (Taglish), #6 and #7 (Taglish) instead. #7 sets up the approve-blocked beat.
 - From API contract and live events: demo beats available include scanning the QR to open phone capture, `receipt.ocr_done` text appearing in under 1 s while extraction runs (~15 s), the Buyer Details Rule toggle recomputing live, async question answers, and `GET /api/health` / `POST /api/admin/warmup` as pre-flight.
