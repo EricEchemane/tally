@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import {
-  Button, Card, CardHeader, Crumbs, cx, inputClass, Money, Notice, Pill, ReceiptStatusPill, SeverityPill, Skeleton,
+  Button, Card, CardHeader, cx, inputClass, Money, Notice, PageHeader, Pill, ReceiptStatusPill, SeverityPill, Skeleton, StatusIcon,
 } from "@/components/ui";
 import { api, ApiError, errorMessage, peso } from "@/lib/api";
 import { CHECK, FIELD_GROUPS, formatDate, formatTin, STAGE, type FieldDef } from "@/lib/labels";
@@ -34,26 +34,24 @@ function ReceiptView() {
   const settled = r.findings.filter((f) => f.state !== "OPEN");
 
   return (
-    <div className="space-y-5">
-      <div className="space-y-2">
-        <Crumbs items={[{ label: "Cash Advances", href: "/" }, { label: employee, href: liquidationHref(r.liquidation_id) }, { label: name }]} />
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">
-            {name}
-            <ReceiptStatusPill status={r.status} stage={r.stage} checksPending={r.checks_pending} />
-          </h1>
-          <div className="flex items-center gap-3">
-            <span className="text-xl font-semibold"><Money value={r.effective?.total as number | null} /></span>
+    <div className="space-y-8">
+      <PageHeader
+        crumbs={[{ label: "Cash Advances", href: "/" }, { label: employee, href: liquidationHref(r.liquidation_id) }, { label: name }]}
+        title={name}
+        badge={<ReceiptStatusPill status={r.status} stage={r.stage} checksPending={r.checks_pending} />}
+        actions={
+          <>
+            <span className="mr-2 text-2xl font-semibold tracking-tight"><Money value={r.effective?.total as number | null} /></span>
             {liq.data?.status === "OPEN" && <DeleteReceipt r={r} />}
-          </div>
-        </div>
-        {liq.data && liq.data.status !== "OPEN" && (
-          <Notice tone="info">This Liquidation is {liq.data.status.toLowerCase()}, so the receipt is read-only.</Notice>
-        )}
-      </div>
+          </>
+        }
+      />
+      {liq.data && liq.data.status !== "OPEN" && (
+        <Notice tone="info">This Liquidation is {liq.data.status.toLowerCase()}, so the receipt is read-only.</Notice>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
-        <div className="space-y-4 lg:sticky lg:top-20 lg:self-start">
+        <div className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           <ReceiptImage key={r.rotation} r={r} />
           {r.ocr_text && <OcrText text={r.ocr_text} />}
         </div>
@@ -70,7 +68,7 @@ function ReceiptView() {
             <Card>
               <CardHeader title="Findings" sub={open.length ? `${open.length} open` : r.checks_pending ? "Checking…" : "Nothing open"} />
               {r.findings.length === 0 ? (
-                <p className="px-4 py-6 text-sm text-ok">✅ Passed every check.</p>
+                <p className="flex items-center gap-2 px-6 py-6 text-sm text-ok"><StatusIcon status="ACCEPTED" />Passed every check.</p>
               ) : (
                 <ul className="divide-y divide-line">
                   {[...open, ...settled].map((f) => <FindingRow key={f.id} f={f} receiptId={r.id} canAct={editable} />)}
@@ -107,7 +105,7 @@ function ReceiptImage({ r }: { r: Receipt }) {
           }}
         />
       </div>
-      <div className="flex items-center justify-between border-t border-line px-3 py-2">
+      <div className="flex items-center justify-between border-t border-line px-4 py-2">
         <Button variant="ghost" size="sm" onClick={() => setTurn((t) => t + 90)}>Rotate ↻</Button>
         <a href={r.image_url} target="_blank" rel="noreferrer" className="text-sm text-muted hover:text-accent">Open full size ↗</a>
       </div>
@@ -117,9 +115,9 @@ function ReceiptImage({ r }: { r: Receipt }) {
 
 function OcrText({ text }: { text: string }) {
   return (
-    <details className="rounded-lg border border-line bg-surface">
-      <summary className="cursor-pointer px-4 py-2.5 text-sm font-medium">Text read from the photo</summary>
-      <pre className="max-h-80 overflow-auto whitespace-pre-wrap border-t border-line px-4 py-3 font-mono text-xs text-muted">{text}</pre>
+    <details className="overflow-hidden rounded-3xl border border-line bg-surface shadow-card">
+      <summary className="cursor-pointer px-6 py-4 text-sm font-medium">Text read from the photo</summary>
+      <pre className="max-h-80 overflow-auto whitespace-pre-wrap border-t border-line px-6 py-4 font-mono text-xs text-muted">{text}</pre>
     </details>
   );
 }
@@ -146,7 +144,7 @@ function FindingRow({ f, receiptId, canAct }: { f: Finding; receiptId: number; c
   const error = dismiss.error ?? confirm.error;
 
   return (
-    <li className={cx("space-y-2 px-4 py-3", !isOpen && "bg-sunken/40")}>
+    <li className={cx("space-y-2 px-6 py-4", !isOpen && "bg-sunken/40")}>
       <div className="flex flex-wrap items-center gap-2">
         <SeverityPill severity={f.severity} />
         <span className="text-xs font-medium uppercase tracking-wide text-muted">{CHECK[f.check] ?? f.check}</span>
@@ -211,8 +209,8 @@ function Fields({ r, editable }: { r: Receipt; editable: boolean }) {
       />
       <div className="divide-y divide-line">
         {FIELD_GROUPS.map((g) => (
-          <section key={g.title} className="px-4 py-3">
-            <h3 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted">{g.title}</h3>
+          <section key={g.title} className="px-6 py-4">
+            <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted">{g.title}</h3>
             <dl className="divide-y divide-line/60">
               {g.fields.map((def) => (
                 <FieldRow key={def.key} r={r} def={def} correction={corrected.get(def.key)} editable={editable && def.editable !== false} />
@@ -310,7 +308,7 @@ function FieldInput({ def, value, onChange, label }: { def: FieldDef; value: str
   const cls = cx(inputClass, "h-8 min-w-0 flex-1");
   if (def.kind === "enum") {
     return (
-      <select className={cls} value={value} onChange={(e) => onChange(e.target.value)} autoFocus aria-label={label}>
+      <select className={cx(cls, "appearance-none pr-9 select-chevron")} value={value} onChange={(e) => onChange(e.target.value)} autoFocus aria-label={label}>
         <option value="">— none —</option>
         {Object.entries(def.options ?? {}).map(([k, label]) => <option key={k} value={k}>{label}</option>)}
       </select>
@@ -318,7 +316,7 @@ function FieldInput({ def, value, onChange, label }: { def: FieldDef; value: str
   }
   if (def.kind === "bool") {
     return (
-      <select className={cls} value={value} onChange={(e) => onChange(e.target.value)} autoFocus aria-label={label}>
+      <select className={cx(cls, "appearance-none pr-9 select-chevron")} value={value} onChange={(e) => onChange(e.target.value)} autoFocus aria-label={label}>
         <option value="">Unknown</option>
         <option value="true">Yes</option>
         <option value="false">No</option>

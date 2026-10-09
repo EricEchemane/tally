@@ -1,12 +1,36 @@
 "use client";
 // Phone capture page, opened from the Liquidation's QR code (SPEC §7). Sits outside the dashboard shell.
+// One-handed: context at the top, what was sent in the middle, the capture actions pinned in thumb reach.
 import { useMutation } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
-import { Money, Notice, ReceiptStatusPill, Spinner } from "@/components/ui";
+import { Suspense, useEffect, useState } from "react";
+import { cx, Money, Notice, ReceiptStatusPill, Spinner } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
+import { formatDate, STAGE } from "@/lib/labels";
 import { useLive } from "@/lib/live";
 import { useLiquidation, useReceipt } from "@/lib/queries";
+
+const CameraIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 8.5h3l2-3h6l2 3h3v10.5H4z" /><circle cx="12" cy="13.5" r="3.5" />
+  </svg>
+);
+const GalleryIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3.5" y="4.5" width="17" height="15" rx="3" /><circle cx="9" cy="10" r="1.6" /><path d="M20 16l-4.5-4.5L7 19.5" />
+  </svg>
+);
+const CheckIcon = ({ className }: { className?: string }) => (
+  <svg viewBox="0 0 16 16" aria-hidden className={className} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M3.5 8.5l3 3 6-7" />
+  </svg>
+);
+
+const TIPS = [
+  "One receipt per photo",
+  "Lay it flat, in good light",
+  "Keep the whole receipt in the frame, top to bottom",
+];
 
 function Capture() {
   const params = useSearchParams();
@@ -15,67 +39,128 @@ function Capture() {
   const liq = useLiquidation(id);
   const { connected } = useLive();
   const [sent, setSent] = useState<number[]>([]);
+  const [justSent, setJustSent] = useState(0);
   const upload = useMutation({
     mutationFn: (files: File[]) =>
       api.upload<{ id: number }[]>(`/api/liquidations/${id}/receipts?t=${encodeURIComponent(token)}`, files),
-    onSuccess: (r) => setSent((s) => [...r.map((x) => x.id).reverse(), ...s]),
+    onSuccess: (r) => {
+      setSent((s) => [...r.map((x) => x.id).reverse(), ...s]);
+      setJustSent(r.length);
+    },
   });
+  // The "sent" confirmation fades after a moment; the list below keeps the record.
+  useEffect(() => {
+    if (!justSent) return;
+    const t = setTimeout(() => setJustSent(0), 2500);
+    return () => clearTimeout(t);
+  }, [justSent]);
+
   const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (files.length) upload.mutate(files);
     e.target.value = "";
   };
 
+  const ca = liq.data?.cash_advance;
   const closed = liq.data && liq.data.status !== "OPEN";
   const forbidden = upload.error instanceof ApiError && upload.error.status === 403;
-  const busy = upload.isPending || !!closed;
+  const busy = upload.isPending || !!closed || !liq.data;
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col gap-5 px-4 py-6">
-      <header className="flex items-center gap-3">
-        <span aria-hidden className="grid size-9 place-items-center rounded-lg bg-accent font-bold text-accent-ink">T</span>
-        <div className="min-w-0">
-          <h1 className="font-semibold leading-tight">Tally receipt capture</h1>
-          <p className="truncate text-sm text-muted">
-            {liq.data ? `${liq.data.cash_advance.employee.name} · ${liq.data.cash_advance.purpose}` : "Connecting…"}
-          </p>
-        </div>
-        <span className={`ml-auto size-2.5 shrink-0 rounded-full ${connected ? "bg-ok" : "pulse bg-warn"}`} title={connected ? "Connected" : "Reconnecting"} />
-      </header>
+    <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col">
+      <main className="flex flex-1 flex-col gap-6 px-4 pb-40 pt-4">
+        {/* Who and what this phone is scanning for */}
+        <header className="flex items-center gap-3 rounded-full border border-line bg-surface py-2 pl-2 pr-4 shadow-card">
+          <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-full bg-accent text-sm font-bold text-accent-ink">T</span>
+          <span className="text-sm font-semibold">Tally</span>
+          <span className={cx("ml-auto flex items-center gap-1.5 text-xs", connected ? "text-muted" : "text-warn")}>
+            <span className={cx("size-2 rounded-full", connected ? "bg-ok" : "pulse bg-warn")} />
+            {connected ? "Connected" : "Reconnecting…"}
+          </span>
+        </header>
 
-      {closed && <Notice tone="warn">This Liquidation is {liq.data!.status.toLowerCase()}. New receipts can’t be added.</Notice>}
-      {liq.isError && <Notice tone="bad">Can’t reach Tally. Make sure this phone is on the same Wi-Fi as the computer.</Notice>}
-
-      <div className="grid gap-3">
-        <label className={`flex h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl bg-accent text-accent-ink shadow-card active:scale-[0.99] ${busy ? "pointer-events-none opacity-60" : ""}`}>
-          <span className="text-lg font-semibold">📷 Take photo</span>
-          <span className="text-sm opacity-80">One receipt per photo, flat and well lit</span>
-          <input type="file" accept="image/*" capture="environment" hidden onChange={pick} disabled={busy} />
-        </label>
-        <label className={`flex h-16 cursor-pointer items-center justify-center rounded-xl border border-line-strong bg-surface text-base font-medium active:scale-[0.99] ${busy ? "pointer-events-none opacity-60" : ""}`}>
-          🖼️ Choose from gallery
-          <input type="file" accept="image/*" multiple hidden onChange={pick} disabled={busy} />
-        </label>
-      </div>
-
-      {upload.isPending && <p className="flex items-center justify-center gap-2 text-sm text-muted"><Spinner /> Uploading…</p>}
-      {upload.isError && (
-        <Notice tone="bad">
-          {forbidden ? "This capture link is no longer valid. Scan the QR code on the computer again." : `Upload failed: ${errorMessage(upload.error)}. Try again.`}
-        </Notice>
-      )}
-
-      {sent.length > 0 && (
-        <section className="space-y-2">
-          <h2 className="text-sm font-medium text-muted">Sent from this phone ({sent.length})</h2>
-          <ul className="divide-y divide-line rounded-xl border border-line bg-surface">
-            {sent.map((rid) => <SentReceipt key={rid} id={rid} />)}
-          </ul>
+        <section className="rounded-3xl border border-line bg-surface p-6 shadow-card">
+          {ca ? (
+            <>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted">Scanning receipts for</p>
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight">{ca.employee.name}</h1>
+              <p className="mt-1 text-sm text-muted">{ca.purpose}</p>
+              <p className="mt-4 inline-flex rounded-full bg-sunken px-3 py-1 text-xs text-muted">
+                {formatDate(ca.released_on)} – {formatDate(ca.spending_end_on)}
+              </p>
+            </>
+          ) : liq.isError ? (
+            <h1 className="text-base font-semibold">Can’t reach Tally</h1>
+          ) : (
+            <div className="space-y-3"><div className="pulse h-3 w-32 rounded-full bg-sunken" /><div className="pulse h-7 w-48 rounded-full bg-sunken" /></div>
+          )}
         </section>
-      )}
 
-      <p className="mt-auto text-center text-xs text-faint">Photos go only to the Tally computer on this network. Nothing is uploaded to the internet.</p>
-    </main>
+        {closed && <Notice tone="warn">This Liquidation is {liq.data!.status.toLowerCase()}. New receipts can’t be added.</Notice>}
+        {liq.isError && <Notice tone="bad">Make sure this phone is on the same Wi-Fi as the Tally computer, then scan the QR code again.</Notice>}
+        {upload.isError && (
+          <Notice tone="bad">
+            {forbidden ? "This capture link is no longer valid. Scan the QR code on the computer again." : `Upload failed: ${errorMessage(upload.error)}. Try again.`}
+          </Notice>
+        )}
+
+        {sent.length === 0 ? (
+          <section className="rounded-3xl border border-dashed border-line-strong p-6">
+            <h2 className="text-base font-semibold">For a clean read</h2>
+            <ul className="mt-4 space-y-3">
+              {TIPS.map((t) => (
+                <li key={t} className="flex items-center gap-3 text-sm">
+                  <span className="grid size-6 shrink-0 place-items-center rounded-full bg-accent-soft text-accent"><CheckIcon className="size-3.5" /></span>
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : (
+          <section className="space-y-3">
+            <h2 className="flex items-baseline justify-between px-2 text-base font-semibold">
+              Sent from this phone
+              <span className="text-sm font-normal text-muted">{sent.length}</span>
+            </h2>
+            <ul className="space-y-1 overflow-hidden rounded-3xl border border-line bg-surface p-2 shadow-card">
+              {sent.map((rid) => <SentReceipt key={rid} id={rid} />)}
+            </ul>
+            <p className="px-2 text-xs text-muted">The computer reads and checks each one. Results show here as they finish.</p>
+          </section>
+        )}
+
+        <p className="mt-auto text-center text-xs text-faint">Photos go only to the Tally computer on this network. Nothing is uploaded to the internet.</p>
+      </main>
+
+      {/* Capture actions, pinned in thumb reach */}
+      <div className="fixed inset-x-0 bottom-0 z-10 bg-linear-to-t from-paper from-70% to-transparent px-4 pt-6 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto max-w-md space-y-3">
+          <div aria-live="polite" className="flex justify-center">
+            {upload.isPending ? (
+              <span className="enter inline-flex items-center gap-2 rounded-full border border-line bg-surface px-4 py-1.5 text-sm shadow-card"><Spinner /> Sending…</span>
+            ) : justSent ? (
+              <span className="enter inline-flex items-center gap-2 rounded-full border border-ok/25 bg-ok-soft px-4 py-1.5 text-sm text-ok shadow-card">
+                <CheckIcon className="size-4" /> Sent {justSent} photo{justSent === 1 ? "" : "s"}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex gap-3">
+            <label className={cx("flex h-14 flex-1 cursor-pointer items-center justify-center gap-2 rounded-full bg-accent text-base font-semibold text-accent-ink shadow-pop transition-transform active:scale-[0.98]",
+              busy && "pointer-events-none opacity-50")}>
+              <CameraIcon className="size-5" />
+              {sent.length ? "Take another" : "Take photo"}
+              <input type="file" accept="image/*" capture="environment" hidden onChange={pick} disabled={busy} />
+            </label>
+            <label aria-label="Choose from gallery" title="Choose from gallery"
+              className={cx("grid size-14 shrink-0 cursor-pointer place-items-center rounded-full border border-line-strong bg-surface text-ink shadow-card transition-transform active:scale-[0.98]",
+                busy && "pointer-events-none opacity-50")}>
+              <GalleryIcon className="size-5" />
+              <input type="file" accept="image/*" multiple hidden onChange={pick} disabled={busy} />
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -83,11 +168,18 @@ function SentReceipt({ id }: { id: number }) {
   const r = useReceipt(id);
   const preview = useLive().previews[id];
   const d = r.data;
+  const name = (d?.effective?.seller_name as string | null) ?? null;
   return (
-    <li className="enter flex items-center gap-3 px-3 py-2.5">
+    <li className="enter flex items-center gap-3 rounded-2xl p-2">
+      {d ? (
+        // eslint-disable-next-line @next/next/no-img-element -- local API image, no optimizer offline
+        <img src={d.image_url} alt="" className="size-12 shrink-0 rounded-2xl border border-line bg-sunken object-cover" />
+      ) : <div className="pulse size-12 shrink-0 rounded-2xl bg-sunken" />}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">{(d?.effective?.seller_name as string | null) ?? `Receipt #${id}`}</p>
-        <p className="truncate font-mono text-xs text-muted">{d?.stage === "done" ? <Money value={d.effective?.total as number | null} /> : preview ?? "Reading…"}</p>
+        <p className="truncate text-sm font-medium">{name ?? (d && d.stage !== "done" ? STAGE[d.stage] + "…" : `Receipt #${id}`)}</p>
+        <p className="truncate text-xs text-muted">
+          {d?.stage === "done" ? <Money value={d.effective?.total as number | null} /> : <span className="font-mono">{preview ?? "Waiting for the computer"}</span>}
+        </p>
       </div>
       {d && <ReceiptStatusPill status={d.status} stage={d.stage} checksPending={d.checks_pending} />}
     </li>

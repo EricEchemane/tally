@@ -16,6 +16,7 @@ import os
 import socket
 import sys
 import threading
+import time
 from pathlib import Path
 
 PREFERRED_PORT = 8765
@@ -46,6 +47,17 @@ def bind(port: int) -> socket.socket:
 def bundled(*parts: str) -> Path:
     """A path inside the frozen bundle (PyInstaller's _MEIPASS) or next to this file in dev."""
     return Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent), *parts)
+
+
+def follow_network(config, port: int) -> None:
+    """The QR code carries this Mac's LAN address, which changes when the Wi-Fi does (office, hotspot).
+    Capture links read config.WEB_URL per request, so keeping it current is enough."""
+    def loop():
+        while True:
+            time.sleep(5)
+            config.WEB_URL = f"http://{lan_ip()}:{port}"
+
+    threading.Thread(target=loop, daemon=True).start()
 
 
 def mount_web(app, web_dir: Path) -> None:
@@ -89,12 +101,18 @@ def main() -> None:
     # config reads these at import, so they are set before the app is imported.
     os.environ["TALLY_DATA_DIR"] = a.data_dir
     os.environ.setdefault("TALLY_WEB_URL", f"http://{lan_ip()}:{port}")
-    os.environ.setdefault("TALLY_SEED", "minimal")  # until the first-run wizard sets up the Company
+    os.environ.setdefault("TALLY_SEED", "empty")  # the first-run setup fills in the Company
     Path(a.data_dir).mkdir(parents=True, exist_ok=True)
 
     import uvicorn
 
+    import config
+    import desktop_setup
     from main import app
+
+    app.include_router(desktop_setup.router)
+    if "TALLY_WEB_URL_FIXED" not in os.environ:
+        follow_network(config, port)
 
     web_dir = Path(a.web_dir) if a.web_dir else bundled("web")
     if not web_dir.is_dir():

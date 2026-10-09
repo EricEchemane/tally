@@ -85,3 +85,27 @@ def test_demo_reset_endpoint(client):
     assert {(a["employee"]["name"], a["purpose"]) for a in advances} == {
         ("Juan Dela Cruz", "Field sales trip, South Luzon"), ("Juan Dela Cruz", "Office supplies restock"),
         ("Maria Santos", "Pharmacy and pantry supplies")}
+
+
+def test_receipt_waits_for_the_model_instead_of_failing(clean_client, monkeypatch):
+    """A new desktop install may still be downloading the model when the first receipts arrive."""
+    from pipeline import runner
+
+    ready = {"now": False}
+
+    async def model_ready():
+        return ready["now"]
+
+    monkeypatch.setattr(runner, "_model_ready", model_ready)
+    monkeypatch.setattr(runner, "MODEL_WAIT_SECONDS", 0.05)
+    c = clean_client
+    (r,) = c.post(f"/api/liquidations/{_liq(c)}/receipts", files=_files("valid-7eleven")).json()
+    time.sleep(0.5)
+    waiting = c.get(f"/api/receipts/{r['id']}").json()
+    assert waiting["stage"] == "extracting" and waiting["error"] is None   # held, not failed
+    ready["now"] = True
+    for _ in range(100):
+        if c.get(f"/api/receipts/{r['id']}").json()["stage"] == "done":
+            break
+        time.sleep(0.05)
+    assert c.get(f"/api/receipts/{r['id']}").json()["stage"] == "done"

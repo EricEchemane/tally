@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Button, ButtonLink, Card, CardHeader, cx, Empty, inputClass, Label, LiquidationStatusPill, Money, Notice, Skeleton } from "@/components/ui";
+import { Button, ButtonLink, Card, CardHeader, cx, Empty, inputClass, Label, LiquidationStatusPill, Money, Notice, PageHeader, selectClass, Skeleton } from "@/components/ui";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate, LIQUIDATION_STATUS } from "@/lib/labels";
 import { useCashAdvances, useEmployees } from "@/lib/queries";
@@ -19,19 +19,17 @@ export default function Home() {
   const advances = useCashAdvances(filter);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Cash Advances</h1>
-          <p className="text-sm text-muted">Open one to review its Liquidation and scan receipts.</p>
-        </div>
-        {!creating && <Button variant="primary" onClick={() => setCreating(true)}>New Cash Advance</Button>}
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        title="Cash Advances"
+        sub="Open one to review its Liquidation and scan receipts."
+        actions={!creating && <Button variant="primary" onClick={() => setCreating(true)}>New Cash Advance</Button>}
+      />
 
       {creating && <NewCashAdvance onDone={() => setCreating(false)} />}
 
       <Card>
-        <div className="flex flex-wrap gap-1 border-b border-line px-3 py-2" role="tablist" aria-label="Filter by status">
+        <div className="flex flex-wrap gap-1 border-b border-line px-4 py-3" role="tablist" aria-label="Filter by status">
           {([undefined, "OPEN", "RETURNED", "APPROVED"] as Filter[]).map((f) => (
             <button
               key={f ?? "ALL"}
@@ -39,14 +37,14 @@ export default function Home() {
               role="tab"
               aria-selected={filter === f}
               onClick={() => setFilter(f)}
-              className={cx("rounded-md px-3 py-1 text-sm", filter === f ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-sunken")}
+              className={cx("rounded-full px-4 py-1.5 text-sm", filter === f ? "bg-accent-soft font-medium text-accent" : "text-muted hover:bg-sunken hover:text-ink")}
             >
               {f ? LIQUIDATION_STATUS[f] : "All"}
             </button>
           ))}
         </div>
         {advances.isPending ? (
-          <div className="space-y-2 p-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-12" />)}</div>
+          <div className="space-y-2 p-4">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-14" />)}</div>
         ) : advances.isError ? (
           <div className="p-4"><Notice tone="bad">Couldn’t load Cash Advances: {errorMessage(advances.error)}</Notice></div>
         ) : advances.data.length === 0 ? (
@@ -64,13 +62,13 @@ export default function Home() {
 function AdvanceTable({ rows }: { rows: CashAdvance[] }) {
   const router = useRouter();
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto px-2 pb-2">
       <table className="w-full text-sm">
         <thead className="text-left text-xs uppercase tracking-wide text-muted">
           <tr className="border-b border-line">
-            <th className="px-4 py-2 font-medium">Employee</th>
-            <th className="px-4 py-2 font-medium">Spending Period</th>
-            <th className="px-4 py-2 font-medium">Status</th>
+            <th className="px-4 py-3 font-medium">Employee</th>
+            <th className="px-4 py-3 font-medium">Spending Period</th>
+            <th className="px-4 py-3 font-medium">Status</th>
             <th className="px-4 py-2 text-right font-medium">Cash Advance</th>
             <th className="px-4 py-2 text-right font-medium">Valid Spend</th>
             <th className="px-4 py-2 text-right font-medium">Balance</th>
@@ -82,7 +80,7 @@ function AdvanceTable({ rows }: { rows: CashAdvance[] }) {
             return (
               // The whole row opens the Liquidation. Not a stretched link: WebKit (the macOS app window) ignores
               // position: relative on <tr>, so the link's overlay would cover the whole page.
-              <tr key={ca.id} onClick={() => router.push(liquidationHref(ca.liquidation.id))} className="group cursor-pointer hover:bg-sunken/60">
+              <tr key={ca.id} onClick={() => router.push(liquidationHref(ca.liquidation.id))} className="group cursor-pointer hover:bg-sunken/60 [&>td:first-child]:rounded-l-lg [&>td:last-child]:rounded-r-lg">
                 <td className="px-4 py-3">
                   <Link href={liquidationHref(ca.liquidation.id)} className="font-medium group-hover:text-accent">
                     {ca.employee.name}
@@ -148,14 +146,14 @@ function NewCashAdvance({ onDone }: { onDone: () => void }) {
     <Card className="enter">
       <CardHeader title="New Cash Advance" sub="Its Liquidation opens with it." />
       <form
-        className="grid gap-4 p-4 sm:grid-cols-2"
+        className="grid gap-4 p-6 sm:grid-cols-2"
         onSubmit={(e) => {
           e.preventDefault();
           if (ready) create.mutate();
         }}
       >
         <Label label="Employee">
-          <select className={inputClass} value={employee} onChange={(e) => setEmployee(e.target.value)} required>
+          <select className={selectClass} value={employee} onChange={(e) => setEmployee(e.target.value)} required>
             <option value="" disabled>Choose…</option>
             {employees.data?.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
             <option value={NEW_EMPLOYEE}>+ New Employee…</option>
@@ -198,15 +196,13 @@ function SlspExport() {
       <CardHeader
         title="SLSP purchases"
         sub="Non-rejected receipts for one month, ready for your RELIEF converter. Receipts without input VAT go in the non-creditable column."
-        actions={
-          <>
-            <input type="month" className={cx(inputClass, "w-44")} value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month" />
-            <ButtonLink href={month ? `/api/exports/slsp.csv?month=${month}` : undefined} aria-disabled={!month} download>
-              Download CSV
-            </ButtonLink>
-          </>
-        }
       />
+      <div className="flex flex-wrap items-center gap-3 px-6 py-4">
+        <input type="month" className={cx(inputClass, "w-48!")} value={month} onChange={(e) => setMonth(e.target.value)} aria-label="Month" />
+        <ButtonLink href={month ? `/api/exports/slsp.csv?month=${month}` : undefined} aria-disabled={!month} download>
+          Download CSV
+        </ButtonLink>
+      </div>
     </Card>
   );
 }

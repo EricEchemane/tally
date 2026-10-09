@@ -9,7 +9,8 @@ export const metadata: Metadata = {
   description: "Every receipt checked against BIR rules, on your own laptop.",
 };
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1 };
+// viewportFit: the phone capture page pads its bottom bar by the safe area (home indicator).
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover" };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

@@ -72,26 +72,26 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
         aria-modal="true"
         aria-label="Ask Tally"
         className={cx(
-          "absolute right-0 top-0 flex h-full w-full max-w-xl flex-col border-l border-line bg-paper shadow-pop transition-transform",
-          open ? "translate-x-0" : "translate-x-full",
+          "absolute inset-y-2 right-2 flex w-[calc(100%-1rem)] max-w-xl flex-col overflow-hidden rounded-2xl border border-line bg-paper shadow-pop transition-transform",
+          open ? "translate-x-0" : "translate-x-[calc(100%+1rem)]",
         )}
       >
-        <header className="flex items-center justify-between border-b border-line bg-surface px-4 py-3">
+        <header className="flex items-center justify-between border-b border-line bg-surface px-6 py-4">
           <div>
-            <h2 className="font-semibold">Ask Tally</h2>
+            <h2 className="text-base font-semibold">Ask Tally</h2>
             <p className="text-xs text-muted">English or Taglish. Answered on this computer from your records.</p>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">✕</Button>
         </header>
 
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4">
+        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
           {history.isPending && open && <p className="text-sm text-muted">Loading…</p>}
           {count === 0 && !history.isPending && (
             <div className="space-y-2">
               <p className="text-sm text-muted">Try one of these:</p>
               {EXAMPLES.map((ex) => (
                 <button key={ex} type="button" onClick={() => submit(ex)}
-                  className="block w-full rounded-md border border-line bg-surface px-3 py-2 text-left text-sm hover:border-accent">
+                  className="block w-full rounded-full border border-line bg-surface px-4 py-2.5 text-left text-sm hover:border-accent">
                   {ex}
                 </button>
               ))}
@@ -102,7 +102,7 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
         </div>
 
         <form
-          className="border-t border-line bg-surface p-3"
+          className="border-t border-line bg-surface p-4"
           onSubmit={(e) => {
             e.preventDefault();
             submit(text);
@@ -124,7 +124,7 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
             <div className="mt-2 flex flex-wrap gap-1.5">
               {EXAMPLES.map((ex) => (
                 <button key={ex} type="button" onClick={() => submit(ex)}
-                  className="rounded-full border border-line px-2.5 py-0.5 text-xs text-muted hover:border-accent hover:text-ink">
+                  className="rounded-full border border-line px-3 py-1 text-xs text-muted hover:border-accent hover:text-ink">
                   {ex}
                 </button>
               ))}
@@ -139,8 +139,8 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
 function Exchange({ q, onAsk, onNavigate }: { q: Question; onAsk: (t: string) => void; onNavigate: () => void }) {
   return (
     <div className="enter space-y-2">
-      <p className="ml-auto w-fit max-w-[85%] rounded-lg rounded-br-sm bg-accent px-3 py-2 text-sm text-accent-ink">{q.text}</p>
-      <div className="max-w-[95%] rounded-lg rounded-bl-sm border border-line bg-surface px-3 py-2.5 text-sm">
+      <p className="ml-auto w-fit max-w-[85%] rounded-3xl rounded-br-lg bg-accent px-4 py-2.5 text-sm text-accent-ink">{q.text}</p>
+      <div className="max-w-[95%] rounded-3xl rounded-bl-lg border border-line bg-surface px-4 py-3 text-sm">
         {q.state !== "done" || !q.answer ? (
           <p className="flex items-center gap-2 text-muted">
             <Spinner />
@@ -186,16 +186,16 @@ function AnswerView({ a, onAsk, onNavigate }: { a: Answer; onAsk: (t: string) =>
     <div className="space-y-3">
       <p className="font-medium">{a.sentence}</p>
       {rows.length > 0 && (
-        <div className="overflow-x-auto rounded-md border border-line">
+        <div className="overflow-x-auto rounded-2xl border border-line">
           <table className="w-full text-xs">
             <thead className="bg-sunken text-left text-muted">
-              <tr>{columns.map((c) => <th key={c} className={cx("px-2 py-1.5 font-medium", MONEY_COLUMNS.has(c) && "text-right")}>{c}</th>)}</tr>
+              <tr>{columns.map((c) => <th key={c} className={cx("px-3 py-2 font-medium", MONEY_COLUMNS.has(c) && "text-right")}>{c}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-line">
               {rows.map((row, i) => (
                 <tr key={i}>
                   {row.map((cell, j) => (
-                    <td key={j} className={cx("px-2 py-1.5", (MONEY_COLUMNS.has(columns[j]) || typeof cell === "number") && "num text-right")}>
+                    <td key={j} className={cx("px-3 py-2", (MONEY_COLUMNS.has(columns[j]) || typeof cell === "number") && "num text-right")}>
                       {cell == null ? "—" : MONEY_COLUMNS.has(columns[j]) && typeof cell === "number" ? peso(cell) : String(cell)}
                     </td>
                   ))}
@@ -209,7 +209,7 @@ function AnswerView({ a, onAsk, onNavigate }: { a: Answer; onAsk: (t: string) =>
         <div className="flex flex-wrap gap-1.5">
           {a.links.map((l) => (
             <Link key={l.href + l.label} href={pageHref(l.href)} onClick={onNavigate}
-              className="rounded-full border border-line px-2.5 py-0.5 text-xs text-accent hover:border-accent">
+              className="rounded-full border border-line px-3 py-1 text-xs text-accent hover:border-accent">
               {l.label} →
             </Link>
           ))}

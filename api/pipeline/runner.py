@@ -9,6 +9,9 @@ import itertools
 import json
 import logging
 
+import httpx
+
+import config
 import db
 import events
 from checks import service as checks
@@ -25,6 +28,7 @@ _llm_queue: asyncio.PriorityQueue | None = None
 _seq = itertools.count()
 _current: dict | None = None
 _tasks: list[asyncio.Task] = []
+MODEL_WAIT_SECONDS = 5  # how often a receipt re-checks for the model while Ollama or the model is missing
 
 
 def queue_state() -> dict:
@@ -91,11 +95,31 @@ async def _ocr_worker() -> None:
             _ocr_queue.task_done()
 
 
+async def _model_ready() -> bool:
+    """Is the model installed in a running Ollama? A receipt waits for it instead of failing: on a new
+    desktop install the model may still be downloading when the first receipts arrive."""
+    if config.FAKE_PIPELINE:
+        return True
+    try:
+        res = await asyncio.to_thread(httpx.get, f"{config.OLLAMA_URL}/api/tags", timeout=2)
+        names = {m.get("name") for m in res.json().get("models", [])}
+    except (httpx.HTTPError, ValueError):
+        return False
+    return config.MODEL in names or f"{config.MODEL}:latest" in names
+
+
 async def _llm_worker() -> None:
     global _current
     be = backend()
     while True:
-        _priority, _n, (kind, item_id) = await _llm_queue.get()
+        item = await _llm_queue.get()
+        _priority, _n, (kind, item_id) = item
+        if kind == "receipt" and not await _model_ready():
+            # Back in line (questions still go first), then look again shortly.
+            _llm_queue.task_done()
+            await asyncio.sleep(MODEL_WAIT_SECONDS)
+            _llm_queue.put_nowait(item)
+            continue
         _current = {"kind": kind, "id": item_id}
         _publish_queue()
         conn = db.connect()

@@ -60,6 +60,7 @@
   }
 }
 
+/* Shape: controls are rounded-full, panels rounded-3xl (24 px), anything inside a panel rounded-2xl (16 px). */
 @theme inline {
   --color-paper: var(--paper);
   --color-surface: var(--surface);
@@ -91,6 +92,14 @@
 body {
   background: var(--paper);
   color: var(--ink);
+}
+
+/* Native selects ignore border-radius in WebKit: draw our own chevron so they can be pills. */
+.select-chevron {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%238a918b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 1rem;
 }
 
 /* Figures line up in columns, like a ledger. */

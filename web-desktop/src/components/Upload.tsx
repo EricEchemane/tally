@@ -38,7 +38,7 @@ export function UploadDropzone({ liquidationId }: { liquidationId: number }) {
           send(e.dataTransfer.files);
         }}
         className={cx(
-          "flex w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed px-4 py-6 text-center transition-colors",
+          "flex w-full flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed px-6 py-8 text-center transition-colors",
           over ? "border-accent bg-accent-soft" : "border-line-strong bg-sunken/50 hover:border-accent",
         )}
       >
@@ -66,11 +66,11 @@ export function CapturePanel({ liquidationId }: { liquidationId: number }) {
   return (
     <Card>
       <CardHeader title="Scan with your phone" sub="Same Wi-Fi as this computer." />
-      <div className="flex flex-col items-center gap-3 p-4">
+      <div className="flex flex-col items-center gap-3 p-6">
         {link.data ? (
           <>
             <div
-              className="w-44 rounded-md bg-white p-2 [&_svg]:h-auto [&_svg]:w-full"
+              className="w-44 rounded-2xl bg-white p-3 [&_svg]:h-auto [&_svg]:w-full"
               aria-label="QR code for the phone capture page"
               role="img"
               dangerouslySetInnerHTML={{ __html: link.data.qr_svg }}
@@ -82,7 +82,7 @@ export function CapturePanel({ liquidationId }: { liquidationId: number }) {
         ) : link.isError ? (
           <Notice tone="bad">{errorMessage(link.error)}</Notice>
         ) : (
-          <div className="pulse size-44 rounded-md bg-sunken" />
+          <div className="pulse size-44 rounded-2xl bg-sunken" />
         )}
       </div>
     </Card>

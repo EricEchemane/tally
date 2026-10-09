@@ -9,17 +9,19 @@ import { useLive } from "@/lib/live";
 import { useCompany, useHealth } from "@/lib/queries";
 import type { BuyerDetailsRule, Company } from "@/lib/types";
 import { QuestionsPanel } from "./QuestionsPanel";
+import { SetupGate } from "./SetupGate";
 import { Button, cx } from "./ui";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [asking, setAsking] = useState(false);
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-line bg-surface/90 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-2.5">
+      <SetupGate />
+      <header className="sticky top-0 z-30 bg-linear-to-b from-paper from-70% to-transparent px-3 pb-2 pt-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 rounded-full border border-line bg-surface/90 py-2 pl-3 pr-2 shadow-card backdrop-blur">
           <HistoryButtons />
           <Link href="/" className="flex items-center gap-2 font-semibold tracking-tight">
-            <span aria-hidden className="grid size-7 place-items-center rounded-md bg-accent text-sm font-bold text-accent-ink">T</span>
+            <span aria-hidden className="grid size-8 place-items-center rounded-full bg-accent text-sm font-bold text-accent-ink">T</span>
             Tally
           </Link>
           <CompanyName />
@@ -30,8 +32,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
-      <footer className="mx-auto w-full max-w-6xl px-4 pb-6 text-xs text-faint">
+      <main className="mx-auto w-full max-w-6xl flex-1 px-6 py-8">{children}</main>
+      <footer className="mx-auto w-full max-w-6xl px-6 pb-8 text-xs text-faint">
         Every receipt is read and checked on this computer. No request leaves the machine.
       </footer>
       <QuestionsPanel open={asking} onClose={() => setAsking(false)} />
@@ -53,9 +55,9 @@ function HistoryButtons() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [router]);
-  const btn = "grid size-7 place-items-center rounded-md text-muted hover:bg-sunken hover:text-ink";
+  const btn = "grid size-8 place-items-center rounded-full text-muted hover:bg-sunken hover:text-ink";
   return (
-    <div className="-ml-1 -mr-3 flex items-center">
+    <div className="-mr-3 flex items-center">
       <button type="button" className={btn} onClick={() => router.back()} title="Back (⌘[)" aria-label="Back">
         <svg viewBox="0 0 20 20" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden><path d="M12.5 4.5 7 10l5.5 5.5" /></svg>
       </button>
@@ -88,7 +90,7 @@ function BuyerRuleToggle() {
   return (
     <div className="flex items-center gap-2 text-sm" title={set.error ? errorMessage(set.error) : undefined}>
       <span className="text-muted">Buyer details on</span>
-      <div role="radiogroup" aria-label="Buyer Details Rule" className="flex rounded-md border border-line-strong bg-sunken p-0.5">
+      <div role="radiogroup" aria-label="Buyer Details Rule" className="flex rounded-full border border-line-strong bg-sunken p-0.5">
         {(Object.keys(BUYER_RULE) as BuyerDetailsRule[]).map((rule) => (
           <button
             key={rule}
@@ -98,7 +100,7 @@ function BuyerRuleToggle() {
             disabled={!company.data || set.isPending}
             onClick={() => current !== rule && set.mutate(rule)}
             className={cx(
-              "rounded px-2.5 py-1 text-xs font-medium transition-colors",
+              "rounded-full px-3 py-1 text-xs font-medium transition-colors",
               current === rule ? "bg-surface text-accent shadow-card ring-1 ring-accent/30" : "text-muted hover:text-ink",
             )}
           >

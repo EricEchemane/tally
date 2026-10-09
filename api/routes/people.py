@@ -5,7 +5,9 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field, model_validator
 
+import events
 import serialize
+from checks import service as checks
 from db import get_db
 from db.seed import create_cash_advance
 from money import to_centavos
@@ -65,3 +67,42 @@ def create(body: CashAdvanceIn, conn: sqlite3.Connection = Depends(get_db)):
                                 body.released_on.isoformat(), body.spending_end_on.isoformat())
     conn.commit()
     return _cash_advance_with_liquidation(conn, conn.execute("SELECT * FROM cash_advance WHERE id = ?", (ca_id,)).fetchone())
+
+
+class CashAdvancePatch(BaseModel):
+    """Every field optional: send only what changed."""
+    employee_id: int | None = None
+    amount: float | None = Field(None, gt=0)
+    purpose: str | None = Field(None, min_length=1)
+    released_on: dt.date | None = None
+    spending_end_on: dt.date | None = None
+
+
+@router.patch("/cash-advances/{cash_advance_id}")
+def update(cash_advance_id: int, body: CashAdvancePatch, conn: sqlite3.Connection = Depends(get_db)):
+    ca = conn.execute("SELECT * FROM cash_advance WHERE id = ?", (cash_advance_id,)).fetchone()
+    if not ca:
+        raise HTTPException(404, "cash advance not found")
+    liq = conn.execute("SELECT id, status FROM liquidation WHERE cash_advance_id = ?", (cash_advance_id,)).fetchone()
+    if liq["status"] != "OPEN":
+        raise HTTPException(409, "only a Cash Advance whose Liquidation is OPEN can be edited (reopen it first)")
+    if body.employee_id is not None and not conn.execute("SELECT 1 FROM employee WHERE id = ?", (body.employee_id,)).fetchone():
+        raise HTTPException(404, "employee not found")
+    fields = {
+        "employee_id": body.employee_id,
+        "amount": to_centavos(body.amount) if body.amount is not None else None,
+        "purpose": body.purpose.strip() if body.purpose is not None else None,
+        "released_on": body.released_on.isoformat() if body.released_on else None,
+        "spending_end_on": body.spending_end_on.isoformat() if body.spending_end_on else None,
+    }
+    new = {k: v if v is not None else ca[k] for k, v in fields.items()}
+    if new["spending_end_on"] < new["released_on"]:
+        raise HTTPException(422, "spending_end_on must be on or after released_on")
+    conn.execute("UPDATE cash_advance SET employee_id = ?, amount = ?, purpose = ?, released_on = ?, spending_end_on = ? "
+                 "WHERE id = ?", (*new.values(), cash_advance_id))
+    conn.commit()
+    # The Spending Period feeds the date check; the amount feeds the totals. Re-run, then always tell the
+    # dashboard: an amount change moves the totals even when no receipt's status changes.
+    checks.recheck_open(conn)
+    events.publish("liquidation.updated", liquidation_id=liq["id"], status="OPEN", totals=serialize.totals(conn, liq["id"]))
+    return _cash_advance_with_liquidation(conn, conn.execute("SELECT * FROM cash_advance WHERE id = ?", (cash_advance_id,)).fetchone())

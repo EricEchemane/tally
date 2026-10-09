@@ -4,9 +4,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { EditCashAdvance } from "@/components/EditCashAdvance";
 import { CapturePanel, UploadDropzone } from "@/components/Upload";
 import {
-  Button, ButtonLink, Card, CardHeader, Crumbs, cx, Empty, inputClass, LiquidationStatusPill, Money, Notice, ReceiptStatusPill, Skeleton, Stat,
+  Button, ButtonLink, Card, CardHeader, cx, Empty, LiquidationStatusPill, Money, Notice, PageHeader, ReceiptStatusPill, Skeleton, Stat, textareaClass,
 } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { formatDate, STAGE, STAGE_ORDER } from "@/lib/labels";
@@ -18,14 +19,15 @@ import type { Liquidation, ReceiptSummary } from "@/lib/types";
 function LiquidationView() {
   const id = Number(useSearchParams().get("id"));
   const liq = useLiquidation(id);
+  const [editing, setEditing] = useState(false);
 
   if (!id) return <Notice tone="bad">Liquidation not found.</Notice>;
 
   if (liq.isPending) {
     return (
-      <div className="space-y-4">
+      <div className="space-y-8">
         <Skeleton className="h-10 w-2/3" />
-        <div className="grid gap-3 sm:grid-cols-5">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20" />)}</div>
+        <div className="grid gap-4 sm:grid-cols-5">{[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} className="h-20" />)}</div>
         <Skeleton className="h-64" />
       </div>
     );
@@ -38,22 +40,16 @@ function LiquidationView() {
   const ca = l.cash_advance;
   const open = l.status === "OPEN";
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <Crumbs items={[{ label: "Cash Advances", href: "/" }, { label: ca.employee.name }]} />
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h1 className="flex flex-wrap items-center gap-3 text-2xl font-semibold tracking-tight">
-              {ca.employee.name}
-              <LiquidationStatusPill status={l.status} />
-            </h1>
-            <p className="text-muted">
-              {ca.purpose} · Spending Period {formatDate(ca.released_on)} – {formatDate(ca.spending_end_on)}
-            </p>
-          </div>
-          <Actions liq={l} />
-        </div>
-      </div>
+    <div className="space-y-8">
+      <PageHeader
+        crumbs={[{ label: "Cash Advances", href: "/" }, { label: ca.employee.name }]}
+        title={ca.employee.name}
+        badge={<LiquidationStatusPill status={l.status} />}
+        sub={<>{ca.purpose} · Spending Period {formatDate(ca.released_on)} – {formatDate(ca.spending_end_on)}</>}
+        actions={<Actions liq={l} onEdit={open && !editing ? () => setEditing(true) : undefined} />}
+      />
+
+      {editing && open && <EditCashAdvance liq={l} onDone={() => setEditing(false)} />}
 
       {l.status === "RETURNED" && (
         <Notice tone="warn">
@@ -65,7 +61,7 @@ function LiquidationView() {
 
       <Totals liq={l} />
 
-      <div className={cx("grid gap-6", open && "lg:grid-cols-[1fr_17rem]")}>
+      <div className={cx("grid gap-6", open && "lg:grid-cols-[1fr_18rem]")}>
         <Card>
           <CardHeader
             title={`Receipts (${l.receipts.length})`}
@@ -83,7 +79,7 @@ function LiquidationView() {
 function Totals({ liq }: { liq: Liquidation }) {
   const t = liq.totals;
   return (
-    <dl className="grid grid-cols-2 gap-3 md:grid-cols-5">
+    <dl className="grid grid-cols-2 gap-4 md:grid-cols-5">
       <Stat label="Cash Advance" value={t.advance} />
       <Stat label="Valid Spend" value={t.valid_spend} />
       <Stat label="Disallowed Amount" value={t.disallowed} tone={t.disallowed > 0 ? "bad" : undefined} hint="Rejected receipts" />
@@ -97,7 +93,7 @@ function Totals({ liq }: { liq: Liquidation }) {
   );
 }
 
-function Actions({ liq }: { liq: Liquidation }) {
+function Actions({ liq, onEdit }: { liq: Liquidation; onEdit?: () => void }) {
   const qc = useQueryClient();
   const [returning, setReturning] = useState(false);
   const [note, setNote] = useState("");
@@ -125,6 +121,7 @@ function Actions({ liq }: { liq: Liquidation }) {
   return (
     <div className="flex max-w-md flex-col items-end gap-2">
       <div className="flex flex-wrap justify-end gap-2">
+        {onEdit && <Button variant="ghost" onClick={onEdit}>Edit details</Button>}
         <ButtonLink href={`/api/liquidations/${liq.id}/summary.xlsx`} download>Summary (.xlsx)</ButtonLink>
         {liq.status === "OPEN" && (
           <>
@@ -159,14 +156,14 @@ function Actions({ liq }: { liq: Liquidation }) {
 
       {returning && liq.status === "OPEN" && (
         <form
-          className="enter w-full space-y-2 rounded-lg border border-line bg-surface p-3 shadow-card"
+          className="enter w-full space-y-3 rounded-3xl border border-line bg-surface p-4 shadow-card"
           onSubmit={(e) => {
             e.preventDefault();
             ret.mutate();
           }}
         >
           <label className="block text-sm font-medium" htmlFor="return-note">Return to the Employee</label>
-          <textarea id="return-note" className={cx(inputClass, "h-20 py-2")} value={note} onChange={(e) => setNote(e.target.value)}
+          <textarea id="return-note" className={textareaClass} value={note} onChange={(e) => setNote(e.target.value)}
             placeholder="Optional note, e.g. Please bring an Invoice for the hotel stay." />
           <div className="flex justify-end gap-2">
             <Button variant="ghost" size="sm" onClick={() => setReturning(false)}>Cancel</Button>
@@ -180,7 +177,7 @@ function Actions({ liq }: { liq: Liquidation }) {
 
 function ReceiptList({ receipts }: { receipts: ReceiptSummary[] }) {
   return (
-    <ul className="divide-y divide-line">
+    <ul className="space-y-1 p-2">
       {receipts.map((r) => <ReceiptRow key={r.id} r={r} />)}
     </ul>
   );
@@ -192,9 +189,9 @@ function ReceiptRow({ r }: { r: ReceiptSummary }) {
   const queuePos = live.stages[r.id]?.queue_position;
   const processing = r.stage !== "done" && r.stage !== "failed";
   return (
-    <li className="enter group relative flex items-center gap-4 px-4 py-3 hover:bg-sunken/60">
+    <li className="enter group relative flex items-center gap-4 rounded-2xl p-3 hover:bg-sunken/60">
       {/* eslint-disable-next-line @next/next/no-img-element -- local API image, no optimizer offline */}
-      <img src={r.thumbnail_url} alt="" loading="lazy" className="size-14 shrink-0 rounded-md border border-line bg-sunken object-cover" />
+      <img src={r.thumbnail_url} alt="" loading="lazy" className="size-14 shrink-0 rounded-2xl border border-line bg-sunken object-cover" />
       <div className="min-w-0 flex-1">
         <Link href={receiptHref(r.id)} className="font-medium after:absolute after:inset-0 group-hover:text-accent">
           {r.seller_name ?? (processing ? "Reading receipt…" : r.stage === "failed" ? "Couldn’t read this photo" : `Receipt #${r.id}`)}
