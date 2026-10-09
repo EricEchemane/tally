@@ -48,6 +48,7 @@ CREATE TABLE IF NOT EXISTS receipt (
     extraction     TEXT,                           -- JSON, immutable once written
     derived        TEXT,                           -- JSON, amounts in centavos
     status         TEXT CHECK (status IN ('ACCEPTED', 'NO_INPUT_VAT', 'NEEDS_REVIEW', 'REJECT')),
+    checks_run     INTEGER NOT NULL DEFAULT 0,       -- 0 = processed but checks not run yet ("checks pending")
     created_at     TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS receipt_liquidation ON receipt(liquidation_id);

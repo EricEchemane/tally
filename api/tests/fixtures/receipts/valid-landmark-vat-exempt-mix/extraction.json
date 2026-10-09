@@ -1,6 +1,6 @@
 {
   "seller_name": "Landmark Supermarket",
-  "seller_address": "Citysuper Alabang Inc.\nvic Drive, Filinvest, Alabang\nMuntinlupa City",
+  "seller_address": "vic Drive, Filinvest, Alabang\nMuntinlupa City",
   "seller_tin_raw": "009-149-884-000",
   "invoice_number_raw": "059-00-000125989",
   "date_raw": "05/01/26",
@@ -12,6 +12,6 @@
   "vat_exempt_sales": 37.4,
   "zero_rated_sales": 0.0,
   "total": 773.65,
-  "particulars": "ALMND BRZ VA 946ML 1  172.50\nKS SKN CLSC 3X 100G  152.50\nASTRL HRV RLD 500G  1  87.25\nMR.HAT GLMN RED25G  2\n@ 16.50  33.00\nDIZON PPY SLO A[S]  37.40 *\nHEINZ TK 120G  22.00\nCENTRY BANGUS[S]  259.00",
-  "expense_category": "MEALS"
+  "particulars": "Groceries",
+  "expense_category": "SUPPLIES"
 }

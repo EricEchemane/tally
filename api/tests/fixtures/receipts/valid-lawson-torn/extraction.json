@@ -2,16 +2,16 @@
   "seller_name": "LAWSO* IN'S CONVENIENCE STORE",
   "seller_address": "IFC - MSA Prine Center\nUNIT 1 & 4 G/F MSA PRIME CENTER\nMADRIGAL BUSINESS PARK AYALA\nALABANG1799 NCR, FOURTH DISTRICT,\nMuntinlupa, PHL",
   "seller_tin_raw": "121-553-541-00002",
-  "invoice_number_raw": "25082009085019724",
+  "invoice_number_raw": "SN...  25082009085019724",
   "date_raw": "4/6/2026  03:22 PM",
-  "buyer_name": null,
-  "buyer_tin_raw": null,
-  "buyer_address": null,
+  "buyer_name": "",
+  "buyer_tin_raw": "",
+  "buyer_address": "",
   "vatable_sales": 11.25,
   "vat_amount": 0.0,
   "vat_exempt_sales": 0.0,
-  "zero_rated_sales": null,
+  "zero_rated_sales": 0.0,
   "total": 105.0,
-  "particulars": "Chicken Nuggets  Spcs Alacarte KVI",
-  "expense_category": "MEALS"
+  "particulars": "Chicken Nuggets",
+  "expense_category": "SUPPLIES"
 }

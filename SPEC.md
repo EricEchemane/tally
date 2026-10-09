@@ -56,7 +56,7 @@ Mac dashboard ─┘   (rewrites; one origin)   └─ SQLite + data/images/ └
 - `num_ctx: 4096` (2048 is probably enough), `num_predict: 600`, `keep_alive: -1`
 - Environment: `OLLAMA_MAX_LOADED_MODELS=1`
 
-**Fake pipeline mode (for development on Windows):** `TALLY_FAKE_PIPELINE=1`.
+**Fake pipeline mode (for development on Windows):** `TALLY_FAKE_PIPELINE=1` (`TALLY_FAKE_DELAY` scales the simulated delays; tests use 0).
 - The backend skips `ocrmac` and Ollama and serves the committed fixtures from `api/tests/fixtures/receipts/<sample>/`, which hold `ocr.txt` and `extraction.json`.
 - An upload matching a known sample (by `image_hash`) gets that sample's real OCR text and extraction. An unknown upload gets a random fixture after a ~3 s delay, so the live stages and events still play out.
 - The question picker falls back to keyword matching onto the 7 questions.
@@ -96,15 +96,15 @@ Decisions from [Measure OCR and extraction on the 8GB M1](.wayfinder/liquidation
 |---|---|---|
 | 1. Ingest | Save the image; convert HEIC → JPEG; compute `image_hash` | — |
 | 2. OCR | `ocrmac` accurate mode. **Upright detection:** if the median box is tall and narrow, rotate ±90° and keep the better pass. **Row grouping:** join observations whose vertical centers overlap, left to right. Emit `receipt.ocr_done` with a short preview. | ~0.5 s (1.6 s if rotated) |
-| 3. Extraction | One qwen3:4b call over the grouped text, with the JSON Schema below. Goes through the **LLM queue** (questions have priority). | **13–34 s** warm (long pharmacy tapes are slowest) |
+| 3. Extraction | One qwen3:4b call over the grouped text, with the JSON Schema below. Goes through the **LLM queue** (questions have priority). | **10–17 s** warm |
 | 4. Derive | Code normalization and keyword rules (below), then VAT repair | ms |
 | 5. Checks | A pure function, re-run on every change | ms |
 
-**Measured on 18 real receipts** (fixtures, hour 1–3): **91% field accuracy** after derive. Every wrong amount fails the VAT arithmetic check, so it becomes NEEDS_REVIEW. Every seller TIN is right or absent, except one known gap: a faded TIN misread into a wrong but well-formed one.
+**Measured on 18 real receipts** (fixtures, hours 1–4): **91% field accuracy** after derive. Every wrong amount fails the VAT arithmetic check (→ NEEDS_REVIEW), and every seller TIN is right or absent (→ NEEDS_REVIEW). Nothing is silently wrong.
 
 ### Extraction (LLM output, immutable; all nullable; never invent values)
 
-`seller_name`, `seller_address`, `seller_tin_raw`, `invoice_number_raw`, `date_raw` (as printed), `buyer_name`, `buyer_tin_raw`, `buyer_address` (display only), `vatable_sales`, `vat_amount`, `vat_exempt_sales`, `zero_rated_sales`, `total`, `particulars` (short text, e.g. "2 rice meals"), `expense_category` (`MEALS` \| `TRANSPORT_FUEL` \| `LODGING` \| `SUPPLIES` \| `OTHER`).
+`seller_name`, `seller_address`, `seller_tin_raw`, `invoice_number_raw`, `date_raw` (as printed), `buyer_name`, `buyer_tin_raw`, `buyer_address` (display only), `vatable_sales`, `vat_amount`, `vat_exempt_sales`, `zero_rated_sales`, `total`, `particulars` (the model's 2–5 word summary, max 40 characters, e.g. "Rice meals", "Fuel", "Pharmacy items"), `expense_category` (`MEALS` \| `TRANSPORT_FUEL` \| `LODGING` \| `SUPPLIES` \| `OTHER`, decided by the kind of seller).
 
 No line items. The prompt rules, refined from the benchmark:
 - The seller is the business at the top. Ignore the POS-provider and accreditation block at the bottom.
@@ -121,7 +121,7 @@ No line items. The prompt rules, refined from the benchmark:
 - `seller_tin` (9 digits) and `seller_branch` (3–5 digits):
   - reject MIN-like strings
   - rejoin a TIN that wraps onto the next row; keep the 9 digits when the branch is incomplete (→ NEEDS_REVIEW)
-  - **reject a POS-provider TIN**: one in the bottom 40% of rows next to Accred/PTU/Systems/"Date Issued" lines. This happens on faded tapes where only the footer is legible.
+  - **reject a POS-provider TIN**: any TIN found only in the bottom 40% of OCR rows. PH receipts print the seller TIN in the header; on faded tapes only the footer (provider) TIN is legible, and OCR mangles the provider labels too much for keywords.
 - `buyer_tin`.
 - `invoice_number`: a **labelled OCR line wins** (`SI No.`, `SI Number`, `INVOICE#`, `OR No.`, including a label with the number on the next row), because the LLM confuses MINs and TXN numbers. Otherwise use the LLM's value with prefixes stripped.
 - `date`: find the date token inside the raw string (`09-19-26 12:47P DAEZEL`), then parse to ISO (month first, the PH convention).

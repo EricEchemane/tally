@@ -13,8 +13,9 @@ from tests.expected import EXPECTED, SKIP
 
 FIXTURES = Path(__file__).parent / "fixtures" / "receipts"
 AMOUNTS = ("vatable_sales", "vat_amount", "vat_exempt_sales", "total")
-# Faded header: OCR misread the TIN into a well-formed wrong one. Only a Reviewer can catch this.
-KNOWN_SILENT_TIN_MISREADS = {"mercury-drug-226-faded"}
+# Known cases where a seller TIN can be silently wrong (OCR misreads a faded header TIN into a
+# well-formed one). Only a Reviewer can catch those. Currently none in the samples.
+KNOWN_SILENT_TIN_MISREADS: set[str] = set()
 
 
 @pytest.mark.parametrize("raw,ocr,expected", [
@@ -31,8 +32,8 @@ def test_parse_tin(raw, ocr, expected):
 
 
 def test_provider_tin_in_footer_is_not_the_seller():
-    ocr = "\n".join(["MERCURY DRUG"] + ["item"] * 20 + ["Phillogix Systems, Inc.", "VAT REG TIN: 205-713-621-00000",
-                                                         "PTU No.: FP062021", "INVOICE#1"])
+    ocr = "\n".join(["MERCURY DRUG"] + ["item"] * 20 + ["Thillooix S/stems  Inc", "JeSUS TIN: 205-713-621-00000",
+                                                         "+ FD0620121-116", "INVOICE#1"])
     assert is_provider_tin("205-713-621-00000", ocr)
     assert not is_provider_tin("205-713-621-00000", "VAT REG TIN: 205-713-621-00000\n" + "x\n" * 20)
 

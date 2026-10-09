@@ -1,6 +1,6 @@
 {
   "seller_name": "PerPet Pilipinas Corp.",
-  "seller_address": "FILLED COOKIES  Lot 2 Blk 4 Madrigal Business Park  Ayala Alabang, 418  Muntinlupa, Philippines",
+  "seller_address": "FILLED COOKIES  Lot 2 Blk 4 Madrigal Business Park Ayala Alabang, 418 Muntinlupa, Philippines",
   "seller_tin_raw": "008-578-970-030",
   "invoice_number_raw": "100237423",
   "date_raw": "04/21/2026",
@@ -12,6 +12,6 @@
   "vat_exempt_sales": 0.0,
   "zero_rated_sales": 0.0,
   "total": 284.0,
-  "particulars": "7FreshChsyTkyk  79.00V\nCityCafeFrnchVanSm  37.00V\nYakult  12.00V\nAbsolute 1L  32.00V\nKYMobLegBangCrd1Pc  59.00V  len\nNewShawarmaFriedRi  65.00V  SELECTA",
+  "particulars": "Fast food",
   "expense_category": "MEALS"
 }

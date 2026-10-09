@@ -22,7 +22,8 @@ export interface CashAdvance {
 }
 
 export interface ReceiptSummary {
-  id: number; stage: Stage; status: ReceiptStatus | null; seller_name: string | null;
+  // status is null while processing or while checks are pending (checks_pending) — never show null as a pass.
+  id: number; stage: Stage; status: ReceiptStatus | null; checks_pending: boolean; seller_name: string | null;
   date: string | null; total: number | null; thumbnail_url: string; open_findings: number;
 }
 
@@ -39,7 +40,7 @@ export interface Finding {
 }
 
 export interface Receipt {
-  id: number; liquidation_id: number; stage: Stage; status: ReceiptStatus | null; error: string | null;
+  id: number; liquidation_id: number; stage: Stage; status: ReceiptStatus | null; checks_pending: boolean; error: string | null;
   image_url: string; rotation: number; ocr_text: string | null;
   extraction: Record<string, unknown> | null; derived: Record<string, unknown> | null;
   corrections: { field: string; value: unknown; previous: unknown; at: string }[];

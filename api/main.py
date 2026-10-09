@@ -7,6 +7,7 @@ from fastapi import FastAPI
 import db
 import events
 from db.seed import seed
+from pipeline import runner
 from routes import company, exports, liquidations, ops, people, questions, receipts, ws
 
 
@@ -17,7 +18,9 @@ async def lifespan(app: FastAPI):
     seed(conn)
     conn.close()
     events.bind_loop(asyncio.get_running_loop())
+    runner.start()
     yield
+    await runner.stop()
 
 
 app = FastAPI(title="Tally API", lifespan=lifespan)

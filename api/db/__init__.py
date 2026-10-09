@@ -16,8 +16,15 @@ def connect(path: Path | None = None) -> sqlite3.Connection:
     return conn
 
 
+# Columns added after the first schema; CREATE TABLE IF NOT EXISTS won't add them to an existing DB.
+_ADDED_COLUMNS = [("receipt", "checks_run", "INTEGER NOT NULL DEFAULT 0")]
+
+
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA.read_text())
+    for table, column, decl in _ADDED_COLUMNS:
+        if column not in {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}:
+            conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
     conn.commit()
 
 

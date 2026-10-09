@@ -1,0 +1,140 @@
+"""Receipt runner (SPEC §4, §7): OCR queue -> LLM queue -> derive, with live stage events.
+
+OCR runs outside the LLM queue (Neural Engine), so receipt.ocr_done fires right after upload.
+The LLM queue is a priority queue: questions will use priority 0, receipts 1 (hours 7–12).
+Checks are not wired yet (hours 4–7): processed receipts stay "checks pending" (checks_run = 0).
+"""
+import asyncio
+import itertools
+import json
+import logging
+
+import db
+import events
+import serialize
+from pipeline.backends import backend
+from pipeline.derive import derive
+
+log = logging.getLogger("tally.runner")
+
+RECEIPT_PRIORITY = 1
+_ocr_queue: asyncio.Queue[int] | None = None
+_llm_queue: asyncio.PriorityQueue | None = None
+_seq = itertools.count()
+_current: dict | None = None
+_tasks: list[asyncio.Task] = []
+
+
+def queue_state() -> dict:
+    pending = (_ocr_queue.qsize() if _ocr_queue else 0) + (_llm_queue.qsize() if _llm_queue else 0)
+    return {"length": pending + (1 if _current else 0), "current": _current}
+
+
+def _publish_queue() -> None:
+    events.publish("queue.updated", **queue_state())
+
+
+def enqueue(receipt_id: int) -> int:
+    """Returns the receipt's queue position (1 = next)."""
+    _ocr_queue.put_nowait(receipt_id)
+    _publish_queue()
+    return queue_state()["length"]
+
+
+def _set_stage(conn, receipt_id: int, stage: str, **fields) -> int:
+    sets = ", ".join(["stage = ?"] + [f"{k} = ?" for k in fields])
+    conn.execute(f"UPDATE receipt SET {sets} WHERE id = ?", (stage, *fields.values(), receipt_id))
+    conn.commit()
+    lid = conn.execute("SELECT liquidation_id FROM receipt WHERE id = ?", (receipt_id,)).fetchone()[0]
+    events.publish("receipt.stage", receipt_id=receipt_id, liquidation_id=lid, stage=stage,
+                   queue_position=queue_state()["length"])
+    return lid
+
+
+def _fail(conn, receipt_id: int, error: str) -> None:
+    log.exception("receipt %s failed: %s", receipt_id, error)
+    _set_stage(conn, receipt_id, "failed", error=error[:500])
+    events.publish("receipt.failed", receipt_id=receipt_id, error=error[:200])
+
+
+async def _ocr_worker() -> None:
+    be = backend()
+    while True:
+        receipt_id = await _ocr_queue.get()
+        conn = db.connect()
+        try:
+            row = conn.execute("SELECT image_path FROM receipt WHERE id = ?", (receipt_id,)).fetchone()
+            if row is None:  # deleted while queued
+                continue
+            _set_stage(conn, receipt_id, "ocr")
+            result = await be.ocr(row["image_path"])
+            conn.execute("UPDATE receipt SET ocr_text = ?, rotation = ? WHERE id = ?",
+                         (result.text, result.rotation, receipt_id))
+            conn.commit()
+            preview = " · ".join(line for line in result.text.splitlines()[:3] if line.strip())
+            events.publish("receipt.ocr_done", receipt_id=receipt_id, preview=preview[:160])
+            _set_stage(conn, receipt_id, "extracting")
+            _llm_queue.put_nowait((RECEIPT_PRIORITY, next(_seq), ("receipt", receipt_id)))
+            _publish_queue()
+        except Exception as e:  # noqa: BLE001 — one bad receipt must not stop the queue
+            _fail(conn, receipt_id, f"OCR: {e}")
+        finally:
+            conn.close()
+            _ocr_queue.task_done()
+
+
+async def _llm_worker() -> None:
+    global _current
+    be = backend()
+    while True:
+        _priority, _n, (kind, item_id) = await _llm_queue.get()
+        _current = {"kind": kind, "id": item_id}
+        _publish_queue()
+        conn = db.connect()
+        try:
+            if kind == "receipt":
+                await _process_receipt(conn, be, item_id)
+        except Exception as e:  # noqa: BLE001
+            _fail(conn, item_id, f"extraction: {e}")
+        finally:
+            conn.close()
+            _current = None
+            _llm_queue.task_done()
+            _publish_queue()
+
+
+async def _process_receipt(conn, be, receipt_id: int) -> None:
+    row = conn.execute("SELECT image_path, ocr_text FROM receipt WHERE id = ?", (receipt_id,)).fetchone()
+    if row is None:
+        return
+    extraction = await be.extract(row["ocr_text"], row["image_path"])
+    conn.execute("UPDATE receipt SET extraction = ? WHERE id = ?", (json.dumps(extraction), receipt_id))
+    _set_stage(conn, receipt_id, "checking")
+    derived = derive(extraction, row["ocr_text"])
+    # TODO(Eric, hours 4–7): run the checks here, write Findings, set checks_run = 1.
+    lid = _set_stage(conn, receipt_id, "done", derived=json.dumps(derived), status=None)
+    events.publish("receipt.updated", receipt_id=receipt_id, liquidation_id=lid, status=None, open_findings=0)
+    events.publish("liquidation.updated", liquidation_id=lid, status="OPEN", totals=serialize.totals(conn, lid))
+
+
+def start() -> None:
+    """Start the workers on the running loop and resume receipts interrupted by a restart."""
+    global _ocr_queue, _llm_queue
+    _ocr_queue, _llm_queue = asyncio.Queue(), asyncio.PriorityQueue()
+    _tasks[:] = [asyncio.create_task(_ocr_worker()), asyncio.create_task(_llm_worker())]
+    conn = db.connect()
+    try:
+        for r in conn.execute("SELECT id, stage, ocr_text FROM receipt WHERE stage IN ('queued', 'ocr', 'extracting', 'checking') ORDER BY id"):
+            if r["ocr_text"] and r["stage"] != "queued":
+                _llm_queue.put_nowait((RECEIPT_PRIORITY, next(_seq), ("receipt", r["id"])))
+            else:
+                _ocr_queue.put_nowait(r["id"])
+    finally:
+        conn.close()
+
+
+async def stop() -> None:
+    for t in _tasks:
+        t.cancel()
+    await asyncio.gather(*_tasks, return_exceptions=True)
+    _tasks.clear()

@@ -44,9 +44,9 @@ def findings(conn: sqlite3.Connection, receipt_id: int) -> list[dict]:
 
 def refresh_status(conn: sqlite3.Connection, receipt_id: int) -> str | None:
     """Recompute Receipt Status from open Findings (only once the receipt is processed)."""
-    r = conn.execute("SELECT stage FROM receipt WHERE id = ?", (receipt_id,)).fetchone()
-    if r["stage"] != "done":
-        return None
+    r = conn.execute("SELECT stage, checks_run FROM receipt WHERE id = ?", (receipt_id,)).fetchone()
+    if r["stage"] != "done" or not r["checks_run"]:
+        return None  # still processing, or "checks pending"
     open_sev = [f["severity"] for f in conn.execute(
         "SELECT severity FROM finding WHERE receipt_id = ? AND state IN ('OPEN', 'CONFIRMED')", (receipt_id,))]
     status = receipt_status(open_sev)
@@ -59,7 +59,8 @@ def receipt_detail(conn: sqlite3.Connection, r: sqlite3.Row) -> dict:
     eff, corrections = effective(conn, r["id"], derived)
     return {
         "id": r["id"], "liquidation_id": r["liquidation_id"], "stage": r["stage"], "status": r["status"],
-        "error": r["error"], "image_url": f"/api/receipts/{r['id']}/image", "rotation": r["rotation"],
+        "checks_pending": r["stage"] == "done" and not r["checks_run"], "error": r["error"],
+        "image_url": f"/api/receipts/{r['id']}/image", "rotation": r["rotation"],
         "ocr_text": r["ocr_text"],
         "extraction": json.loads(r["extraction"]) if r["extraction"] else None,
         "derived": _amounts_to_pesos(derived) if r["derived"] else None,
@@ -115,7 +116,8 @@ def liquidation_detail(conn: sqlite3.Connection, liq: sqlite3.Row) -> dict:
         open_findings = conn.execute(
             "SELECT COUNT(*) FROM finding WHERE receipt_id = ? AND state = 'OPEN'", (r["id"],)).fetchone()[0]
         receipts.append({
-            "id": r["id"], "stage": r["stage"], "status": r["status"], "seller_name": eff.get("seller_name"),
+            "id": r["id"], "stage": r["stage"], "status": r["status"],
+            "checks_pending": r["stage"] == "done" and not r["checks_run"], "seller_name": eff.get("seller_name"),
             "date": eff.get("date"), "total": to_pesos(eff.get("total")),
             "thumbnail_url": f"/api/receipts/{r['id']}/image", "open_findings": open_findings,
         })

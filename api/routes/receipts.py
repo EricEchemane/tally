@@ -11,6 +11,7 @@ import events
 import serialize
 from db import get_db
 from money import to_centavos
+from pipeline import runner
 from pipeline.ingest import save_upload
 from routes.liquidations import load as load_liquidation
 
@@ -50,9 +51,9 @@ async def upload(liquidation_id: int, images: list[UploadFile] = File(...),
             (liquidation_id, str(path), digest)).lastrowid
         created.append(rid)
     conn.commit()
-    # TODO(Eric, hours 1–4): enqueue each receipt into the pipeline (real or fake).
     out = []
-    for pos, rid in enumerate(created, start=1):
+    for rid in created:
+        pos = runner.enqueue(rid)
         events.publish("receipt.stage", receipt_id=rid, liquidation_id=liquidation_id, stage="queued", queue_position=pos)
         out.append({"id": rid, "stage": "queued", "queue_position": pos})
     return out

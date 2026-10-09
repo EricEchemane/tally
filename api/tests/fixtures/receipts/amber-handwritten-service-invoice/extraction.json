@@ -12,6 +12,6 @@
   "vat_exempt_sales": 715,
   "zero_rated_sales": null,
   "total": 1845,
-  "particulars": null,
+  "particulars": "Meals",
   "expense_category": "MEALS"
 }

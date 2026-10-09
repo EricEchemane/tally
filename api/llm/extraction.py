@@ -22,7 +22,8 @@ SCHEMA = {
         "vat_exempt_sales": _num,
         "zero_rated_sales": _num,
         "total": _num,
-        "particulars": {**_str, "description": "What was bought, at most 6 words, e.g. '2 rice meals' or 'Fuel, 2.92 L'"},
+        "particulars": {"type": ["string", "null"], "maxLength": 40,
+                        "description": "Your 2-5 word summary of what was bought, e.g. 'Rice meals', 'Fuel', 'Pharmacy items'"},
         "expense_category": {"type": ["string", "null"], "enum": EXPENSE_CATEGORIES + [None]},
     },
     "required": [
@@ -38,8 +39,14 @@ SYSTEM = """You read the OCR text of one Philippine receipt and copy its values 
 - buyer_name / buyer_tin_raw / buyer_address: only if written on the Name / Sold To / TIN / Address lines. Blank lines mean null.
 - date_raw: the transaction date exactly as printed, never an accreditation or permit date.
 - Amounts are plain numbers without currency symbols or commas. total is the amount due. Use null when a value is not printed.
-- expense_category: MEALS (food, drinks), TRANSPORT_FUEL (fuel, fares, tolls, parking), LODGING, SUPPLIES (goods, medicine, hardware, groceries), OTHER.
-- Copy values exactly as printed; never invent or calculate values."""
+- Copy values exactly as printed; never invent or calculate values. The only exceptions are the two judgement fields below.
+- particulars: YOUR short summary of what was bought, 2-5 words, e.g. "Rice meals", "Iced coffees", "Fuel", "Groceries", "Pharmacy items", "Hardware supplies". Never copy the item lines.
+- expense_category, decided by the kind of seller:
+  MEALS = restaurant, cafe, fast food, bakery, dessert shop;
+  TRANSPORT_FUEL = gas station, fuel, fares, tolls, parking;
+  LODGING = hotel, inn;
+  SUPPLIES = supermarket, grocery, convenience store, pharmacy/drugstore, hardware, department store, office supplies;
+  OTHER = anything else (e.g. repairs, services)."""
 
 
 def extract(ocr_text: str) -> dict:

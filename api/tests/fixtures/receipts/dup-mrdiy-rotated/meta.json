@@ -3,6 +3,6 @@
   "image_sha256": "1cece4db2807c6faa6949fbc29594c6b960ea36091ff3be126af13ee45c823ac",
   "rotation": -90,
   "model": "qwen3:4b",
-  "ocr_seconds": 2.57,
-  "llm_seconds": 26.0
+  "ocr_seconds": 2.04,
+  "llm_seconds": 11.5
 }

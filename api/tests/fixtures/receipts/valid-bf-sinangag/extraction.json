@@ -12,6 +12,6 @@
   "vat_exempt_sales": 0.0,
   "zero_rated_sales": 0.0,
   "total": 355.0,
-  "particulars": "01 MEALS @170x1  170.00\n- TAPSILOG\n01 MEALS @135x1  185.00\n- LIEMPOSILOG",
+  "particulars": "MEALS",
   "expense_category": "MEALS"
 }

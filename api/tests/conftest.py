@@ -6,6 +6,7 @@ import pytest
 # Isolate every test run in a throwaway data dir, before config is imported.
 os.environ["TALLY_DATA_DIR"] = tempfile.mkdtemp(prefix="tally-test-")
 os.environ["TALLY_FAKE_PIPELINE"] = "1"
+os.environ["TALLY_FAKE_DELAY"] = "0"
 
 import config  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402

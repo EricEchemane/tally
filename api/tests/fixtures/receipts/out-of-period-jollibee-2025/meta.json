@@ -4,5 +4,5 @@
   "rotation": 0,
   "model": "qwen3:4b",
   "ocr_seconds": 0.67,
-  "llm_seconds": 15.5
+  "llm_seconds": 14.9
 }

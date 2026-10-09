@@ -29,22 +29,17 @@ def parse_tin(raw: str | None, ocr_text: str = "") -> tuple[str | None, str | No
     return None, None  # MINs (16–17 digits) and fragments are not TINs
 
 
-_PROVIDER = re.compile(r"ACCRED|PTU|P\.T\.U|PERMIT|DATE ISSUED|VALID UNTIL|POS PROVIDER|POS VENDOR|SOFTWARE|SYSTEMS", re.I)
-
-
 def is_provider_tin(raw: str | None, ocr_text: str) -> bool:
-    """True when the TIN sits in the POS/software-provider block at the bottom of the receipt,
-    i.e. it is not the seller's. Seen on faded Mercury Drug tapes where only the footer TIN is legible."""
+    """True when the TIN sits in the bottom 40% of the receipt. PH receipts print the seller's TIN in
+    the header; a TIN only legible near the bottom is the POS/software provider's (seen on faded
+    Mercury Drug tapes, where OCR also mangles the provider labels, so keywords are not reliable)."""
     digits = re.sub(r"\D", "", raw or "")[:9]
     if len(digits) < 9:
         return False
     rows = ocr_text.splitlines()
     for i, row in enumerate(rows):
-        if re.sub(r"\D", "", row).find(digits) >= 0:
-            if i < len(rows) * 0.6:
-                return False
-            window = " ".join(rows[max(0, i - 4): i + 3])
-            return bool(_PROVIDER.search(window))
+        if digits in re.sub(r"\D", "", row):
+            return i >= len(rows) * 0.6
     return False
 
 

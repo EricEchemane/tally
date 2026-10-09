@@ -97,8 +97,8 @@ def insert(conn, liquidation_id: int) -> None:
             continue
         ocr_file = OCR / f"{p['sample']}.txt"
         rid = conn.execute(
-            "INSERT INTO receipt (liquidation_id, stage, image_path, image_hash, ocr_text, extraction, derived, status) "
-            "VALUES (?, 'done', ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO receipt (liquidation_id, stage, image_path, image_hash, ocr_text, extraction, derived, status, checks_run) "
+            "VALUES (?, 'done', ?, ?, ?, ?, ?, ?, 1)",
             (liquidation_id, str(image), hashlib.sha256(image.read_bytes()).hexdigest(),
              ocr_file.read_text() if ocr_file.exists() else None,
              json.dumps(p["extraction"]), json.dumps(p["derived"]), p["status"])).lastrowid

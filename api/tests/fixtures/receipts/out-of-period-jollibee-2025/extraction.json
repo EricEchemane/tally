@@ -1,6 +1,6 @@
 {
   "seller_name": "SOUTH FOODCHAIN GROUP INC",
-  "seller_address": "Jollibee Concerce\nSTORE #1004\n3/F Joval Bldg, 52 Nat  Rd Putatar, Muriti",
+  "seller_address": "Jollibee Concerce, 3/F Joval Bldg, 52 Nat  Rd Putatar, Muriti",
   "seller_tin_raw": "753-390-697-000",
   "invoice_number_raw": "588456",
   "date_raw": "2025-09-04",
@@ -12,6 +12,6 @@
   "vat_exempt_sales": 0.0,
   "zero_rated_sales": 0.0,
   "total": 180.0,
-  "particulars": "Drive Thru\nDT CIBStK  138.00\nDT Pocket Fmp  42.00",
+  "particulars": "Fast food",
   "expense_category": "MEALS"
 }

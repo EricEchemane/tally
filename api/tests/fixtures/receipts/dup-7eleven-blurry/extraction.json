@@ -12,6 +12,6 @@
   "vat_exempt_sales": 0.0,
   "zero_rated_sales": null,
   "total": 1000.0,
-  "particulars": "STAFF :M1 Torio  79.00V\n7FreshChsyTkyk  37.00V\nCityCafeFrnchVanSm  12.00V\nYaku]t  32.00V\nAbsolute 1L  59.00V\nKYMobLegBangCrdiPc  65.00V\nNewShawarmaFriecR1  284.00",
-  "expense_category": "MEALS"
+  "particulars": "Fuel",
+  "expense_category": "TRANSPORT_FUEL"
 }

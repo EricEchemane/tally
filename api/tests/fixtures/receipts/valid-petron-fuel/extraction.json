@@ -12,6 +12,6 @@
   "vat_exempt_sales": 0.0,
   "zero_rated_sales": 0.0,
   "total": 282.95,
-  "particulars": "XCS (V) (P : 06)  2.92  Php96.90  Php282.95",
-  "expense_category": "MEALS"
+  "particulars": "Fuel",
+  "expense_category": "TRANSPORT_FUEL"
 }

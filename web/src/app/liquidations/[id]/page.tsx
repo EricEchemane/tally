@@ -63,7 +63,7 @@ function LiquidationView() {
           {liq.data.receipts.map((r) => (
             <li key={r.id} className="flex justify-between gap-4 p-3">
               <span>{r.seller_name ?? `Receipt #${r.id}`}<span className="block text-sm opacity-70">{r.date ?? "—"} · {r.stage}</span></span>
-              <span className="text-right">{peso(r.total)}<span className="block text-sm">{r.status ?? "…"} · {r.open_findings} open</span></span>
+              <span className="text-right">{peso(r.total)}<span className="block text-sm">{r.checks_pending ? "checks pending" : r.status ?? "…"} · {r.open_findings} open</span></span>
             </li>
           ))}
         </ul>
