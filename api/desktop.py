@@ -6,7 +6,9 @@
   prints `TALLY_READY port=N` so the shell knows where to point its window.
 - Exits when stdin closes: the shell holds the other end of the pipe, so a crash or force quit of the
   app still stops this process.
-- Serves the static export of web/ at / when one is bundled or passed with --web-dir.
+- Serves the dashboard (the static export of web-desktop/) at / when one is bundled or passed with --web-dir.
+  The export's pages take ?id=; the API and the capture QR still write path links (/receipts/5,
+  /capture/5?t=...), so those redirect here instead of changing the shared backend.
 """
 import argparse
 import multiprocessing
@@ -46,6 +48,35 @@ def bundled(*parts: str) -> Path:
     return Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent), *parts)
 
 
+def mount_web(app, web_dir: Path) -> None:
+    import mimetypes
+
+    from fastapi import HTTPException
+    from fastapi.responses import RedirectResponse
+    from starlette.staticfiles import StaticFiles
+
+    mimetypes.add_type("text/javascript", ".js")  # Windows can map .js to text/plain through the registry
+    mimetypes.add_type("text/css", ".css")
+
+    class WebFiles(StaticFiles):
+        """Hashed assets cache forever; pages always revalidate, so an app update shows at once."""
+
+        async def get_response(self, path, scope):
+            if path == "api" or path.startswith("api/"):
+                raise HTTPException(404)  # an unknown API path gets JSON, not the HTML 404 page
+            resp = await super().get_response(path, scope)
+            immutable = path.startswith("_next/static/")
+            resp.headers["Cache-Control"] = "public, max-age=31536000, immutable" if immutable else "no-cache"
+            return resp
+
+    for page in ("liquidations", "receipts", "capture"):
+        def redirect(item_id: int, t: str | None = None, page=page):
+            return RedirectResponse(f"/{page}/?id={item_id}" + (f"&t={t}" if t else ""))
+        app.add_api_route(f"/{page}/{{item_id:int}}", redirect, methods=["GET"], include_in_schema=False)
+
+    app.mount("/", WebFiles(directory=web_dir, html=True), name="web")
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", required=True)
@@ -66,10 +97,10 @@ def main() -> None:
     from main import app
 
     web_dir = Path(a.web_dir) if a.web_dir else bundled("web")
+    if not web_dir.is_dir():
+        web_dir = Path(__file__).resolve().parents[1] / "web-desktop" / "out"  # dev, after `npm run build`
     if web_dir.is_dir():
-        from fastapi.staticfiles import StaticFiles
-
-        app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
+        mount_web(app, web_dir)
 
     server = uvicorn.Server(uvicorn.Config(app, log_level="info"))
 

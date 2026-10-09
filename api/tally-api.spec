@@ -1,6 +1,6 @@
 # PyInstaller spec for the desktop sidecar: one-folder build (see .wayfinder/desktop-app/research/02-tauri-sidecar.md).
 #   cd api && uv run --group desktop pyinstaller tally-api.spec --noconfirm --distpath ../desktop/dist-sidecar
-# The static export of web/ is bundled when ../web/out exists.
+# The dashboard (the static export of ../web-desktop, built first) is bundled when ../web-desktop/out exists.
 import os
 import sys
 
@@ -17,8 +17,8 @@ for pkg in packages:
     d, b, h = collect_all(pkg)
     datas, binaries, hiddenimports = datas + d, binaries + b, hiddenimports + h
 
-if os.path.isdir("../web/out"):
-    datas.append(("../web/out", "web"))
+if os.path.isdir("../web-desktop/out"):
+    datas.append(("../web-desktop/out", "web"))
 
 a = Analysis(["desktop.py"], pathex=["."], binaries=binaries, datas=datas, hiddenimports=hiddenimports,
              excludes=["pytest", "watchfiles", "tkinter"])
