@@ -40,9 +40,10 @@ def approve(liquidation_id: int, conn: sqlite3.Connection = Depends(get_db)):
     liq = load(conn, liquidation_id)
     if liq["status"] != "OPEN":
         raise HTTPException(409, f"liquidation is {liq['status']}")
+    # Only receipts still undecided block approval. A NEEDS_REVIEW Finding on a receipt that is already
+    # rejected changes nothing: its whole amount is disallowed either way.
     blocking = [r[0] for r in conn.execute(
-        "SELECT DISTINCT r.id FROM finding f JOIN receipt r ON r.id = f.receipt_id "
-        "WHERE r.liquidation_id = ? AND f.state = 'OPEN' AND f.severity = 'NEEDS_REVIEW'", (liquidation_id,))]
+        "SELECT id FROM receipt WHERE liquidation_id = ? AND status = 'NEEDS_REVIEW' ORDER BY id", (liquidation_id,))]
     still_processing = conn.execute(
         "SELECT COUNT(*) FROM receipt WHERE liquidation_id = ? AND stage NOT IN ('done', 'failed')", (liquidation_id,)
     ).fetchone()[0]

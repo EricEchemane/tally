@@ -271,3 +271,20 @@ def test_seller_name_correction_changes_display_not_findings(clean_client):
     summary = next(x for x in c.get(f"/api/liquidations/{_liq(c)}").json()["receipts"] if x["id"] == rid)
     assert summary["seller_name"] == "llaollao Festival Mall"
     assert c.post(f"/api/receipts/{rid}/corrections", json={"field": "seller_name", "value": "x" * 121}).status_code == 422
+
+
+def test_a_rejected_receipt_does_not_block_approval(clean_client):
+    """The 2022 Official Receipt is REJECT and also has NEEDS_REVIEW Findings; only undecided receipts block."""
+    c = clean_client
+    lid = _liq(c)
+    c.patch("/api/company", json={"buyer_details_rule": "AT_1000_AND_ABOVE"})
+    rejected, petron = _upload(c, lid, "or-cebu-2022-multi-finding"), _upload(c, lid, "valid-petron-fuel")
+    _wait(c, [rejected, petron])
+    r = c.get(f"/api/receipts/{rejected}").json()
+    assert r["status"] == "REJECT" and any(f["severity"] == "NEEDS_REVIEW" and f["state"] == "OPEN" for f in r["findings"])
+    blocked = c.post(f"/api/liquidations/{lid}/approve")
+    assert blocked.status_code == 409 and blocked.json()["receipt_ids"] == [petron]
+    assert c.get(f"/api/liquidations/{lid}").json()["open_needs_review"] == 1
+    f = c.get(f"/api/receipts/{petron}").json()["findings"][0]
+    c.post(f"/api/findings/{f['id']}/dismiss", json={"reason": "Pump receipt is a sales invoice"})
+    assert c.post(f"/api/liquidations/{lid}/approve").json()["status"] == "APPROVED"

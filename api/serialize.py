@@ -122,9 +122,9 @@ def liquidation_detail(conn: sqlite3.Connection, liq: sqlite3.Row) -> dict:
             "date": eff.get("date"), "total": to_pesos(eff.get("total")),
             "thumbnail_url": f"/api/receipts/{r['id']}/image", "open_findings": open_findings,
         })
+    # Receipts whose status is NEEDS_REVIEW: the ones that block approval.
     open_needs_review = conn.execute(
-        "SELECT COUNT(*) FROM finding f JOIN receipt r ON r.id = f.receipt_id "
-        "WHERE r.liquidation_id = ? AND f.state = 'OPEN' AND f.severity = 'NEEDS_REVIEW'", (liq["id"],)).fetchone()[0]
+        "SELECT COUNT(*) FROM receipt WHERE liquidation_id = ? AND status = 'NEEDS_REVIEW'", (liq["id"],)).fetchone()[0]
     return {
         "id": liq["id"], "status": liq["status"], "return_note": liq["return_note"],
         "cash_advance": cash_advance(conn, ca), "totals": totals(conn, liq["id"]),

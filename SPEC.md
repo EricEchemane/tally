@@ -110,7 +110,7 @@ Decisions from [Measure OCR and extraction on the 8GB M1](.wayfinder/liquidation
 | Step | What | Time on M1 |
 |---|---|---|
 | 1. Ingest | Save the image; convert HEIC → JPEG; compute `image_hash` | — |
-| 2. OCR | `ocrmac` accurate mode. **Upright detection:** if the median box is tall and narrow, rotate ±90° and keep the better pass. **Row grouping:** join observations whose vertical centers overlap, left to right. Emit `receipt.ocr_done` with a short preview. | ~0.5 s (1.6 s if rotated) |
+| 2. OCR | `ocrmac` accurate mode on the photo shrunk to **at most 2048 px** (4032 px phone photos OCR 2–2.5× slower with no gain; the stored photo stays full size). **Upright detection:** if the median box is tall and narrow, rotate ±90° and keep the better pass. **Row grouping:** join observations whose vertical centers overlap, left to right. Emit `receipt.ocr_done` with a short preview. | ~0.5 s (1.6 s if rotated) |
 | 3. Extraction | One qwen3:4b call over the grouped text, with the JSON Schema below. Goes through the **LLM queue** (questions have priority). | **10–17 s** warm |
 | 4. Derive | Code normalization and keyword rules (below), then VAT repair | ms |
 | 5. Checks | A pure function, re-run on every change | ms |
@@ -219,7 +219,9 @@ From [Checks and Disallowed Amount rules](.wayfinder/liquidation-review/issues/0
 - Claimable input VAT = the VAT of accepted receipts without NO_INPUT_VAT.
 
 **Liquidation lifecycle:**
-- `OPEN` → `APPROVED` (only with no open NEEDS_REVIEW; freezes totals).
+- `OPEN` → `APPROVED`: only when no receipt's **status** is NEEDS_REVIEW; it freezes totals.
+  - A NEEDS_REVIEW Finding on a receipt that is already REJECT doesn't block. Its whole amount is disallowed either way, and the first rehearsal showed the Reviewer otherwise had to confirm Findings that change nothing.
+  - `open_needs_review` counts those receipts.
 - `OPEN` → `RETURNED` (the open Findings are the reasons) → `OPEN` again via reopen.
 
 ---

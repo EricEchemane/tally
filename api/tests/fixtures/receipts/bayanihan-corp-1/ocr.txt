@@ -1,11 +1,11 @@
 *** DEMO ONLY ***
-MANDini St, Munt iniupa Cite
+ANDini St, Munt inlupa Cit
 VAT REG TIN: 987-654-321-00000
 SALES INVOICE
 Invoice No.  SI-000123
 Date  2026-10-09
 Bond Paper A4 (ream)
-2 X 202,00  570.00
+2 x 202,00  570.00
 Balpen Black (box)
 1 x 96.00  96.00
 TOTAL  PHP  666.00

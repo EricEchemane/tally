@@ -29,9 +29,15 @@ def health():
 
 @router.post("/admin/warmup")
 def warmup():
-    """Load the model and keep it resident (keep_alive -1)."""
+    """Load the model and keep it resident (keep_alive -1), and warm Apple Vision: the first OCR after
+    a start loads the framework (~1.5 s), which would otherwise land on the first live scan."""
     if config.FAKE_PIPELINE:
         return {"warmed": False, "reason": "fake pipeline"}
+    from PIL import Image
+
+    from pipeline.ocr import _recognize
+
+    _recognize(Image.new("RGB", (400, 600), "white"))
     try:
         httpx.post(f"{config.OLLAMA_URL}/api/generate",
                    json={"model": config.MODEL, "prompt": "", "keep_alive": -1}, timeout=120).raise_for_status()

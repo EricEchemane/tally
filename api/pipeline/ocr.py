@@ -41,8 +41,12 @@ def to_rows(obs: list[Observation]) -> str:
     return "\n".join("  ".join(t for _, t in sorted(r["items"])) for r in rows)
 
 
+OCR_MAX_SIDE = 2048  # full-resolution phone photos (4032 px) OCR 2–2.5x slower with no gain on receipts
+
+
 def ocr_image(path: str) -> OcrResult:
     img = Image.open(path).convert("RGB")
+    img.thumbnail((OCR_MAX_SIDE, OCR_MAX_SIDE))  # only shrinks; the stored photo stays full size
     obs, rotation = _recognize(img), 0
     if is_sideways(obs):
         best = None

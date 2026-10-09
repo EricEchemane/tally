@@ -59,7 +59,7 @@ def test_placeholder_liquidation_shape(client):
     liq = client.get(f"/api/liquidations/{_liquidation(client)}").json()
     assert set(liq) >= {"id", "status", "cash_advance", "totals", "open_needs_review", "receipts"}
     assert [r["status"] for r in liq["receipts"]] == ["REJECT", "NEEDS_REVIEW", "REJECT", "ACCEPTED"]
-    assert liq["totals"]["disallowed"] == 615.0 and liq["open_needs_review"] == 2
+    assert liq["totals"]["disallowed"] == 615.0 and liq["open_needs_review"] == 1   # receipts, not Findings
     r = client.get(liq["receipts"][0]["thumbnail_url"].replace("/image", "")).json()
     assert set(r) >= {"extraction", "derived", "corrections", "effective", "findings", "ocr_text"}
     assert client.get(liq["receipts"][0]["thumbnail_url"]).status_code == 200
