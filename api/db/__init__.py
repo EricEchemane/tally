@@ -21,7 +21,7 @@ _ADDED_COLUMNS = [("receipt", "checks_run", "INTEGER NOT NULL DEFAULT 0")]
 
 
 def init_db(conn: sqlite3.Connection) -> None:
-    conn.executescript(SCHEMA.read_text())
+    conn.executescript(SCHEMA.read_text(encoding="utf-8"))
     for table, column, decl in _ADDED_COLUMNS:
         if column not in {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}:
             conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {decl}")
