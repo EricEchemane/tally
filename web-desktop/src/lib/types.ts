@@ -58,7 +58,9 @@ export type Answer =
       links: { label: string; href: string }[];
       how: { question_id: number; question: string; period: { from: string; to: string } | null; slots?: Record<string, unknown> } }
   | { kind: "clarify"; sentence: string; choices: { label: string; text: string }[] }
-  | { kind: "unsupported"; sentence: string; supported: string[] };
+  | { kind: "unsupported"; sentence: string; supported: string[] }   // answers stored before replies existed
+  // Pre-written text (greeting, help, thanks, an explanation, or the polite refusal); never model-written.
+  | { kind: "reply"; sentence: string; body: string[]; suggestions: string[]; note: string | null };
 
 export interface Question { id: number; text: string; state: "queued" | "answering" | "done"; created_at: string; answer: Answer | null }
 

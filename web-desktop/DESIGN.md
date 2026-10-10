@@ -38,6 +38,7 @@ The decisions behind the desktop dashboard's look, and the reasons. Values (colo
 - **Numbers never animate:** an accounting screen never shows an amount that isn't real, so no count-up.
 - **Page changes crossfade** through React `<ViewTransition>`. Lists cascade. Dialogs scale in.
 - **Ask Tally** is the one expressive place: gradient button, springing panel, a thinking track, and answers revealed word by word. Everything else stays calm.
+- **Ask Tally introduces itself** on the empty panel ("Hi! I'm Tally." with the 7 questions as full-width chips). Replies that suggest questions show them as small accent chips; a click asks that exact text. Tally speaks in the first person, with no gender.
 - **Every action confirms itself:** a toast in the bottom-right corner (`toast()` in `src/lib/toast.ts`). Its icon draws in; it slides away after about 4 s, or 7 s for downloads with Show in Finder. Use one short title saying what happened ("Liquidation approved"), plus one line of consequence only when useful ("Totals are now frozen."). In-page notices carry an icon for their kind and fade in. A Liquidation's status pill pops when it changes.
 - **Reduce motion:** with macOS "Reduce motion" on, everything is instant except loading indicators.
 

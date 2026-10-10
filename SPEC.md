@@ -239,11 +239,24 @@ From [Question set and query approach](.wayfinder/liquidation-review/issues/07-q
 6. Receipts submitted twice
 7. What still needs my review
 
-Anything else gets "I can't answer that yet" plus the list.
+**Anything else gets a pre-written reply** (`questions/replies.py`), in English or Filipino/Taglish to match the message. The model only picks which one; it never writes reply text.
+
+| Message | Reply |
+|---|---|
+| Greeting ("Hi", "Kumusta") | First message in the history: Tally's introduction plus the 7 questions as clickable suggestions. Later: "Hi again! What would you like to know?" |
+| Help ("What can you do?", "Sino ka?") | The introduction |
+| Thanks ("Salamat!") | "You're welcome! Ask me anytime." |
+| What one of Tally's terms means | A fixed explanation of one of 12 topics: input VAT, the severities, why receipts are rejected (the six checks), Invoice vs Official Receipt, Buyer Details Rule, seller TIN, Spending Period, Amount to Return vs Excess Spend, Liquidation, the SLSP export, dismissing a finding, phone capture. "Why was this receipt rejected?" gets the checks explanation and a pointer to the receipt. |
+| Anything else, including attempts to change Tally's instructions | "Sorry, I can only help with your company's cash advances, receipts and liquidations. Try one of these:" plus 4 suggestions |
+
+A greeting together with a supported question is that question. The empty Ask Tally panel shows the introduction (`GET /api/questions/intro`).
+
+**What a message can't do.** The text is cleaned (NFKC, no control or bidi-override characters, at most 300 characters, rejected if empty), and at most 5 questions wait at once, since questions run ahead of receipts. The model sees it JSON-encoded, as data to classify. Its output is held to a JSON schema of enums and re-validated in code, so the worst a message can do is pick the wrong fixed reply or the wrong supported question. Answers come only from read-only, parameterized SQL templates, and the page shows them as text, never HTML.
 
 **How a question is answered** (`llm/question_picker.py`, `questions/service.py`):
-1. **The pick.** One qwen3:4b call returns `{question_id (0 = unsupported), employee, expense_category, period, days}`, about 30 output tokens. The prompt describes each question with Filipino synonyms and has 8 English/Filipino/Taglish examples. The output is validated in code; anything malformed becomes null or question 0.
+1. **The pick.** One qwen3:4b call returns `{question_id (0 = not a supported question), employee, expense_category, period, days, reply, topic, language}`, about 50 output tokens. The prompt describes each question with Filipino synonyms, each reply and topic, and has English/Filipino/Taglish examples, including injection attempts. The output is validated in code; anything malformed becomes null, question 0 or the off-topic reply.
    - **Measured on the Mac: 16/16 exact** on English, Filipino and Taglish phrasings, 10 of them outside the prompt's examples. **~2–3 s** per question (~6 s cold).
+   - **Measured on Windows (8 GB laptop, CPU), 2026-10-10: 34/34** with the replies added: the 16 questions, 10 replies from the examples and 8 outside them, among them 4 injection attempts. **~5 s** per message.
    - In fake pipeline mode, a keyword picker stands in for the model.
 2. `period` is `THIS_MONTH | LAST_MONTH | THIS_QUARTER | LAST_QUARTER | THIS_YEAR | MONTH:MM | MONTH:YYYY-MM | RANGE:a..b`. The model writes `MONTH:04` for "Abril", because it never knows the year. **Code resolves the dates** (`templates.resolve_period`; `MONTH:MM` = the most recent such month on or before today).
 3. **The Employee is resolved in code:** every word typed must start a word of the name, so "Juan" matches Juan Dela Cruz.
