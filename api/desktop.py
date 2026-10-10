@@ -121,6 +121,13 @@ def main() -> None:
     if web_dir.is_dir():
         mount_web(app, web_dir)
 
+    from urllib.parse import urlsplit
+
+    from lan_guard import LanGuard
+
+    # Only this computer uses Tally; other devices on the Wi-Fi reach the phone capture page and upload only.
+    app.add_middleware(LanGuard, own_hosts=lambda: {urlsplit(config.WEB_URL).hostname or "", lan_ip()})
+
     server = uvicorn.Server(uvicorn.Config(app, log_level="info"))
 
     def exit_on_stdin_close():
