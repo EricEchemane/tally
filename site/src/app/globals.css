@@ -154,13 +154,6 @@ details[open] .faq-answer { animation: panel-in 260ms var(--ease-out-expo); }
   animation: chooser-in 180ms var(--ease-out-expo);
 }
 
-/* Windows "coming" toast rises in from the bottom edge. */
-@keyframes toast-in {
-  from { opacity: 0; transform: translateY(12px) scale(0.96); }
-  to { opacity: 1; transform: none; }
-}
-.toast-in { animation: toast-in 280ms var(--ease-out-expo); }
-
 /* Demo video dialog: fades and settles in. */
 .demo-dialog[open] { animation: panel-in 320ms var(--ease-out-expo); }
 
@@ -180,5 +173,5 @@ details[open] .faq-answer { animation: panel-in 260ms var(--ease-out-expo); }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .panel-in, details[open] .faq-answer, .marquee, .hero-photo, .hero-chip, .chooser-in, .chat-play .chat-step, .toast-in, .demo-dialog[open] { animation: none; }
+  .panel-in, details[open] .faq-answer, .marquee, .hero-photo, .hero-chip, .chooser-in, .chat-play .chat-step, .demo-dialog[open] { animation: none; }
 }

@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono"
 // Display voice for headings, after the chunky headline in the Paynex reference (image.png).
 const bricolage = Bricolage_Grotesque({ subsets: ["latin"], variable: "--font-bricolage" });
 
-const TITLE = "Tally: BIR receipt checker for liquidation reports, offline on your Mac";
+const TITLE = "Tally: BIR receipt checker for liquidation reports, offline on your computer";
 const DESCRIPTION =
-  "Snap receipts with your phone and Tally checks each one in your cash advance liquidation against BIR rules, flags what needs a second look and exports the report. Private, offline AI that runs on your Mac; nothing goes to the cloud.";
+  "Snap receipts with your phone and Tally checks each one in your cash advance liquidation against BIR rules, flags what needs a second look and exports the report. Private, offline AI that runs on your Mac or Windows PC; nothing goes to the cloud.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

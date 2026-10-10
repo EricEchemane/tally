@@ -1,14 +1,11 @@
 "use client";
 import { AppleLogoIcon, CaretDownIcon, DownloadSimpleIcon, PlayIcon, WindowsLogoIcon, XIcon } from "@phosphor-icons/react";
-import { useEffect, useId, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
-import { createPortal } from "react-dom";
-import { DEMO_POSTER, DEMO_VIDEO_URL, DOWNLOAD_LABEL, DOWNLOAD_MAC_HREF, WINDOWS_COMING } from "@/lib/links";
+import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
+import { DEMO_POSTER, DEMO_VIDEO_URL, DOWNLOAD_LABEL, DOWNLOAD_MAC_HREF, DOWNLOAD_WINDOWS_HREF } from "@/lib/links";
 
 const base =
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold " +
   "transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98]";
-
-const noop = () => () => {};
 
 const TONES = {
   lime: "bg-lime text-lime-ink hover:bg-lime-hover",
@@ -18,7 +15,7 @@ const TONES = {
 /**
  * The page's one action: "Download the desktop app" opens a small chooser of platforms, Mac or Windows. A
  * disclosure (button + panel of links), not an ARIA menu: Escape and a click outside close it, and focus returns to
- * the button. Windows has no build yet, so its item only shows a toast saying it's coming.
+ * the button. Each item downloads that platform's installer from the GitHub release.
  */
 export function DownloadButton({
   className = "",
@@ -33,8 +30,6 @@ export function DownloadButton({
 }) {
   const [open, setOpen] = useState(false);
   const [animate, setAnimate] = useState(true);
-  const [toast, setToast] = useState(0);
-  const mounted = useSyncExternalStore(noop, () => true, () => false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -57,13 +52,6 @@ export function DownloadButton({
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
-
-  // Each click restarts the timer (the key is the click count), so the toast stays up 3 s after the last one.
-  useEffect(() => {
-    if (!toast) return;
-    const t = window.setTimeout(() => setToast(0), 3000);
-    return () => window.clearTimeout(t);
-  }, [toast]);
 
   function toggle(e: MouseEvent) {
     // A keyboard press (detail 0) opens instantly: keyboard-initiated UI never animates.
@@ -119,41 +107,21 @@ export function DownloadButton({
               <span className="block text-xs text-[#0f2b26]/60">macOS app</span>
             </span>
           </a>
-          <button
-            type="button"
-            onClick={() => {
-              setOpen(false);
-              setToast((n) => n + 1);
-            }}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-150 hover:bg-[#edf6e8] focus-visible:bg-[#edf6e8]"
+          <a
+            href={DOWNLOAD_WINDOWS_HREF}
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-[#edf6e8] focus-visible:bg-[#edf6e8]"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#0f2b26] text-white">
               <WindowsLogoIcon aria-hidden weight="fill" className="size-5" />
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-semibold">Download for Windows</span>
-              <span className="block text-xs text-[#0f2b26]/60">Coming soon</span>
+              <span className="block text-xs text-[#0f2b26]/60">Windows 11 app</span>
             </span>
-          </button>
+          </a>
         </div>
       )}
-
-      {/* Portalled: inside the header's backdrop blur, "fixed" would pin to the header, not the window. Always in
-          the DOM so screen readers hear the message when it is put in. */}
-      {mounted &&
-        createPortal(
-          <div role="status" className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
-            {toast > 0 && (
-              <p
-                key={toast}
-                className="toast-in rounded-full bg-[#0f2b26] px-5 py-3 text-sm font-medium text-white shadow-[0_18px_48px_rgb(15_43_38/0.28)]"
-              >
-                {WINDOWS_COMING}
-              </p>
-            )}
-          </div>,
-          document.body,
-        )}
     </div>
   );
 }

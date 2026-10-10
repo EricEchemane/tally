@@ -1,4 +1,4 @@
-export const REPO_URL = "https://github.com/EricEchemane/local-ai-project";
+export const REPO_URL = "https://github.com/EricEchemane/tally";
 
 /**
  * The site's public address, for canonical links, the sitemap and social previews. NEXT_PUBLIC_SITE_URL wins when
@@ -12,11 +12,12 @@ export const SITE_URL =
 
 /** Primary CTA: one button that opens a chooser of desktop platforms. */
 export const DOWNLOAD_LABEL = "Download the desktop app";
-/** Mac installer asset from the desktop-v0.1.0 GitHub release. */
+/** Installer assets from the desktop-v0.1.0 GitHub release. */
 export const MAC_DOWNLOAD_URL = `${REPO_URL}/releases/download/desktop-v0.1.0/Tally-mac-arm64.dmg`;
 export const DOWNLOAD_MAC_HREF = MAC_DOWNLOAD_URL;
-/** There is no Windows build yet: its chooser item only says so. */
-export const WINDOWS_COMING = "Tally for Windows is coming…";
+export const WINDOWS_DOWNLOAD_URL =
+  "https://github.com/EricEchemane/tally/releases/download/desktop-v0.1.0/Tally-windows-x64-setup.exe";
+export const DOWNLOAD_WINDOWS_HREF = WINDOWS_DOWNLOAD_URL;
 
 /**
  * Secondary CTA: the 83 s hackathon demo. Served from the R2 bucket's dev URL, which Cloudflare rate-limits; swap in

@@ -171,7 +171,7 @@ export function Hero() {
             leaves your laptop.
           </p>
           {/* The actions live in the nav (Download the desktop app, Watch the demo). */}
-          <p className="mt-5 text-sm text-[#0f2b26]/60">Available for Mac. Windows is coming.</p>
+          <p className="mt-5 text-sm text-[#0f2b26]/60">Available for Mac and Windows.</p>
         </div>
       </div>
     </section>

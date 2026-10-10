@@ -8,7 +8,7 @@ import { KeepTogether, SectionHeader, SectionShell } from "@/components/marketin
 import { PRIVACY_PROMISE } from "./Privacy";
 
 const NEEDS = [
-  { Icon: LaptopIcon, title: "A Mac with Apple Silicon", body: "M1 or newer, with 8 GB of memory. Windows is coming." },
+  { Icon: LaptopIcon, title: "A Mac or a Windows 11 PC", body: "A Mac with Apple Silicon (M1 or newer) or a 64-bit Windows 11 PC, with 8 GB of memory." },
   { Icon: DeviceMobileIcon, title: "Any phone with a camera", body: "On the same Wi-Fi as your computer." },
   { Icon: DownloadSimpleIcon, title: "Internet once", body: "Only to set up. After that, it works offline." },
 ];
@@ -45,7 +45,7 @@ const FAQ = [
   },
   { q: "Does the AI decide whether a receipt is valid?", a: "No. The AI only reads the receipt. Fixed BIR rules do the checking, and you make the final call." },
   { q: "Can I overrule a flag?", a: "Yes. Dismiss it and write a short reason. It stays on record as dismissed." },
-  { q: "What computer do I need?", a: "A Mac with Apple Silicon (M1 or newer), macOS 14 Sonoma or newer and 8 GB of memory. A Windows version is coming." },
+  { q: "What computer do I need?", a: "A Mac with Apple Silicon (M1 or newer) on macOS 14 Sonoma or newer, or a 64-bit Windows 11 PC. Either needs 8 GB of memory. Download the app for yours from the button at the top." },
   { q: "What does it cost?", a: "Tally is free while it's in its pilot." },
 ];
 
