@@ -92,6 +92,7 @@ def mount_web(app, web_dir: Path) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--data-dir", required=True)
+    ap.add_argument("--log-dir", help="desktop shell log directory")
     ap.add_argument("--port", type=int, default=PREFERRED_PORT)
     ap.add_argument("--web-dir", help="the static export of web/ (default: the bundled copy, if any)")
     a = ap.parse_args()
@@ -100,6 +101,8 @@ def main() -> None:
     port = sock.getsockname()[1]
     # config reads these at import, so they are set before the app is imported.
     os.environ["TALLY_DATA_DIR"] = a.data_dir
+    if a.log_dir:
+        os.environ["TALLY_LOG_DIR"] = a.log_dir
     os.environ.setdefault("TALLY_WEB_URL", f"http://{lan_ip()}:{port}")
     os.environ.setdefault("TALLY_SEED", "empty")  # the first-run setup fills in the Company
     Path(a.data_dir).mkdir(parents=True, exist_ok=True)

@@ -2,7 +2,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { api, errorMessage } from "@/lib/api";
-import { useCaptureLink } from "@/lib/queries";
+import { useCaptureLink, useFirewall, type Firewall } from "@/lib/queries";
 import { Dialog } from "./Dialog";
 import { Button, Card, CardHeader, cx, Notice, Spinner } from "./ui";
 import { toast } from "@/lib/toast";
@@ -99,7 +99,44 @@ export function CapturePanel({ liquidationId }: { liquidationId: number }) {
         ) : (
           <div className="shimmer size-60 rounded-2xl" />
         )}
+        <FirewallNotice />
       </div>
     </Card>
+  );
+}
+
+/** Windows: if the installer's firewall prompt was declined, the phone can't connect. Say so and offer to fix it. */
+function FirewallNotice() {
+  const qc = useQueryClient();
+  const firewall = useFirewall();
+  const allow = useMutation({
+    mutationFn: () => api.post<Firewall>("/api/setup/firewall", {}),
+    onSuccess: (r) => qc.setQueryData(["firewall"], r),
+  });
+  if (!firewall.data?.applies) return null;
+  if (firewall.data.allowed && firewall.data.public_network) {
+    // The allow rule covers Private networks only, so a Public Wi-Fi still blocks the phone.
+    return (
+      <Notice tone="warn" className="w-full">
+        <p className="font-medium">Your Wi-Fi is set to Public</p>
+        <p className="mt-1">
+          Windows blocks phones on public networks. If this is your office Wi-Fi, open Settings, then Network &amp; internet,
+          then Wi-Fi, choose this network and set it to Private.
+        </p>
+      </Notice>
+    );
+  }
+  if (firewall.data.allowed) return null;
+  return (
+    <Notice tone="warn" className="w-full">
+      <p className="font-medium">Phone capture is blocked by Windows Firewall</p>
+      <p className="mt-1">Your phone can&apos;t reach Tally until Windows allows it on your private office network.</p>
+      <Button size="sm" variant="secondary" className="mt-3" busy={allow.isPending} onClick={() => allow.mutate()}>
+        Allow
+      </Button>
+      {allow.isSuccess && !allow.data.allowed && (
+        <p className="mt-2">Windows didn&apos;t allow it. Click Allow and choose Yes, or ask an administrator.</p>
+      )}
+    </Notice>
   );
 }

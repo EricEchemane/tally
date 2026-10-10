@@ -1,7 +1,7 @@
 "use client";
-// Download feedback. Inside the Mac app, a download saves straight to ~/Downloads and the shell sends a
-// `tally:download` event when the file is written (desktop/src-tauri/src/lib.rs). The button spins until
-// then; a toast says where the file went and offers Show in Finder. In a plain browser, downloads behave
+// Download feedback. Inside the desktop app, a download saves straight to the OS Downloads folder and the shell
+// sends a `tally:download` event when the file is written (desktop/src-tauri/src/lib.rs). The button spins until
+// then; a toast says where the file went and offers Show location. In a plain browser, downloads behave
 // as the browser does and nothing here shows.
 import { useEffect, useState } from "react";
 import { Button, ButtonLink, cx } from "./ui";

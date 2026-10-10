@@ -1,6 +1,6 @@
 "use client";
 // Bottom-right confirmations: actions (toast() in lib/toast.ts) and finished downloads (the Mac app's
-// `tally:download` event, with Show in Finder). Each slides up, its icon draws in, and it slides away.
+// `tally:download` event, with a link to the saved file). Each slides up, its icon draws in, and it slides away.
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ToastDetail, ToastTone } from "@/lib/toast";
@@ -62,7 +62,7 @@ export function Toasts() {
             {t.reveal && (
               <button type="button" className="mt-2 text-sm font-medium text-accent hover:underline"
                 onClick={() => api.post("/api/setup/reveal", { path: t.reveal }).catch(() => undefined)}>
-                Show in Finder
+                Show location
               </button>
             )}
           </div>

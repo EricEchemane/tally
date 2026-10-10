@@ -6,6 +6,7 @@ ROOT = Path(__file__).resolve().parent
 DATA_DIR = Path(os.environ.get("TALLY_DATA_DIR", ROOT / "data"))
 DB_PATH = Path(os.environ.get("TALLY_DB", DATA_DIR / "tally.db"))
 IMAGES_DIR = DATA_DIR / "images"
+LOG_DIR = Path(os.environ.get("TALLY_LOG_DIR", DATA_DIR / "logs"))
 
 # Windows/dev: skip ocrmac + Ollama and serve committed fixtures instead.
 FAKE_PIPELINE = os.environ.get("TALLY_FAKE_PIPELINE", "0") == "1"

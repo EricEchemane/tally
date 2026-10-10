@@ -8,11 +8,14 @@ from PyInstaller.utils.hooks import collect_all
 
 datas = [("db/schema.sql", "db")]
 binaries = []
-hiddenimports = ["ocrmac", "ocrmac.ocrmac", "pillow_heif"]
+hiddenimports = ["pillow_heif"]
 
 # Lazily imported, no PyInstaller hooks: Apple Vision through pyobjc (macOS) and libheif.
-packages = ["pillow_heif"] + (["objc", "Foundation", "Quartz", "Vision", "CoreML", "AppKit", "ocrmac"]
-                              if sys.platform == "darwin" else [])
+packages = ["pillow_heif"]
+if sys.platform == "darwin":
+    packages += ["objc", "Foundation", "Quartz", "Vision", "CoreML", "AppKit", "ocrmac"]
+elif sys.platform == "win32":
+    packages += ["rapidocr_onnxruntime", "onnxruntime"]
 for pkg in packages:
     d, b, h = collect_all(pkg)
     datas, binaries, hiddenimports = datas + d, binaries + b, hiddenimports + h

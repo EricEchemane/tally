@@ -16,7 +16,8 @@
     "active": true,
     "targets": [
       "app",
-      "dmg"
+      "dmg",
+      "nsis"
     ],
     "category": "Business",
     "icon": [
@@ -46,6 +47,12 @@
           "x": 480,
           "y": 170
         }
+      }
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "installerHooks": "./windows/installer-hooks.nsh"
       }
     }
   }

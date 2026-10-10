@@ -43,9 +43,15 @@ def test_clean_invoice_has_no_findings():
     ({"vat_amount": 1000}, ("VAT_ARITHMETIC", "mismatch", "NEEDS_REVIEW")),
     ({"vatable_sales": None, "vat_amount": None}, ("VAT_ARITHMETIC", "no_breakdown", "NEEDS_REVIEW")),
     ({"total": None}, ("VAT_ARITHMETIC", "total_missing", "NEEDS_REVIEW")),
+    # adds up only because no VAT was read (Windows OCR dropped ₱11.25 on a torn receipt)
+    ({"vatable_sales": 0, "vat_amount": 0, "vat_exempt_sales": 35500}, ("VAT_ARITHMETIC", "zero_vat", "NEEDS_REVIEW")),
+    # "VAT Reg" lost to OCR on a torn receipt, so nothing says whether VAT applies
+    ({"vat_registered": None, "vat_amount": 0}, ("VAT_ARITHMETIC", "vat_status_unknown", "NEEDS_REVIEW")),
     # 6. Date
     ({"date": "2026-03-29"}, ("DATE", "outside_period", "REJECT")),
     ({"date": "2026-05-03"}, ("DATE", "outside_period", "REJECT")),
+    ({"date": "2018-04-03"}, ("DATE", "outside_period", "REJECT")),   # a genuinely old receipt is evidence
+    ({"date": "2608-09-11"}, ("DATE", "implausible", "NEEDS_REVIEW")),   # "26" misread: never auto-REJECT
     ({"date": None}, ("DATE", "missing", "NEEDS_REVIEW")),
 ])
 def test_each_condition(overrides, expected):

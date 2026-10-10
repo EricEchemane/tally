@@ -11,7 +11,6 @@ from pipeline.derive import duplicate_key, vat_arithmetic_ok
 
 BUYER_DETAILS_MIN = 100_000  # ₱1,000.00, the legal minimum for AT_1000_AND_ABOVE
 
-
 @dataclass(frozen=True)
 class Finding:
     check: str          # DOC_TYPE | SELLER_TIN | BUYER_DETAILS | VAT_ARITHMETIC | DUPLICATE | DATE
@@ -105,6 +104,14 @@ def run_checks(r: dict, receipt_id: int, image_hash: str, ctx: Context, others: 
             add(Finding("VAT_ARITHMETIC", "mismatch", "NEEDS_REVIEW",
                         f"Amounts don't add up (VATable {_peso(r.get('vatable_sales'))}, VAT {_peso(r.get('vat_amount'))}, "
                         f"total {_peso(total)}): likely misread, confirm them", total))
+        elif not r.get("vat_amount") and total:
+            # Adds up only because nothing was read as VAT; accepting it would silently drop the input VAT.
+            add(Finding("VAT_ARITHMETIC", "zero_vat", "NEEDS_REVIEW",
+                        "VAT-registered seller but no VAT read: confirm the VAT, or that the sale is VAT-exempt", total))
+    elif r.get("vat_registered") is None and not r.get("vat_amount"):
+        # Neither "VAT Reg" nor "Non-VAT" was read, and no VAT: accepting would silently drop any input VAT.
+        add(Finding("VAT_ARITHMETIC", "vat_status_unknown", "NEEDS_REVIEW",
+                    "Couldn't tell whether the seller is VAT-registered: confirm the VAT", total))
 
     return out + _duplicate(r, receipt_id, image_hash, others, total) + _date(r, ctx, total)
 
@@ -133,6 +140,11 @@ def _date(r, ctx: Context, total) -> list[Finding]:
         d = dt.date.fromisoformat(date)
     except ValueError:
         return [Finding("DATE", "missing", "NEEDS_REVIEW", f"Receipt date '{date}' is not a date: confirm it", total)]
+    # A year after the Spending Period's next year (e.g. "26" read as 2608) can't be printed: it's a misread,
+    # not evidence. Old dates stay outside_period: a genuinely old receipt is printed evidence.
+    if d.year > dt.date.fromisoformat(ctx.spending_end_on).year + 1:
+        return [Finding("DATE", "implausible", "NEEDS_REVIEW",
+                        f"Dated {d.isoformat()}, which looks misread: confirm the date", total)]
     if not ctx.released_on <= d.isoformat() <= ctx.spending_end_on:
         return [Finding("DATE", "outside_period", "REJECT",
                         f"Dated {d.isoformat()}, outside the Spending Period {ctx.released_on} to {ctx.spending_end_on}",
