@@ -180,6 +180,24 @@ function AnswerView({ a, onAsk, onNavigate }: { a: Answer; onAsk: (t: string) =>
       </div>
     );
   }
+  if (a.kind === "reply") {
+    return (
+      <div className="space-y-2">
+        <p className="font-medium">{a.sentence}</p>
+        {a.body.map((p) => <p key={p}>{p}</p>)}
+        {a.suggestions.length > 0 && (
+          <ul className="space-y-1">
+            {a.suggestions.map((s) => (
+              <li key={s}>
+                <button type="button" className="text-left text-accent hover:underline" onClick={() => onAsk(s)}>{s}</button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {a.note && <p className="text-xs text-muted">{a.note}</p>}
+      </div>
+    );
+  }
   const { columns, rows } = a.table;
   return (
     <div className="space-y-3">

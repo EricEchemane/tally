@@ -27,6 +27,14 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
   const input = useRef<HTMLInputElement>(null);
   const bottom = useRef<HTMLDivElement>(null);
 
+  // Tally introduces itself on the empty panel: the same pre-written text "Hi" gets.
+  const intro = useQuery({
+    queryKey: ["questions", "intro"],
+    queryFn: () => api.get<Extract<Answer, { kind: "reply" }>>("/api/questions/intro"),
+    enabled: open,
+    staleTime: Infinity,
+  });
+
   const history = useQuery({
     queryKey: ["questions"],
     queryFn: () => api.get<Question[]>("/api/questions"),
@@ -84,7 +92,7 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
             <span className="ask-button grid size-9 shrink-0 place-items-center rounded-full text-white"><Sparkle className="twinkle size-5" /></span>
             <div>
               <h2 className="text-base font-semibold">Ask Tally</h2>
-              <p className="text-xs text-muted">English or Taglish. Answered on this computer from your records.</p>
+              <p className="text-xs text-muted">English, Filipino or Taglish. Answered on this computer from your records.</p>
             </div>
           </div>
           <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">✕</Button>
@@ -96,12 +104,16 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
             <div className="space-y-6 pt-6">
               <div className="space-y-2 text-center">
                 <span className="ask-button mx-auto grid size-14 place-items-center rounded-full text-white"><Sparkle className="twinkle size-8" /></span>
-                <p className="text-xl font-semibold tracking-tight">What do you want to know?</p>
-                <p className="text-sm text-muted">Ask about your Cash Advances, receipts and lost input VAT.</p>
+                <p className="text-xl font-semibold tracking-tight">{intro.data ? "Hi! I'm Tally." : "What do you want to know?"}</p>
+                <p className="text-sm text-muted text-pretty">
+                  {intro.data
+                    ? intro.data.sentence.replace(/^Hi! I'm Tally\.\s*/, "")
+                    : "Ask about your Cash Advances, receipts and lost input VAT."}
+                </p>
               </div>
               {/* key: the chips float in again every time the panel opens */}
               <div key={String(open)} className="stagger space-y-2">
-                {EXAMPLES.map((ex) => (
+                {(intro.data?.suggestions ?? EXAMPLES).map((ex) => (
                   <button key={ex} type="button" onClick={() => submit(ex)}
                     className="group flex w-full items-center justify-between gap-3 rounded-full border border-line bg-surface px-4 py-2.5 text-left text-sm transition-[border-color,transform,background-color] duration-150 hover:-translate-y-px hover:border-accent/50 hover:bg-accent-soft/40">
                     {ex}
@@ -109,6 +121,7 @@ export function QuestionsPanel({ open, onClose }: { open: boolean; onClose: () =
                   </button>
                 ))}
               </div>
+              {intro.data?.note && <p className="text-center text-xs text-muted">{intro.data.note}</p>}
             </div>
           )}
           {items.map((q) => <Exchange key={q.id} q={q} fresh={asked.includes(q.id)} onAsk={submit} onNavigate={onClose} />)}
@@ -214,6 +227,20 @@ function Sentence({ text, reveal }: { text: string; reveal: boolean }) {
   );
 }
 
+/** Questions Tally can answer, one click each (the text is asked exactly as shown). */
+function Suggestions({ items, onAsk }: { items: string[]; onAsk: (t: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((s) => (
+        <button key={s} type="button" onClick={() => onAsk(s)}
+          className="rounded-full border border-line px-3 py-1 text-left text-xs text-accent transition-colors duration-150 hover:border-accent/50 hover:bg-accent-soft/40">
+          {s}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function AnswerView({ a, onAsk, onNavigate, reveal }: { a: Answer; onAsk: (t: string) => void; onNavigate: () => void; reveal: boolean }) {
   if (a.kind === "clarify") {
     return (
@@ -231,13 +258,23 @@ function AnswerView({ a, onAsk, onNavigate, reveal }: { a: Answer; onAsk: (t: st
     return (
       <div className="space-y-2">
         <p>{a.sentence}</p>
-        <ul className="space-y-1">
-          {a.supported.map((s) => (
-            <li key={s}>
-              <button type="button" className="text-left text-accent hover:underline" onClick={() => onAsk(s)}>{s}</button>
-            </li>
-          ))}
-        </ul>
+        <Suggestions items={a.supported} onAsk={onAsk} />
+      </div>
+    );
+  }
+  if (a.kind === "reply") {
+    const words = a.sentence.split(/\s+/).length;
+    const after = reveal ? { animationDelay: `${Math.min(words * 28, 700) + 150}ms` } : undefined;
+    return (
+      <div className="space-y-2.5">
+        <Sentence text={a.sentence} reveal={reveal} />
+        {(a.body.length > 0 || a.suggestions.length > 0 || a.note) && (
+          <div className={cx("space-y-2.5", reveal && "after-words")} style={after}>
+            {a.body.map((p) => <p key={p} className="leading-relaxed text-pretty">{p}</p>)}
+            {a.suggestions.length > 0 && <Suggestions items={a.suggestions} onAsk={onAsk} />}
+            {a.note && <p className="text-xs text-muted">{a.note}</p>}
+          </div>
+        )}
       </div>
     );
   }

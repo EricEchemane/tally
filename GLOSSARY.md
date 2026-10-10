@@ -85,8 +85,8 @@ A Reviewer's replacement for one value of an extraction; where it exists, it is 
 _Avoid_: Edit, override, fix
 
 **Assistant**:
-The part of the app the Reviewer talks to in plain words, offline on their own computer; it answers from the Company's own records and shows how each answer was worked out. It reads and explains; it never changes a record.
-_Avoid_: Chatbot, AI assistant, bot
+The part of the app the Reviewer talks to in plain words, offline on their own computer; it answers from the Company's own records and shows how each answer was worked out. It reads and explains; it never changes a record. It speaks as "Tally", in the first person, with no gender, and never claims to be a person.
+_Avoid_: Chatbot, AI assistant, bot, "she"/"he"
 
 **Check**:
 One rule applied to a receipt or a liquidation, such as "buyer TIN matches the company".
@@ -131,5 +131,9 @@ _Avoid_: Overspend, reimbursement, negative balance
 ## Asking
 
 **Ask Tally**:
-Asking a plain-language question (English or Taglish) about the Company's own liquidations and getting an answer drawn only from that data, with a note of how it was found.
+Asking a plain-language question (English, Filipino or Taglish) and getting either an answer drawn only from the Company's own liquidations, with a note of how it was found, or a fixed, pre-written reply: an introduction of what Tally can do, an explanation of one of Tally's own terms, or a polite pointer back to what it can answer. Tally never makes up a reply.
 _Avoid_: Tally AI, chatbot, chat
+
+**Supported Question**:
+One of the fixed questions Ask Tally answers from the Company's data, such as "What still needs my review"; anything else gets a pre-written reply, never a computed one.
+_Avoid_: Query, command, intent

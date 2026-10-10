@@ -10,14 +10,25 @@ import sqlite3
 
 import config
 from llm.question_picker import Pick, pick
-from questions import templates
+from questions import replies, templates
 from questions.templates import SUPPORTED
 
 NEEDS_EMPLOYEE = {3}  # question 3 takes an optional Employee
 
 
-def unsupported(sentence: str = "I can't answer that yet. These are the questions Tally can answer:") -> dict:
-    return {"kind": "unsupported", "sentence": sentence, "supported": list(SUPPORTED.values())}
+def _reply(conn: sqlite3.Connection, question_id: int, p: Pick) -> dict:
+    """Anything that isn't a Supported Question gets a pre-written reply; nothing here comes from the model."""
+    lang = p.language if p.language in ("en", "fil") else "en"
+    if p.reply == "GREETING":
+        first = conn.execute("SELECT 1 FROM question WHERE id < ? LIMIT 1", (question_id,)).fetchone() is None
+        return replies.greeting(lang, first)
+    if p.reply == "HELP":
+        return replies.intro(lang)
+    if p.reply == "THANKS":
+        return replies.thanks(lang)
+    if p.reply == "EXPLAIN" and p.topic:
+        return replies.explain(p.topic, lang)
+    return replies.off_topic(lang)
 
 
 def resolve_employee(conn: sqlite3.Connection, name: str) -> list[sqlite3.Row]:
@@ -64,7 +75,7 @@ async def answer(conn: sqlite3.Connection, question_id: int) -> dict:
 
     p = await asyncio.to_thread(pick, text)
     if p.question_id == 0:
-        result = unsupported()
+        result = _reply(conn, question_id, p)
     else:
         slots, result = build_slots(conn, text, p)
         if result is None:
