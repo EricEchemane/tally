@@ -2,6 +2,7 @@ import { CheckIcon, QrCodeIcon } from "@phosphor-icons/react/dist/ssr";
 import Image from "next/image";
 import { SectionHeader, SectionShell } from "@/components/marketing";
 import { AppWindow, DEMO, Money, SampleNote, SeverityPill, StatusPill, WorkingPill } from "@/components/product";
+import { DEMO_POSTER, DEMO_VIDEO_URL } from "@/lib/links";
 import demoInvoice from "../../../public/receipts/demo-invoice.jpg";
 import { StepTabs, type Step } from "./StepTabs";
 
@@ -147,6 +148,16 @@ export function HowItWorks() {
   return (
     <SectionShell tone="plain" id="how-it-works" labelledBy="how-title">
       <SectionHeader id="how-title" label="How it works" title="From a pile of receipts to an approved liquidation." />
+      {/* The whole flow in 83 s. preload="none": the 138 MB file loads only when someone presses play. */}
+      <video
+        src={DEMO_VIDEO_URL}
+        poster={DEMO_POSTER}
+        controls
+        preload="none"
+        playsInline
+        aria-label="Tally demo video"
+        className="mb-12 aspect-[1728/1080] w-full rounded-3xl bg-black shadow-card ring-1 ring-line"
+      />
       <StepTabs steps={STEPS} />
       <div className="mt-10">
         <SampleNote />

@@ -1,11 +1,14 @@
 "use client";
-import { AppleLogoIcon, CaretDownIcon, DownloadSimpleIcon, PlayIcon, WindowsLogoIcon } from "@phosphor-icons/react";
-import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
-import { DEMO_HREF, DOWNLOAD_LABEL, DOWNLOAD_MAC_HREF, DOWNLOAD_WINDOWS_HREF } from "@/lib/links";
+import { AppleLogoIcon, CaretDownIcon, DownloadSimpleIcon, PlayIcon, WindowsLogoIcon, XIcon } from "@phosphor-icons/react";
+import { useEffect, useId, useRef, useState, useSyncExternalStore, type MouseEvent } from "react";
+import { createPortal } from "react-dom";
+import { DEMO_POSTER, DEMO_VIDEO_URL, DOWNLOAD_LABEL, DOWNLOAD_MAC_HREF, WINDOWS_COMING } from "@/lib/links";
 
 const base =
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold " +
   "transition-[background-color,color,transform] duration-150 ease-out active:scale-[0.98]";
+
+const noop = () => () => {};
 
 const TONES = {
   lime: "bg-lime text-lime-ink hover:bg-lime-hover",
@@ -15,7 +18,7 @@ const TONES = {
 /**
  * The page's one action: "Download the desktop app" opens a small chooser of platforms, Mac or Windows. A
  * disclosure (button + panel of links), not an ARIA menu: Escape and a click outside close it, and focus returns to
- * the button.
+ * the button. Windows has no build yet, so its item only shows a toast saying it's coming.
  */
 export function DownloadButton({
   className = "",
@@ -30,6 +33,8 @@ export function DownloadButton({
 }) {
   const [open, setOpen] = useState(false);
   const [animate, setAnimate] = useState(true);
+  const [toast, setToast] = useState(0);
+  const mounted = useSyncExternalStore(noop, () => true, () => false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
   const panelId = useId();
@@ -52,6 +57,13 @@ export function DownloadButton({
       document.removeEventListener("keydown", onKey);
     };
   }, [open]);
+
+  // Each click restarts the timer (the key is the click count), so the toast stays up 3 s after the last one.
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(0), 3000);
+    return () => window.clearTimeout(t);
+  }, [toast]);
 
   function toggle(e: MouseEvent) {
     // A keyboard press (detail 0) opens instantly: keyboard-initiated UI never animates.
@@ -107,26 +119,50 @@ export function DownloadButton({
               <span className="block text-xs text-[#0f2b26]/60">macOS app</span>
             </span>
           </a>
-          <a
-            href={DOWNLOAD_WINDOWS_HREF}
-            onClick={() => setOpen(false)}
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors duration-150 hover:bg-[#edf6e8] focus-visible:bg-[#edf6e8]"
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              setToast((n) => n + 1);
+            }}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition-colors duration-150 hover:bg-[#edf6e8] focus-visible:bg-[#edf6e8]"
           >
             <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-[#0f2b26] text-white">
               <WindowsLogoIcon aria-hidden weight="fill" className="size-5" />
             </span>
             <span className="min-w-0">
               <span className="block text-sm font-semibold">Download for Windows</span>
-              <span className="block text-xs text-[#0f2b26]/60">Windows app</span>
+              <span className="block text-xs text-[#0f2b26]/60">Coming soon</span>
             </span>
-          </a>
+          </button>
         </div>
       )}
+
+      {/* Portalled: inside the header's backdrop blur, "fixed" would pin to the header, not the window. Always in
+          the DOM so screen readers hear the message when it is put in. */}
+      {mounted &&
+        createPortal(
+          <div role="status" className="pointer-events-none fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
+            {toast > 0 && (
+              <p
+                key={toast}
+                className="toast-in rounded-full bg-[#0f2b26] px-5 py-3 text-sm font-medium text-white shadow-[0_18px_48px_rgb(15_43_38/0.28)]"
+              >
+                {WINDOWS_COMING}
+              </p>
+            )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }
 
-/** Secondary action: the dark pill beside the download button, as in the reference hero. */
+/**
+ * Secondary action: the dark pill beside the download button, as in the reference hero. It plays the demo video in a
+ * modal <dialog>, which gives Escape-to-close, a focus trap and focus returning to the button. The video is mounted
+ * only while open, so nothing downloads until someone asks for it, and it stops when closed.
+ */
 export function DemoButton({
   className = "",
   compact = false,
@@ -136,13 +172,53 @@ export function DemoButton({
   compact?: boolean;
   tone?: keyof typeof TONES;
 }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (open) dialog.current?.showModal();
+  }, [open]);
+
   return (
-    <a
-      href={DEMO_HREF}
-      className={`${base} ${TONES[tone]} ${compact ? "h-11 px-5 text-sm" : "h-12 px-6 text-[0.9375rem]"} ${className}`}
-    >
-      <PlayIcon aria-hidden weight="fill" className="size-4" />
-      Watch the demo
-    </a>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className={`${base} ${TONES[tone]} ${compact ? "h-11 px-5 text-sm" : "h-12 px-6 text-[0.9375rem]"} ${className}`}
+      >
+        <PlayIcon aria-hidden weight="fill" className="size-4" />
+        Watch the demo
+      </button>
+
+      {open && (
+        <dialog
+          ref={dialog}
+          aria-label="Tally demo video"
+          onClose={() => setOpen(false)}
+          // A click on the backdrop lands on the dialog itself, not on its content.
+          onClick={(e) => e.target === e.currentTarget && dialog.current?.close()}
+          className="demo-dialog m-auto w-[min(64rem,calc(100vw-2rem),calc((100dvh-9rem)*1.6))] overflow-visible bg-transparent p-0 backdrop:bg-black/75 backdrop:backdrop-blur-sm"
+        >
+          <div className="relative">
+            <button
+              type="button"
+              aria-label="Close video"
+              onClick={() => dialog.current?.close()}
+              className="absolute -top-14 right-0 grid size-11 place-items-center rounded-full bg-white/15 text-white ring-1 ring-white/25 backdrop-blur-md transition-colors hover:bg-white/25"
+            >
+              <XIcon aria-hidden weight="bold" className="size-5" />
+            </button>
+            <video
+              src={DEMO_VIDEO_URL}
+              poster={DEMO_POSTER}
+              controls
+              autoPlay
+              playsInline
+              className="aspect-[1728/1080] w-full rounded-2xl bg-black shadow-[0_24px_80px_rgb(0_0_0/0.5)]"
+            />
+          </div>
+        </dialog>
+      )}
+    </>
   );
 }
