@@ -40,4 +40,15 @@ export const useCaptureLink = (id: number) =>
     staleTime: Infinity,
   });
 
-export const useQuestions = () => useQuery({ queryKey: ["questions"], queryFn: () => api.get<Question[]>("/api/questions") });
+export type Firewall = { applies: boolean; allowed: boolean; public_network: boolean };
+
+// Desktop app only (Windows): whether phone capture can get through Windows Firewall. Fails quietly elsewhere.
+export const useFirewall = () =>
+  useQuery({
+    queryKey: ["firewall"],
+    queryFn: () => api.get<Firewall>("/api/setup/firewall"),
+    retry: false,
+    staleTime: 60_000,
+  });
+
+export const useQuestions =() => useQuery({ queryKey: ["questions"], queryFn: () => api.get<Question[]>("/api/questions") });

@@ -27,3 +27,9 @@ Also settle, from the research: the app-data folder name (Tauri defaults to the 
 - **DMG:** a drag-to-Applications window that also shows the steps for opening an unsigned app the first time.
 - **Closing the window quits Tally,** which stops the backend. A tray mode is not built.
 - **Not tested:** a real Ollama install from scratch (this Mac has Homebrew Ollama), and Gatekeeper with a DMG downloaded on another Mac.
+
+## Windows decisions
+
+**2026-10-10:** The Windows installer requests an administrator-approved firewall allow rule so the phone capture page is reachable on the office Wi-Fi. During unsigned pilots, updates are manual downloads. Before applying a database migration, Tally creates a local backup. If Ollama or the model cannot download during setup, Tally completes setup in review-and-exports mode and labels scanning “Waiting for local AI” until the Reviewer resumes setup.
+
+The pilot ships through an NSIS installer. When another Ollama model occupies memory, Tally warns the Reviewer and waits without changing that model. “Export diagnostics” writes a local ZIP of redacted logs and app-version details, excluding the database and receipt images. Release requires a successful clean install, first-run setup, phone upload, processed receipt, approval and both exports on Windows 10 and Windows 11.

@@ -4,7 +4,9 @@ Ported from the M1 benchmark (.wayfinder/liquidation-review/research/03-m1-bench
 ocrmac is imported lazily so the app still starts on Windows (fake pipeline mode).
 """
 import statistics
+import sys
 from dataclasses import dataclass
+from functools import lru_cache
 
 from PIL import Image
 
@@ -20,10 +22,48 @@ class OcrResult:
     rotation: int      # degrees applied to make the image upright (0, 90 or -90)
 
 
-def _recognize(img: Image.Image) -> list[Observation]:
+def _recognize_macos(img: Image.Image) -> list[Observation]:
     from ocrmac import ocrmac  # macOS only
 
     return ocrmac.OCR(img, recognition_level="accurate", language_preference=["en-US"]).recognize()
+
+
+@lru_cache(maxsize=1)
+def _windows_engine():
+    """Load RapidOCR's local ONNX models once per sidecar process.
+
+    Tuned on the receipt fixtures against Apple Vision (DESKTOP.md): the slow box score and no dilation keep
+    tilted, tightly packed header lines (address, TIN) apart instead of merging or dropping them."""
+    from rapidocr_onnxruntime import RapidOCR
+
+    return RapidOCR(det_score_mode="slow", det_box_thresh=0.4, det_use_dilation=False)
+
+
+def _recognize_windows(img: Image.Image) -> list[Observation]:
+    """Normalize RapidOCR's top-left pixel boxes to Vision's bottom-left coordinate shape."""
+    import numpy as np
+
+    result, _ = _windows_engine()(np.asarray(img.convert("RGB")))
+    if not result:
+        return []
+    width, height = img.size
+    observations: list[Observation] = []
+    for box, text, confidence in result:
+        text = str(text).strip()
+        if not text:
+            continue
+        xs = [point[0] for point in box]
+        ys = [point[1] for point in box]
+        left, right = min(xs), max(xs)
+        top, bottom = min(ys), max(ys)
+        observations.append((text, float(confidence), (
+            left / width, 1 - bottom / height, (right - left) / width, (bottom - top) / height,
+        )))
+    return observations
+
+
+def _recognize(img: Image.Image) -> list[Observation]:
+    return _recognize_windows(img) if sys.platform == "win32" else _recognize_macos(img)
 
 
 def is_sideways(obs: list[Observation]) -> bool:

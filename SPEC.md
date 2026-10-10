@@ -182,10 +182,13 @@ From [Checks and Disallowed Amount rules](.wayfinder/liquidation-review/issues/0
 | 4 | VAT arithmetic (VAT-registered; ±₱0.05; after repair) | VATable × 12% ≠ VAT, or the parts ≠ total | NEEDS_REVIEW |
 | | | Total not found (any receipt) | NEEDS_REVIEW |
 | | | No VAT breakdown | NEEDS_REVIEW (Reviewer confirms as REJECT or NO_INPUT_VAT) |
+| | | Adds up but no VAT read (₱0 or none) | NEEDS_REVIEW (confirm the VAT, or that the sale is VAT-exempt) |
+| | | Neither "VAT Reg" nor "Non-VAT" read, and no VAT (any seller) | NEEDS_REVIEW |
 | | | Auto-repaired | accepted, with an "auto-corrected" note |
 | 5 | Duplicate | Same `duplicate_key` (seller TIN + branch + invoice number) or `image_hash` in **any** Liquidation | REJECT on the later one, naming the earlier |
 | 6 | Date | Outside the Spending Period (`released_on`..`spending_end_on`, inclusive) | REJECT |
 | | | Date missing | NEEDS_REVIEW |
+| | | Year after the Spending Period's next year (a misread, e.g. "26" as 2608) | NEEDS_REVIEW, never REJECT |
 
 - The checks are a pure function, `checks.engine.run_checks(effective_receipt, ...) -> findings` (amounts in centavos). `checks.service.recheck_open` persists them.
 - **When the checks run:** every processed receipt in every OPEN Liquidation is re-checked after:

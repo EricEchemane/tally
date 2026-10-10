@@ -132,6 +132,11 @@ function DataCard() {
           <span className="text-sm text-muted">Save the file somewhere safe, such as a USB drive.</span>
         </div>
 
+        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-6">
+          <DownloadButton href="/api/setup/diagnostics" variant="secondary">Export diagnostics</DownloadButton>
+          <span className="text-sm text-muted">Includes redacted logs and version details, never your receipt photos or data.</span>
+        </div>
+
         <div className="space-y-3 border-t border-line pt-6">
           <p className="text-sm font-medium">Restore from a backup</p>
           <p className="text-sm text-muted">This replaces everything in Tally with the backup. Your current data is backed up automatically first.</p>

@@ -12,7 +12,7 @@ FIXTURES = Path(__file__).resolve().parents[1] / "tests" / "fixtures" / "receipt
 
 
 class RealBackend:
-    """Apple Vision OCR + qwen3:4b. macOS only."""
+    """Apple Vision OCR on macOS or RapidOCR on Windows, then qwen3:4b."""
 
     async def ocr(self, image_path: str, cropped_path: str | None = None) -> OcrResult:
         from pipeline.ocr import ocr_image

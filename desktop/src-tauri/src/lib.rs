@@ -12,10 +12,16 @@ use std::sync::Mutex;
 use std::thread;
 use std::time::{Duration, Instant};
 
+#[cfg(windows)]
+use std::os::windows::process::CommandExt;
+
 use tauri::webview::DownloadEvent;
 use tauri::{Manager, RunEvent, Url, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 
 const PREFERRED_PORT: u16 = 8765;
+/// The backend and taskkill are console programs; without this each opens a black console window.
+#[cfg(windows)]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 const HEALTH_TIMEOUT: Duration = Duration::from_secs(90); // first launch can be slow (macOS scans the bundle)
 
 struct Backend(Mutex<Option<Child>>);
@@ -29,6 +35,17 @@ const QUIT_PATH: &str = "/__tally/quit";
 fn backend_exe(app: &tauri::AppHandle) -> tauri::Result<PathBuf> {
     let name = if cfg!(windows) { "tally-api.exe" } else { "tally-api" };
     Ok(app.path().resource_dir()?.join("tally-api").join(name))
+}
+
+/// ~/Library/Application Support/Tally on macOS. On Windows, %LOCALAPPDATA%\ph.matchmo.tally: Local, not
+/// Roaming, so roaming profiles never copy an open database or the photos. Not %LOCALAPPDATA%\Tally, which
+/// is where the per-user installer puts the app itself; the uninstaller's "Delete the application data"
+/// box clears this folder, and windows/installer-hooks.nsh always removes Tally's Ollama from it.
+fn tally_data_dir(app: &tauri::AppHandle) -> tauri::Result<PathBuf> {
+    #[cfg(windows)]
+    return app.path().app_local_data_dir();
+    #[cfg(not(windows))]
+    return Ok(app.path().data_dir()?.join("Tally"));
 }
 
 /// A previous run that crashed can leave its backend holding the port and the database.
@@ -45,7 +62,12 @@ fn stop_orphan(pid_file: &Path) {
     }
     #[cfg(windows)]
     {
-        let _ = Command::new("taskkill").args(["/PID", pid, "/IM", "tally-api.exe", "/F"]).status();
+        // Only if that PID is still our backend: Windows reuses PIDs.
+        let _ = Command::new("taskkill")
+            .args(["/F", "/FI", &format!("PID eq {pid}"), "/FI", "IMAGENAME eq tally-api.exe"])
+            .creation_flags(CREATE_NO_WINDOW)
+            .status();
+        thread::sleep(Duration::from_millis(500));
     }
     let _ = fs::remove_file(pid_file);
 }
@@ -114,9 +136,8 @@ fn show_error(win: &WebviewWindow, message: &str) {
     let _ = win.eval(&js);
 }
 
-/// Downloads (CSV, Excel, backups) go straight to ~/Downloads under a name that doesn't overwrite an
-/// existing file, like a browser. When one finishes, the page gets a `tally:download` event so it can
-/// say "Saved" and offer Show in Finder.
+/// Downloads (CSV, Excel, backups) go straight to the OS Downloads folder under a name that doesn't
+/// overwrite an existing file. When one finishes, the page gets a `tally:download` event.
 fn unique_in(dir: &Path, name: &str) -> PathBuf {
     let candidate = dir.join(name);
     if !candidate.exists() {
@@ -160,7 +181,10 @@ fn serde_json_string(s: &str) -> String {
 }
 
 fn start_backend(app: &tauri::AppHandle, win: WebviewWindow) -> tauri::Result<()> {
-    let data_dir = app.path().data_dir()?.join("Tally");
+    let data_dir = tally_data_dir(app)?;
+    #[cfg(windows)]
+    let log_dir = data_dir.join("logs");
+    #[cfg(not(windows))]
     let log_dir = app.path().app_log_dir()?;
     fs::create_dir_all(&data_dir)?;
     fs::create_dir_all(&log_dir)?;
@@ -170,13 +194,15 @@ fn start_backend(app: &tauri::AppHandle, win: WebviewWindow) -> tauri::Result<()
     let log_path = log_dir.join("tally-api.log");
     let log = OpenOptions::new().create(true).append(true).open(&log_path)?;
     let exe = backend_exe(app)?;
-    let mut child = match Command::new(&exe)
-        .args(["--data-dir", &data_dir.to_string_lossy(), "--port", &PREFERRED_PORT.to_string()])
+    let mut command = Command::new(&exe);
+    command
+        .args(["--data-dir", &data_dir.to_string_lossy(), "--log-dir", &log_dir.to_string_lossy(), "--port", &PREFERRED_PORT.to_string()])
         .stdin(Stdio::piped()) // the backend exits when this pipe closes, even if the shell crashes
         .stdout(Stdio::piped())
-        .stderr(Stdio::from(log.try_clone()?))
-        .spawn()
-    {
+        .stderr(Stdio::from(log.try_clone()?));
+    #[cfg(windows)]
+    command.creation_flags(CREATE_NO_WINDOW);
+    let mut child = match command.spawn() {
         Ok(child) => child,
         Err(e) => {
             show_error(&win, &format!("The backend at {} did not start: {e}", exe.display()));
@@ -216,7 +242,7 @@ fn start_backend(app: &tauri::AppHandle, win: WebviewWindow) -> tauri::Result<()
             });
         }
         if !ready {
-            show_error(&win, "The backend stopped while starting. Its log is in ~/Library/Logs/ph.matchmo.tally.");
+            show_error(&win, "The backend stopped while starting. Restart Tally, then export diagnostics from Settings if it continues.");
         }
     });
     Ok(())
@@ -235,8 +261,8 @@ fn stop_backend(app: &tauri::AppHandle) {
     }
     let _ = child.kill();
     let _ = child.wait();
-    if let Ok(dir) = app.path().data_dir() {
-        let _ = fs::remove_file(dir.join("Tally").join("tally-api.pid"));
+    if let Ok(dir) = tally_data_dir(app) {
+        let _ = fs::remove_file(dir.join("tally-api.pid"));
     }
 }
 

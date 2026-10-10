@@ -95,7 +95,9 @@ function MachineStep({ s, next }: { s: SetupStatus; next: () => void }) {
         <Check ok={m.ram_ok} hint={m.ram_ok ? undefined : "Tally needs 8 GB to read receipts. You can still review and export."}>
           {m.ram_gb} GB of memory
         </Check>
-        <Check ok={m.disk_ok} hint={m.disk_ok ? "The receipt reader needs about 3 GB." : "Free up about 4 GB: the receipt reader is a one-time download."}>
+        <Check ok={m.disk_ok} hint={m.disk_ok
+          ? "Enough room for the receipt reader."
+          : `Free up about ${Math.ceil(m.free_needed_gb - m.free_gb)} GB: the receipt reader is a one-time download.`}>
           {m.free_gb} GB free on disk
         </Check>
         {m.macos !== null && (
@@ -103,7 +105,13 @@ function MachineStep({ s, next }: { s: SetupStatus; next: () => void }) {
             macOS {m.macos}
           </Check>
         )}
+        {m.windows_build !== null && (
+          <Check ok={m.windows_ok} hint={m.windows_ok ? undefined : "Tally is made for Windows 11. It may work here, but it isn't tested."}>
+            {m.windows_ok ? "Windows 11" : "Windows 10 or older"}
+          </Check>
+        )}
       </ul>
+      {m.os === "win32" && <Notice tone="info" className="mt-6">Phone capture uses your private office network. Allow Tally through Windows Firewall when Windows asks.</Notice>}
       <Nav next={next} />
     </>
   );
