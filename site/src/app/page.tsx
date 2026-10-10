@@ -7,7 +7,7 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { Privacy } from "@/components/sections/Privacy";
 import { Problem } from "@/components/sections/Problem";
 import { Review } from "@/components/sections/Review";
-import { DEMO_DURATION, DEMO_POSTER, DEMO_VIDEO_URL, MAC_DOWNLOAD_URL, SITE_URL } from "@/lib/links";
+import { DEMO_DURATION, DEMO_POSTER, DEMO_VIDEO_URL, MAC_DOWNLOAD_URL, SITE_URL, WINDOWS_DOWNLOAD_URL } from "@/lib/links";
 
 // Structured data for search engines: the app itself, and the demo video so it can show in video results.
 const JSON_LD = [
@@ -17,10 +17,10 @@ const JSON_LD = [
     name: "Tally",
     url: SITE_URL,
     applicationCategory: "FinanceApplication",
-    operatingSystem: "macOS 14 or newer (Apple Silicon)",
-    downloadUrl: MAC_DOWNLOAD_URL,
+    operatingSystem: "macOS 14 or newer (Apple Silicon), Windows 11 (x64)",
+    downloadUrl: [MAC_DOWNLOAD_URL, WINDOWS_DOWNLOAD_URL],
     description:
-      "Checks every receipt in a cash advance liquidation against BIR rules, offline on your Mac. The AI only reads receipts; fixed rules do the checking.",
+      "Checks every receipt in a cash advance liquidation against BIR rules, offline on your Mac or Windows PC. The AI only reads receipts; fixed rules do the checking.",
     offers: { "@type": "Offer", price: "0", priceCurrency: "PHP" },
     screenshot: `${SITE_URL}${DEMO_POSTER}`,
   },

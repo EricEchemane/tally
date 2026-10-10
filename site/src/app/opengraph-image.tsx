@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { ImageResponse } from "next/og";
 
 // The link preview on social apps and chat: the logo, the promise and the platform, in the site's night and lime.
-export const alt = "Tally: every receipt checked against BIR rules, offline on your Mac";
+export const alt = "Tally: every receipt checked against BIR rules, offline on your computer";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -33,7 +33,7 @@ export default async function Image() {
           <span style={{ fontSize: 60, fontWeight: 800, lineHeight: 1.05, letterSpacing: -2 }}>
             Every receipt checked against BIR rules.
           </span>
-          <span style={{ fontSize: 34, color: "#c5f06a" }}>Private, offline AI for liquidation reports, on your Mac.</span>
+          <span style={{ fontSize: 34, color: "#c5f06a" }}>Private, offline AI for liquidation reports, on your computer.</span>
         </div>
       </div>
     ),
