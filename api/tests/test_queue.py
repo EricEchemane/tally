@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 
 import config
+import pytest
 from PIL import Image
 
 SAMPLES = Path(__file__).resolve().parents[2] / "samples" / "receipts"
@@ -74,6 +75,29 @@ def test_heic_upload_is_converted(clean_client):
         time.sleep(0.02)
     img = c.get(d["image_url"])
     assert img.status_code == 200 and img.content[:3] == b"\xff\xd8\xff"     # stored as JPEG
+
+
+@pytest.mark.parametrize("name,fmt,sent_type", [
+    ("a.jpg", "JPEG", ""),                           # Windows can drop a .jpg with no type
+    ("b.jfif", "JPEG", "application/octet-stream"),
+    ("c.jpg", "JPEG", "image/pjpeg"),
+    ("d.webp", "WEBP", "image/webp"),
+    ("e.bmp", "BMP", "image/bmp"),
+])
+def test_any_image_is_accepted_whatever_its_reported_type(clean_client, name, fmt, sent_type):
+    buf = io.BytesIO()
+    Image.new("RGB", (40, 30), "white").save(buf, fmt)
+    c = clean_client
+    r = c.post(f"/api/liquidations/{_liq(c)}/receipts", files=[("images", (name, buf.getvalue(), sent_type))])
+    assert r.status_code == 202, r.text
+    img = c.get(f"/api/receipts/{r.json()[0]['id']}/image")
+    assert img.status_code == 200 and img.content[:3] in (b"\xff\xd8\xff",)
+
+
+def test_a_non_image_is_still_refused(clean_client):
+    c = clean_client
+    r = c.post(f"/api/liquidations/{_liq(c)}/receipts", files=[("images", ("x.jpg", b"not a picture", "image/jpeg"))])
+    assert r.status_code == 415
 
 
 def test_demo_reset_endpoint(client):

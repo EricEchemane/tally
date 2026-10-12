@@ -64,6 +64,13 @@ def test_a_phone_without_a_token_reaches_only_static_files():
             pass
 
 
+def test_typing_the_address_into_a_phone_explains_what_to_do():
+    phone = _client("192.168.1.42")
+    r = phone.get("/", headers={"accept": "text/html,application/xhtml+xml"})
+    assert r.status_code == 403 and "text/html" in r.headers["content-type"] and "QR code" in r.text
+    assert phone.get("/api/liquidations", headers={"accept": "application/json"}).headers["content-type"] == "application/json"
+
+
 def test_a_capture_link_opens_only_its_own_liquidation():
     phone = _client("192.168.1.42")
     page = phone.get("/capture/?id=3&t=tok3")

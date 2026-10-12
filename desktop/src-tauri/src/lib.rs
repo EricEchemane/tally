@@ -283,6 +283,9 @@ pub fn run() {
                 .min_inner_size(900.0, 600.0)
                 // Lets the page know it runs inside the app (downloads report back; see on_download).
                 .initialization_script("window.__TALLY_DESKTOP__ = true;")
+                // On Windows the shell's own file-drop handler swallows drops, so the page's drag-and-drop
+                // (photos onto a Liquidation or the home page) never got them. The page handles drops itself.
+                .disable_drag_drop_handler()
                 .on_download(on_download)
                 .on_navigation(move |url| {
                     if url.path() == QUIT_PATH {

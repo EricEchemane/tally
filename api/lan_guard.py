@@ -108,7 +108,9 @@ class LanGuard:
         liquidation_id = self.scope.liquidation_for(token) if self.scope else None
         receipt_liquidation = self.scope.receipt_liquidation if self.scope else (lambda rid: None)
         if not lan_allowed(method, path, liquidation_id, receipt_liquidation, scope["type"] == "websocket"):
-            return await _deny(scope, send, "only this computer can use Tally; phones can only send receipt photos")
+            wants_page = scope["type"] == "http" and method == "GET" and "text/html" in headers.get("accept", "")
+            return await _deny(scope, send, "only this computer can use Tally; phones can only send receipt photos",
+                               page=wants_page)
 
         if scope["type"] == "http" and liquidation_id is not None and query.get("t") and path.startswith("/capture"):
             # The capture page's own requests (fetches, images, WebSocket, worker) can't all add ?t=.
@@ -123,11 +125,25 @@ class LanGuard:
         return await self.app(scope, receive, send)
 
 
-async def _deny(scope, send, reason: str) -> None:
+_PHONE_PAGE = """<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>Tally</title>
+<style>body{font:16px/1.5 system-ui,sans-serif;margin:0;padding:2rem 1.25rem;max-width:26rem;margin-inline:auto;color:#1c1c1e}
+h1{font-size:1.25rem}ol{padding-left:1.25rem}p{color:#555}</style></head><body>
+<h1>This phone is connected to Tally</h1>
+<p>Typing the address opens the computer's app, which only the computer can use. To send receipt photos from this phone:</p>
+<ol><li>On the computer, open a Cash Advance's Liquidation in Tally.</li>
+<li>Point this phone's camera at the QR code under "Scan with your phone".</li>
+<li>Open the link it shows.</li></ol></body></html>"""
+
+
+async def _deny(scope, send, reason: str, page: bool = False) -> None:
     if scope["type"] == "websocket":
         await send({"type": "websocket.close", "code": 1008})
         return
-    body = ('{"detail": "%s"}' % reason).encode()
+    if page:  # someone typed the address into a phone's browser: explain, don't show JSON
+        body, kind = _PHONE_PAGE.encode(), b"text/html; charset=utf-8"
+    else:
+        body, kind = ('{"detail": "%s"}' % reason).encode(), b"application/json"
     await send({"type": "http.response.start", "status": 403,
-                "headers": [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode())]})
+                "headers": [(b"content-type", kind), (b"content-length", str(len(body)).encode())]})
     await send({"type": "http.response.body", "body": body})

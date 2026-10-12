@@ -2,12 +2,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { api, errorMessage } from "@/lib/api";
+import { photoFiles, PHOTO_ACCEPT } from "@/lib/photos";
 import { useCaptureLink, useFirewall, type Firewall } from "@/lib/queries";
 import { Dialog } from "./Dialog";
 import { Button, Card, CardHeader, cx, Notice, Spinner } from "./ui";
 import { toast } from "@/lib/toast";
-
-const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
 
 /** Drag-and-drop or multi-file picker on the Liquidation screen (SPEC §7). */
 export function UploadDropzone({ liquidationId }: { liquidationId: number }) {
@@ -23,8 +22,9 @@ export function UploadDropzone({ liquidationId }: { liquidationId: number }) {
   });
 
   const send = (list: FileList | null) => {
-    const files = Array.from(list ?? []).filter((f) => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name));
+    const files = photoFiles(list);
     if (files.length) upload.mutate(files);
+    else if (list?.length) toast("That isn't a photo", { body: "Drop JPEG, PNG, HEIC or other image files." });
   };
 
   return (
@@ -52,11 +52,11 @@ export function UploadDropzone({ liquidationId }: { liquidationId: number }) {
         ) : (
           <>
             <span className="text-sm font-medium">Drop receipt photos here, or click to choose</span>
-            <span className="text-xs text-muted">JPEG, PNG or HEIC. Several at once is fine: each photo is one receipt.</span>
+            <span className="text-xs text-muted">JPEG, PNG, HEIC or any image. Several at once is fine: each photo is one receipt.</span>
           </>
         )}
       </button>
-      <input ref={picker} type="file" accept={ACCEPT} multiple hidden onChange={(e) => {
+      <input ref={picker} type="file" accept={PHOTO_ACCEPT} multiple hidden onChange={(e) => {
         send(e.target.files);
         e.target.value = "";
       }} />
