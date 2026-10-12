@@ -23,13 +23,19 @@ PREFERRED_PORT = 8765
 
 
 def lan_ip() -> str:
-    """The address the phone should use. A UDP connect sends nothing; it only picks the outgoing interface."""
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-        try:
-            s.connect(("10.255.255.255", 1))
-            return s.getsockname()[0]
-        except OSError:
-            return "127.0.0.1"
+    """The address the phone should use. A UDP connect sends nothing; it only picks the outgoing interface.
+    Link-local (169.254.x) and loopback answers are skipped: on Windows a disconnected or virtual adapter
+    (WSL, Hyper-V, hotspot) can win otherwise, and the QR would point at an address the phone can't reach."""
+    for target in ("8.8.8.8", "192.168.0.1", "10.255.255.255"):
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            try:
+                s.connect((target, 1))
+                ip = s.getsockname()[0]
+            except OSError:
+                continue
+        if not ip.startswith(("169.254.", "127.", "0.")):
+            return ip
+    return "127.0.0.1"
 
 
 def bind(port: int) -> socket.socket:
@@ -126,10 +132,12 @@ def main() -> None:
 
     from urllib.parse import urlsplit
 
-    from lan_guard import LanGuard
+    from lan_guard import CaptureScope, LanGuard
 
-    # Only this computer uses Tally; other devices on the Wi-Fi reach the phone capture page and upload only.
-    app.add_middleware(LanGuard, own_hosts=lambda: {urlsplit(config.WEB_URL).hostname or "", lan_ip()})
+    # Only this computer uses Tally; other devices on the Wi-Fi reach the phone capture page, and with a capture
+    # token only that Liquidation's capture needs.
+    app.add_middleware(LanGuard, own_hosts=lambda: {urlsplit(config.WEB_URL).hostname or "", lan_ip()},
+                       scope=CaptureScope(lambda: config.DB_PATH))
 
     server = uvicorn.Server(uvicorn.Config(app, log_level="info"))
 
