@@ -29,11 +29,9 @@ def _open(data: bytes) -> Image.Image:
             pass
         _registered = True
     try:
-        img = Image.open(io.BytesIO(data))
-        img.load()
+        return Image.open(io.BytesIO(data))
     except (UnidentifiedImageError, OSError, ValueError, SyntaxError) as e:
         raise UnsupportedImage("not an image this app can read") from e
-    return img
 
 
 def save_upload(data: bytes, content_type: str | None, images_dir: Path) -> tuple[Path, str]:
@@ -42,13 +40,16 @@ def save_upload(data: bytes, content_type: str | None, images_dir: Path) -> tupl
     digest = hashlib.sha256(data).hexdigest()
     img = _open(data)
     images_dir.mkdir(parents=True, exist_ok=True)
-    if img.format == "JPEG":
+    if img.format in ("JPEG", "MPO"):  # MPO: a JPEG with an extra picture inside, common from phone cameras
         ext = ".jpg"
     elif img.format == "PNG":
         ext = ".png"
     else:
         buf = io.BytesIO()
-        ImageOps.exif_transpose(img).convert("RGB").save(buf, "JPEG", quality=92)
+        try:
+            ImageOps.exif_transpose(img).convert("RGB").save(buf, "JPEG", quality=92)
+        except (OSError, ValueError, SyntaxError) as e:
+            raise UnsupportedImage("not an image this app can read") from e
         data, ext = buf.getvalue(), ".jpg"
     path = images_dir / f"{uuid.uuid4().hex}{ext}"
     path.write_bytes(data)

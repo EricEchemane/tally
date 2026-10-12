@@ -94,6 +94,13 @@ def test_any_image_is_accepted_whatever_its_reported_type(clean_client, name, fm
     assert img.status_code == 200 and img.content[:3] in (b"\xff\xd8\xff",)
 
 
+def test_a_phone_jpeg_is_stored_unchanged(clean_client):
+    src = next(SAMPLES.glob("bayanihan-corp-1.*"))  # Pillow reads this phone photo as MPO
+    c = clean_client
+    (r,) = c.post(f"/api/liquidations/{_liq(c)}/receipts", files=[("images", (src.name, src.read_bytes(), ""))]).json()
+    assert c.get(f"/api/receipts/{r['id']}/image").content == src.read_bytes()
+
+
 def test_a_non_image_is_still_refused(clean_client):
     c = clean_client
     r = c.post(f"/api/liquidations/{_liq(c)}/receipts", files=[("images", ("x.jpg", b"not a picture", "image/jpeg"))])
