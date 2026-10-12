@@ -51,7 +51,7 @@ from db import get_db
 
 router = APIRouter(prefix="/api/setup")
 
-APP_VERSION = "0.1.0"  # keep in step with desktop/src-tauri/tauri.conf.json
+APP_VERSION = "0.1.1"  # keep in step with desktop/src-tauri/tauri.conf.json
 MIN_OLLAMA = (0, 12, 5)  # first release where think:false works with a JSON-schema format
 MIN_RAM_GB = 8
 MIN_FREE_GB = 4  # the model is 2.5 GB, written to a pre-sized file

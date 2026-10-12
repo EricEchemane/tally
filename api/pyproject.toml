@@ -1,6 +1,6 @@
 [project]
 name = "tally-api"
-version = "0.1.0"
+version = "0.1.1"
 description = "Tally backend: local receipt checking for cash-advance liquidations"
 requires-python = ">=3.12,<3.13"
 dependencies = [
