@@ -105,7 +105,8 @@ export function CapturePanel({ liquidationId }: { liquidationId: number }) {
   );
 }
 
-/** Windows: if the installer's firewall prompt was declined, the phone can't connect. Say so and offer to fix it. */
+/** Windows: if the installer's firewall prompt was declined (or an older Private-only rule is still there), the
+ *  phone can't connect. Say so and offer to fix it. */
 function FirewallNotice() {
   const qc = useQueryClient();
   const firewall = useFirewall();
@@ -130,7 +131,7 @@ function FirewallNotice() {
   return (
     <Notice tone="warn" className="w-full">
       <p className="font-medium">Phone capture is blocked by Windows Firewall</p>
-      <p className="mt-1">Your phone can&apos;t reach Tally until Windows allows it on your private office network.</p>
+      <p className="mt-1">Your phone can&apos;t reach Tally until Windows allows it on your Wi-Fi network.</p>
       <Button size="sm" variant="secondary" className="mt-3" busy={allow.isPending} onClick={() => allow.mutate()}>
         Allow
       </Button>

@@ -613,19 +613,20 @@ FIREWALL_RULE = "Tally phone capture"  # the installer adds it too (desktop/src-
 
 
 def _firewall_rule_present() -> bool:
-    # Reading rules needs no elevation; netsh exits non-zero when no rule has this name.
+    """Reading rules needs no elevation; netsh exits non-zero when no rule has this name. A rule from an older
+    release covers Private networks only, which Windows doesn't assign to most home and office Wi-Fi (it
+    calls them Public), so it counts as missing until it is replaced."""
     check = subprocess.run(["netsh", "advfirewall", "firewall", "show", "rule", f"name={FIREWALL_RULE}"],
-                           capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, check=False)
-    return check.returncode == 0
+                           capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, check=False)
+    if check.returncode != 0:
+        return False
+    profiles = [line for line in check.stdout.splitlines() if line.strip().startswith("Profiles:")]
+    return bool(profiles) and ("Public" in profiles[0] or "Any" in profiles[0] or "All" in profiles[0])
 
 
 def _public_network() -> bool:
-    """The rule covers Private networks only, so on a network Windows calls Public the phone can't connect."""
-    check = subprocess.run(["powershell.exe", "-NoProfile", "-Command",
-                            "(Get-NetConnectionProfile | Where-Object IPv4Connectivity -ne 'Disconnected').NetworkCategory"],
-                           capture_output=True, text=True, creationflags=subprocess.CREATE_NO_WINDOW, check=False)
-    categories = check.stdout.split()
-    return bool(categories) and "Private" not in categories and "DomainAuthenticated" not in categories
+    """Kept for the capture screen's hint; with the rule covering Public too, this no longer blocks the phone."""
+    return False
 
 
 @router.get("/firewall")
@@ -639,14 +640,16 @@ def firewall():
 
 @router.post("/firewall")
 def allow_firewall():
-    """Ask Windows for administrator approval (UAC) to add the rule for this sidecar, Private networks only."""
+    """Ask Windows for administrator approval (UAC) to add the rule for this sidecar on Private and Public
+    networks (replacing an older Private-only rule). The LAN guard still limits other devices to phone capture."""
     if sys.platform != "win32":
         return {"applies": False, "allowed": True}
     program = sys.executable.replace("'", "''")  # the frozen tally-api.exe
-    args = (f'advfirewall firewall add rule name="{FIREWALL_RULE}" dir=in action=allow '
-            f'program="{program}" enable=yes profile=private')
+    command = (f'netsh advfirewall firewall delete rule name="{FIREWALL_RULE}" & '
+               f'netsh advfirewall firewall add rule name="{FIREWALL_RULE}" dir=in action=allow '
+               f'program="{program}" enable=yes profile=private,public')
     subprocess.run(["powershell.exe", "-NoProfile", "-Command",
-                    f"Start-Process netsh -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '{args}'"],
+                    f"Start-Process cmd.exe -Verb RunAs -Wait -WindowStyle Hidden -ArgumentList '/c {command}'"],
                    capture_output=True, creationflags=subprocess.CREATE_NO_WINDOW, check=False)
     return {"applies": True, "allowed": _firewall_rule_present(), "public_network": _public_network()}
 
