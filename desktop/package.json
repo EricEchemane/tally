@@ -1,7 +1,7 @@
 {
   "name": "tally-desktop",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "web": "cd ../web-desktop && npm ci && npx next build",
     "sidecar": "cd ../api && uv run --group desktop pyinstaller tally-api.spec --noconfirm --distpath ../desktop/dist-sidecar --workpath ../desktop/build-sidecar",

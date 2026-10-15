@@ -111,7 +111,7 @@ function MachineStep({ s, next }: { s: SetupStatus; next: () => void }) {
           </Check>
         )}
       </ul>
-      {m.os === "win32" && <Notice tone="info" className="mt-6">Phone capture uses your private office network. Allow Tally through Windows Firewall when Windows asks.</Notice>}
+      {m.os === "win32" && <Notice tone="info" className="mt-6">Phone capture uses your Wi-Fi network. Allow Tally through Windows Firewall when Windows asks.</Notice>}
       <Nav next={next} />
     </>
   );

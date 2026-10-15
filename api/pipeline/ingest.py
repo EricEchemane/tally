@@ -1,27 +1,56 @@
-"""Store an uploaded image as a JPEG/PNG the OCR can read; HEIC is converted (SPEC §4 step 1)."""
+"""Store an uploaded image as a JPEG/PNG the OCR can read (SPEC §4 step 1).
+
+The file's own bytes decide what it is, not the browser's content type: on Windows a dropped .jpg can arrive
+with no type at all. JPEG and PNG are kept as they are; anything else Pillow can open (HEIC/HEIF, WebP, BMP,
+GIF, TIFF...) is converted to JPEG.
+"""
 import hashlib
 import io
 import uuid
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageOps, UnidentifiedImageError
 
-HEIC_TYPES = {"image/heic", "image/heif"}
+_registered = False
 
 
-def save_upload(data: bytes, content_type: str, images_dir: Path) -> tuple[Path, str]:
-    """Returns (stored path, sha256 of the original bytes). The hash feeds the duplicate check."""
+class UnsupportedImage(ValueError):
+    """The bytes aren't an image this app can read."""
+
+
+def _open(data: bytes) -> Image.Image:
+    global _registered
+    if not _registered:
+        try:
+            from pillow_heif import register_heif_opener
+
+            register_heif_opener()
+        except ImportError:  # HEIC just won't open; every other format still does
+            pass
+        _registered = True
+    try:
+        return Image.open(io.BytesIO(data))
+    except (UnidentifiedImageError, OSError, ValueError, SyntaxError) as e:
+        raise UnsupportedImage("not an image this app can read") from e
+
+
+def save_upload(data: bytes, content_type: str | None, images_dir: Path) -> tuple[Path, str]:
+    """Returns (stored path, sha256 of the original bytes). The hash feeds the duplicate check.
+    `content_type` is accepted for callers that have it but isn't trusted."""
     digest = hashlib.sha256(data).hexdigest()
+    img = _open(data)
     images_dir.mkdir(parents=True, exist_ok=True)
-    if content_type in HEIC_TYPES:
-        from pillow_heif import register_heif_opener
-
-        register_heif_opener()
-        buf = io.BytesIO()
-        Image.open(io.BytesIO(data)).convert("RGB").save(buf, "JPEG", quality=92)
-        data, ext = buf.getvalue(), ".jpg"
+    if img.format in ("JPEG", "MPO"):  # MPO: a JPEG with an extra picture inside, common from phone cameras
+        ext = ".jpg"
+    elif img.format == "PNG":
+        ext = ".png"
     else:
-        ext = ".png" if content_type == "image/png" else ".jpg"
+        buf = io.BytesIO()
+        try:
+            ImageOps.exif_transpose(img).convert("RGB").save(buf, "JPEG", quality=92)
+        except (OSError, ValueError, SyntaxError) as e:
+            raise UnsupportedImage("not an image this app can read") from e
+        data, ext = buf.getvalue(), ".jpg"
     path = images_dir / f"{uuid.uuid4().hex}{ext}"
     path.write_bytes(data)
     return path, digest

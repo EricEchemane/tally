@@ -16,14 +16,11 @@ from checks import service as checks
 from pipeline import runner
 from pipeline.derive import parse_date
 from pipeline.crop import parse_corners_list, save_cropped
-from pipeline.ingest import save_upload
+from pipeline.ingest import UnsupportedImage, save_upload
 from routes.liquidations import load as load_liquidation
 
 router = APIRouter(prefix="/api")
 log = logging.getLogger(__name__)
-
-ALLOWED = {"image/jpeg", "image/png", "image/heic", "image/heif"}
-
 
 def load(conn, receipt_id: int) -> sqlite3.Row:
     r = conn.execute("SELECT * FROM receipt WHERE id = ?", (receipt_id,)).fetchone()
@@ -51,12 +48,13 @@ async def upload(liquidation_id: int, images: list[UploadFile] = File(...), corn
         crops = parse_corners_list(corners, len(images))
     except ValueError as e:
         raise HTTPException(422, f"invalid corners: {e}")
-    for img in images:
-        if img.content_type not in ALLOWED:
-            raise HTTPException(415, f"unsupported file type {img.content_type}")
     created = []
     for img, crop in zip(images, crops):
-        path, digest = save_upload(await img.read(), img.content_type, config.IMAGES_DIR)
+        try:
+            path, digest = save_upload(await img.read(), img.content_type, config.IMAGES_DIR)
+        except UnsupportedImage:
+            conn.rollback()
+            raise HTTPException(415, f"{img.filename or 'file'} isn't an image Tally can read") from None
         cropped = _crop(path, crop) if crop else None
         rid = conn.execute(
             "INSERT INTO receipt (liquidation_id, image_path, image_hash, cropped_path, crop_corners) VALUES (?, ?, ?, ?, ?)",

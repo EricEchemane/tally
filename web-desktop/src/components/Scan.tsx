@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { type ReactNode, useRef, useState } from "react";
 import { api, errorMessage } from "@/lib/api";
 import { formatDate } from "@/lib/labels";
+import { photoFiles } from "@/lib/photos";
 import { useCashAdvances } from "@/lib/queries";
 import { liquidationHref } from "@/lib/routes";
 import type { CashAdvance } from "@/lib/types";
@@ -14,8 +15,7 @@ import { Dialog } from "./Dialog";
 import { Button, Notice } from "./ui";
 import { toast } from "@/lib/toast";
 
-const photos = (list: FileList | null) =>
-  Array.from(list ?? []).filter((f) => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name));
+const photos = photoFiles;
 
 export function useScan(onNewCashAdvance: () => void) {
   const router = useRouter();

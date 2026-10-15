@@ -2,12 +2,11 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import { api, errorMessage } from "@/lib/api";
+import { photoFiles, PHOTO_ACCEPT } from "@/lib/photos";
 import { useCaptureLink, useFirewall, type Firewall } from "@/lib/queries";
 import { Dialog } from "./Dialog";
 import { Button, Card, CardHeader, cx, Notice, Spinner } from "./ui";
 import { toast } from "@/lib/toast";
-
-const ACCEPT = "image/jpeg,image/png,image/heic,image/heif,.heic,.heif";
 
 /** Drag-and-drop or multi-file picker on the Liquidation screen (SPEC §7). */
 export function UploadDropzone({ liquidationId }: { liquidationId: number }) {
@@ -23,8 +22,9 @@ export function UploadDropzone({ liquidationId }: { liquidationId: number }) {
   });
 
   const send = (list: FileList | null) => {
-    const files = Array.from(list ?? []).filter((f) => f.type.startsWith("image/") || /\.hei[cf]$/i.test(f.name));
+    const files = photoFiles(list);
     if (files.length) upload.mutate(files);
+    else if (list?.length) toast("That isn't a photo", { body: "Drop JPEG, PNG, HEIC or other image files." });
   };
 
   return (
@@ -52,11 +52,11 @@ export function UploadDropzone({ liquidationId }: { liquidationId: number }) {
         ) : (
           <>
             <span className="text-sm font-medium">Drop receipt photos here, or click to choose</span>
-            <span className="text-xs text-muted">JPEG, PNG or HEIC. Several at once is fine: each photo is one receipt.</span>
+            <span className="text-xs text-muted">JPEG, PNG, HEIC or any image. Several at once is fine: each photo is one receipt.</span>
           </>
         )}
       </button>
-      <input ref={picker} type="file" accept={ACCEPT} multiple hidden onChange={(e) => {
+      <input ref={picker} type="file" accept={PHOTO_ACCEPT} multiple hidden onChange={(e) => {
         send(e.target.files);
         e.target.value = "";
       }} />
@@ -105,7 +105,8 @@ export function CapturePanel({ liquidationId }: { liquidationId: number }) {
   );
 }
 
-/** Windows: if the installer's firewall prompt was declined, the phone can't connect. Say so and offer to fix it. */
+/** Windows: if the installer's firewall prompt was declined (or an older Private-only rule is still there), the
+ *  phone can't connect. Say so and offer to fix it. */
 function FirewallNotice() {
   const qc = useQueryClient();
   const firewall = useFirewall();
@@ -130,7 +131,7 @@ function FirewallNotice() {
   return (
     <Notice tone="warn" className="w-full">
       <p className="font-medium">Phone capture is blocked by Windows Firewall</p>
-      <p className="mt-1">Your phone can&apos;t reach Tally until Windows allows it on your private office network.</p>
+      <p className="mt-1">Your phone can&apos;t reach Tally until Windows allows it on your Wi-Fi network.</p>
       <Button size="sm" variant="secondary" className="mt-3" busy={allow.isPending} onClick={() => allow.mutate()}>
         Allow
       </Button>
