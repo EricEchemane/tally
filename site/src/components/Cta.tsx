@@ -1,7 +1,7 @@
 "use client";
 import { AppleLogoIcon, CaretDownIcon, DownloadSimpleIcon, PlayIcon, WindowsLogoIcon, XIcon } from "@phosphor-icons/react";
 import { useEffect, useId, useRef, useState, type MouseEvent } from "react";
-import { DEMO_POSTER, DEMO_VIDEO_URL, DOWNLOAD_LABEL, DOWNLOAD_MAC_HREF, DOWNLOAD_WINDOWS_HREF } from "@/lib/links";
+import { DEMO_VIDEO_EMBED_URL, DOWNLOAD_LABEL, DOWNLOAD_MAC_HREF, DOWNLOAD_WINDOWS_HREF } from "@/lib/links";
 
 const base =
   "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full font-semibold " +
@@ -176,12 +176,11 @@ export function DemoButton({
             >
               <XIcon aria-hidden weight="bold" className="size-5" />
             </button>
-            <video
-              src={DEMO_VIDEO_URL}
-              poster={DEMO_POSTER}
-              controls
-              autoPlay
-              playsInline
+            <iframe
+              src={`${DEMO_VIDEO_EMBED_URL}?autoplay=1&rel=0`}
+              title="Tally demo video"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
               className="aspect-[1728/1080] w-full rounded-2xl bg-black shadow-[0_24px_80px_rgb(0_0_0/0.5)]"
             />
           </div>

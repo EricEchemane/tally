@@ -4,7 +4,7 @@ import { Bricolage_Grotesque, Geist_Mono, Hanken_Grotesk } from "next/font/googl
 import "./globals.css";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
-import { DEMO_VIDEO_URL, SITE_URL } from "@/lib/links";
+import { DEMO_VIDEO_EMBED_URL, SITE_URL } from "@/lib/links";
 
 // Self-hosted at build time by next/font: visitors' browsers never call Google.
 // Hanken Grotesk carries body and UI text (clean, warm); Bricolage Grotesque gives headings their voice; Geist Mono is kept only for
@@ -40,7 +40,7 @@ export const metadata: Metadata = {
     title: TITLE,
     description: DESCRIPTION,
     locale: "en_PH",
-    videos: [{ url: DEMO_VIDEO_URL, type: "video/mp4", width: 1728, height: 1080 }],
+    videos: [{ url: DEMO_VIDEO_EMBED_URL, type: "text/html", width: 1728, height: 1080 }],
   },
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };

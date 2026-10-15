@@ -7,7 +7,15 @@ import { HowItWorks } from "@/components/sections/HowItWorks";
 import { Privacy } from "@/components/sections/Privacy";
 import { Problem } from "@/components/sections/Problem";
 import { Review } from "@/components/sections/Review";
-import { DEMO_DURATION, DEMO_POSTER, DEMO_VIDEO_URL, MAC_DOWNLOAD_URL, SITE_URL, WINDOWS_DOWNLOAD_URL } from "@/lib/links";
+import {
+  DEMO_DURATION,
+  DEMO_POSTER,
+  DEMO_VIDEO_EMBED_URL,
+  DEMO_VIDEO_WATCH_URL,
+  MAC_DOWNLOAD_URL,
+  SITE_URL,
+  WINDOWS_DOWNLOAD_URL,
+} from "@/lib/links";
 
 // Structured data for search engines: the app itself, and the demo video so it can show in video results.
 const JSON_LD = [
@@ -31,7 +39,8 @@ const JSON_LD = [
     description:
       "Scan receipts with your phone, see which ones need a second look, and ask Tally about your liquidations, all on your Mac.",
     thumbnailUrl: `${SITE_URL}${DEMO_POSTER}`,
-    contentUrl: DEMO_VIDEO_URL,
+    embedUrl: DEMO_VIDEO_EMBED_URL,
+    contentUrl: DEMO_VIDEO_WATCH_URL,
     duration: DEMO_DURATION,
     uploadDate: "2026-10-10",
   },

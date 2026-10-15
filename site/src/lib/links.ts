@@ -12,18 +12,20 @@ export const SITE_URL =
 
 /** Primary CTA: one button that opens a chooser of desktop platforms. */
 export const DOWNLOAD_LABEL = "Download the desktop app";
-/** Installer assets from the desktop-v0.1.0 GitHub release. */
+/** Installer assets. Mac: desktop-v0.1.0. Windows: desktop-v0.1.1 (LAN-connect fixes). */
 export const MAC_DOWNLOAD_URL = `${REPO_URL}/releases/download/desktop-v0.1.0/Tally-mac-arm64.dmg`;
 export const DOWNLOAD_MAC_HREF = MAC_DOWNLOAD_URL;
 export const WINDOWS_DOWNLOAD_URL =
-  "https://github.com/EricEchemane/tally/releases/download/desktop-v0.1.0/Tally-windows-x64-setup.exe";
+  "https://github.com/EricEchemane/tally/releases/download/desktop-v0.1.1/Tally-windows-x64-setup.exe";
 export const DOWNLOAD_WINDOWS_HREF = WINDOWS_DOWNLOAD_URL;
 
 /**
- * Secondary CTA: the 83 s hackathon demo. Served from the R2 bucket's dev URL, which Cloudflare rate-limits; swap in
- * a custom domain on the bucket when there is one.
+ * Secondary CTA: the 83 s promo video. Streamed straight from YouTube (youtube-nocookie.com embed) instead of a
+ * file in this repo, so the site stays lightweight.
  */
-export const DEMO_VIDEO_URL = "https://pub-9b3c0b9c505b48b290018ee6b84648b8.r2.dev/Tally-AppBuildersPh-Hackathon-2026.mp4";
+export const DEMO_VIDEO_ID = "mdrfEu0IcjM";
+export const DEMO_VIDEO_WATCH_URL = `https://www.youtube.com/watch?v=${DEMO_VIDEO_ID}`;
+export const DEMO_VIDEO_EMBED_URL = `https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}`;
 /** A frame at 0:30: Ask Tally answering inside the app. */
 export const DEMO_POSTER = "/images/demo-poster.jpg";
 export const DEMO_DURATION = "PT1M23S";
