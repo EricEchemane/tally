@@ -12,11 +12,11 @@ export const SITE_URL =
 
 /** Primary CTA: one button that opens a chooser of desktop platforms. */
 export const DOWNLOAD_LABEL = "Download the desktop app";
-/** Installer assets from the desktop-v0.1.0 GitHub release. */
+/** Installer assets. Mac: desktop-v0.1.0. Windows: desktop-v0.1.1 (LAN-connect fixes). */
 export const MAC_DOWNLOAD_URL = `${REPO_URL}/releases/download/desktop-v0.1.0/Tally-mac-arm64.dmg`;
 export const DOWNLOAD_MAC_HREF = MAC_DOWNLOAD_URL;
 export const WINDOWS_DOWNLOAD_URL =
-  "https://github.com/EricEchemane/tally/releases/download/desktop-v0.1.0/Tally-windows-x64-setup.exe";
+  "https://github.com/EricEchemane/tally/releases/download/desktop-v0.1.1/Tally-windows-x64-setup.exe";
 export const DOWNLOAD_WINDOWS_HREF = WINDOWS_DOWNLOAD_URL;
 
 /**
