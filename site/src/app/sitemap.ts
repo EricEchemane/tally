@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { DEMO_POSTER, DEMO_VIDEO_URL, SITE_URL } from "@/lib/links";
+import { DEMO_POSTER, DEMO_VIDEO_EMBED_URL, SITE_URL } from "@/lib/links";
 
 // One page; the old section URLs redirect into it (next.config.ts).
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -14,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
           title: "Tally demo: checking a liquidation's receipts offline",
           description: "Scan receipts with your phone, see which ones need a second look, and ask Tally about your liquidations.",
           thumbnail_loc: `${SITE_URL}${DEMO_POSTER}`,
-          content_loc: DEMO_VIDEO_URL,
+          player_loc: DEMO_VIDEO_EMBED_URL,
           duration: 83,
         },
       ],
