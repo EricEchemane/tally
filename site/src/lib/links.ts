@@ -41,6 +41,7 @@ export const NAV = [
   { href: "#how-it-works", label: "How it works" },
   { href: "#assistant", label: "Assistant" },
   { href: "#faq", label: "FAQ" },
+  { href: "#contact", label: "Contact" },
 ] as const;
 
 export const RELEASES_URL = `${REPO_URL}/releases`;

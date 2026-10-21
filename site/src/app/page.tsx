@@ -1,6 +1,7 @@
 import { Assistant } from "@/components/sections/Assistant";
 import { Checks, ChecksBand } from "@/components/sections/Checks";
 import { Faq, Requirements } from "@/components/sections/Closing";
+import { Contact } from "@/components/sections/Contact";
 import { Exports } from "@/components/sections/Exports";
 import { Hero } from "@/components/sections/Hero";
 import { HowItWorks } from "@/components/sections/HowItWorks";
@@ -68,6 +69,7 @@ export default function Home() {
         <div className="lazy-section"><Exports /></div>
         <div className="lazy-section"><Requirements /></div>
         <div className="lazy-section"><Faq /></div>
+        <div className="lazy-section"><Contact /></div>
       </div>
     </>
   );
