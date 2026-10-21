@@ -20,15 +20,15 @@ export const WINDOWS_DOWNLOAD_URL =
 export const DOWNLOAD_WINDOWS_HREF = WINDOWS_DOWNLOAD_URL;
 
 /**
- * Secondary CTA: the 83 s promo video. Streamed straight from YouTube (youtube-nocookie.com embed) instead of a
+ * Secondary CTA: the 40 s promo video. Streamed straight from YouTube (youtube-nocookie.com embed) instead of a
  * file in this repo, so the site stays lightweight.
  */
-export const DEMO_VIDEO_ID = "mdrfEu0IcjM";
+export const DEMO_VIDEO_ID = "wx08pCjNehI";
 export const DEMO_VIDEO_WATCH_URL = `https://www.youtube.com/watch?v=${DEMO_VIDEO_ID}`;
 export const DEMO_VIDEO_EMBED_URL = `https://www.youtube-nocookie.com/embed/${DEMO_VIDEO_ID}`;
 /** A frame at 0:30: Ask Tally answering inside the app. */
 export const DEMO_POSTER = "/images/demo-poster.jpg";
-export const DEMO_DURATION = "PT1M23S";
+export const DEMO_DURATION = "PT40S";
 
 /** Team portfolios linked from the footer's Contact section. */
 export const CONTACT_LINKS = [

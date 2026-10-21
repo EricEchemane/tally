@@ -15,7 +15,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
           description: "Scan receipts with your phone, see which ones need a second look, and ask Tally about your liquidations.",
           thumbnail_loc: `${SITE_URL}${DEMO_POSTER}`,
           player_loc: DEMO_VIDEO_EMBED_URL,
-          duration: 83,
+          duration: 40,
         },
       ],
     },

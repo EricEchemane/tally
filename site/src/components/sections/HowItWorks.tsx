@@ -148,7 +148,7 @@ export function HowItWorks() {
   return (
     <SectionShell tone="plain" id="how-it-works" labelledBy="how-title">
       <SectionHeader id="how-title" label="How it works" title="From a pile of receipts to an approved liquidation." />
-      {/* The whole flow in 83 s, streamed from YouTube. A poster facade until someone presses play. */}
+      {/* The whole flow in 40 s, streamed from YouTube. A poster facade until someone presses play. */}
       <DemoVideo className="mb-12" />
       <StepTabs steps={STEPS} />
       <div className="mt-10">
